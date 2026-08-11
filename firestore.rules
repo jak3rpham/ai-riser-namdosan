@@ -1,0 +1,57 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Check if authenticated user belongs to family
+    function inFamily(familyId) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/families/$(familyId)/access/$(request.auth.uid));
+    }
+    
+    function isManager(familyId) {
+      return inFamily(familyId) && 
+        get(/databases/$(database)/documents/families/$(familyId)/access/$(request.auth.uid)).data.role == 'manager';
+    }
+
+    // Public Medication & Interaction Catalogs (Anonymized Global Cache)
+    match /med_catalog/{slug} {
+      allow read: if true;
+      allow write: if false; // Only backend/admin writes
+    }
+    
+    match /interactions_cache/{pairHash} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Family Data Partition
+    match /families/{familyId} {
+      allow read: if inFamily(familyId);
+      allow create: if request.auth != null;
+      allow update, delete: if isManager(familyId);
+
+      // Access Subcollection
+      match /access/{userId} {
+        allow read: if inFamily(familyId);
+        allow write: if isManager(familyId);
+      }
+
+      // Family Members & Subcollections
+      match /members/{memberId} {
+        allow read: if inFamily(familyId);
+        allow write: if isManager(familyId);
+
+        match /{document=**} {
+          allow read: if inFamily(familyId);
+          allow write: if inFamily(familyId);
+        }
+      }
+      
+      // Real-time Status Feed
+      match /status_feed/{feedId} {
+        allow read: if inFamily(familyId);
+        allow create, update: if inFamily(familyId);
+      }
+    }
+  }
+}

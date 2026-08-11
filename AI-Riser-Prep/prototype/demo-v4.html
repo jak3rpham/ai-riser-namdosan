@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Riser Health — Futuristic Warm Prototype v4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #0B0E14;
+  --bg-card: rgba(22, 28, 38, 0.75);
+  --bg-card-hover: rgba(30, 38, 52, 0.85);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-active: rgba(255, 107, 75, 0.35);
+  
+  --coral-main: #FF6B4B;
+  --coral-bright: #FF8A65;
+  --coral-glow: rgba(255, 107, 75, 0.3);
+  --coral-grad: linear-gradient(135deg, #FF6B4B 0%, #FF8E53 100%);
+  
+  --amber-warm: #F59E0B;
+  --amber-soft: rgba(245, 158, 11, 0.15);
+  --amber-grad: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  
+  --emerald-ok: #10B981;
+  --emerald-soft: rgba(16, 185, 129, 0.15);
+  --emerald-grad: linear-gradient(135deg, #10B981 0%, #34D399 100%);
+  
+  --text-main: #F3F4F6;
+  --text-sub: #9CA3AF;
+  --text-muted: #6B7280;
+  
+  --radius-xl: 24px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  line-height: 1.5;
+}
+
+/* Ambient Glow Background Mesh */
+.ambient-mesh {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.glow-orb-1 {
+  position: absolute; top: -10%; left: 15%; width: 50vw; height: 50vw;
+  background: radial-gradient(circle, rgba(255, 107, 75, 0.12) 0%, rgba(11, 14, 20, 0) 70%);
+  filter: blur(80px);
+}
+.glow-orb-2 {
+  position: absolute; bottom: 10%; right: -5%; width: 45vw; height: 45vw;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.09) 0%, rgba(11, 14, 20, 0) 70%);
+  filter: blur(90px);
+}
+.glow-orb-3 {
+  position: absolute; top: 40%; left: -10%; width: 40vw; height: 40vw;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.07) 0%, rgba(11, 14, 20, 0) 70%);
+  filter: blur(80px);
+}
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+header {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(11, 14, 20, 0.8);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-glass);
+  padding: 16px 0;
+  margin-bottom: 36px;
+}
+.nav-wrap {
+  max-width: 1280px; margin: 0 auto; padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand {
+  display: flex; align-items: center; gap: 12px;
+}
+.brand-icon {
+  width: 42px; height: 42px; border-radius: 14px;
+  background: var(--coral-grad);
+  display: grid; place-items: center;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800; font-size: 20px; color: #FFF;
+  box-shadow: 0 0 20px var(--coral-glow);
+}
+.brand-text h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px; font-weight: 800; letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #FFF 30%, #FFD0C4 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-text span {
+  font-size: 12px; color: var(--text-sub); display: block; font-weight: 500;
+}
+.style-badge {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255, 107, 75, 0.1);
+  border: 1px solid rgba(255, 107, 75, 0.25);
+  padding: 6px 16px; border-radius: 99px;
+  font-size: 13px; font-weight: 600; color: var(--coral-bright);
+}
+.pulsing-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--coral-main);
+  box-shadow: 0 0 10px var(--coral-main);
+  animation: pulse-glow 2s infinite;
+}
+@keyframes pulse-glow {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+/* Glass Card Shared Utility */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-xl);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+/* Section Header */
+.sec-title {
+  margin-bottom: 28px;
+}
+.sec-title h2 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+}
+.sec-title p {
+  color: var(--text-sub); font-size: 15px; margin-top: 4px;
+}
+
+/* 2-Side Grid Layout */
+.demo-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 32px;
+}
+@media (max-width: 1024px) {
+  .demo-grid { grid-template-columns: 1fr; }
+}
+
+/* Left Side: Parent's Android Phone Mockup (P2) */
+.phone-wrapper {
+  display: flex; flex-direction: column; align-items: center;
+}
+.phone-label {
+  margin-bottom: 14px; text-align: center;
+}
+.phone-label h3 { font-size: 16px; font-weight: 700; }
+.phone-label span { font-size: 13px; color: var(--text-sub); }
+
+.phone-frame {
+  width: 330px; height: 670px;
+  background: #161A23;
+  border-radius: 46px;
+  padding: 12px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  position: relative;
+}
+.phone-notch {
+  position: absolute; top: 22px; left: 50%; transform: translateX(-50%);
+  width: 90px; height: 20px; background: #000; border-radius: 20px; z-index: 50;
+}
+.phone-screen {
+  width: 100%; height: 100%;
+  background: var(--bg-dark);
+  border-radius: 36px;
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+
+/* App Header Inside Phone */
+.app-header {
+  padding: 38px 20px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.app-user-info span { font-size: 12px; color: var(--text-sub); display: block; }
+.app-user-info h4 { font-size: 18px; font-weight: 800; }
+.app-avatar {
+  width: 36px; height: 36px; border-radius: 12px;
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  display: grid; place-items: center; font-weight: 700; font-size: 14px;
+}
+
+/* 4 Progress Dots Bar */
+.prog-bar {
+  display: flex; justify-content: space-between;
+  margin: 8px 20px 16px; padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+}
+.prog-dot-item { text-align: center; flex: 1; position: relative; }
+.prog-dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  margin: 0 auto 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s;
+}
+.prog-dot-item.done .prog-dot {
+  background: var(--emerald-ok); border-color: var(--emerald-ok);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+.prog-dot-item.current .prog-dot {
+  background: var(--coral-main); border-color: var(--coral-bright);
+  box-shadow: 0 0 12px var(--coral-glow);
+  animation: pulse-glow 1.5s infinite;
+}
+.prog-lbl { font-size: 10px; font-weight: 700; color: var(--text-muted); }
+.prog-dot-item.current .prog-lbl { color: var(--coral-bright); }
+.prog-dot-item.done .prog-lbl { color: var(--emerald-ok); }
+
+/* Parent Pill Action Card */
+.parent-card {
+  flex: 1; margin: 0 18px 18px;
+  background: linear-gradient(165deg, rgba(30, 38, 52, 0.9) 0%, rgba(20, 26, 36, 0.95) 100%);
+  border: 1px solid rgba(255, 107, 75, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+.time-tag {
+  background: var(--coral-soft);
+  color: var(--coral-bright);
+  font-size: 12px; font-weight: 700;
+  padding: 4px 12px; border-radius: 99px;
+  border: 1px solid rgba(255, 107, 75, 0.2);
+  margin-bottom: 12px;
+}
+.pill-3d-box {
+  width: 96px; height: 96px; border-radius: 28px;
+  background: radial-gradient(circle at 35% 30%, #2A3446, #161D29);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: grid; place-items: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+  margin-bottom: 14px; position: relative;
+}
+.pill-graphic {
+  width: 50px; height: 26px; border-radius: 13px;
+  background: linear-gradient(90deg, #FF6B4B 50%, #FFFFFF 50%);
+  transform: rotate(-35deg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.pill-name { font-size: 20px; font-weight: 800; line-height: 1.2; }
+.pill-nick { font-size: 13px; color: var(--coral-bright); font-weight: 600; margin-top: 2px; }
+.pill-dosage { font-size: 14px; color: var(--text-sub); margin-top: 6px; }
+
+.btn-parent-action {
+  width: 100%; padding: 16px; margin-top: auto;
+  border: none; border-radius: 18px;
+  background: var(--coral-grad);
+  color: #FFF; font-size: 17px; font-weight: 800; font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 8px 24px var(--coral-glow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.btn-parent-action:active { transform: scale(0.97); }
+
+/* Right Side: Children's Web Dashboard (P1) */
+.web-dashboard {
+  display: flex; flex-direction: column; gap: 24px;
+}
+
+.web-top-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 20px 24px;
+}
+.member-selector {
+  display: flex; gap: 10px;
+}
+.member-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 99px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+  font-size: 14px; font-weight: 600; color: var(--text-sub);
+  cursor: pointer; transition: all 0.2s;
+}
+.member-chip.active {
+  background: rgba(255, 107, 75, 0.12);
+  border-color: var(--coral-main);
+  color: var(--coral-bright);
+}
+.member-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--coral-grad); display: grid; place-items: center;
+  font-size: 11px; color: #fff; font-weight: 700;
+}
+
+/* Upload Prescription Dropzone */
+.dropzone-card {
+  padding: 28px;
+  border: 2px dashed rgba(255, 107, 75, 0.3);
+  background: radial-gradient(circle at 50% 0%, rgba(255, 107, 75, 0.08) 0%, rgba(22, 28, 38, 0.7) 70%);
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  border-radius: var(--radius-xl);
+}
+.dropzone-info h4 { font-size: 18px; font-weight: 700; }
+.dropzone-info p { font-size: 13.5px; color: var(--text-sub); margin-top: 4px; }
+.btn-upload {
+  padding: 12px 24px; border-radius: 14px;
+  background: var(--coral-grad); color: #FFF; border: none;
+  font-weight: 700; font-size: 14px; font-family: inherit;
+  cursor: pointer; box-shadow: 0 4px 16px var(--coral-glow);
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+}
+
+/* Live Medication & Safety Status Grid */
+.status-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+}
+@media (max-width: 768px) { .status-grid { grid-template-columns: 1fr; } }
+
+.stat-box {
+  padding: 20px; border-radius: var(--radius-lg);
+  background: var(--bg-card); border: 1px solid var(--border-glass);
+}
+.stat-box-title { font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-box-value { font-size: 26px; font-weight: 800; margin: 6px 0 2px; }
+.stat-box-sub { font-size: 13px; color: var(--emerald-ok); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+
+/* Signature Warning Card (T15 & M12) */
+.alert-signature-card {
+  padding: 24px; border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(22, 28, 38, 0.8) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  display: flex; gap: 18px; align-items: flex-start;
+}
+.alert-icon-box {
+  width: 44px; height: 44px; border-radius: 14px;
+  background: var(--amber-grad); display: grid; place-items: center;
+  font-size: 20px; color: #FFF; flex-shrink: 0;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+}
+.alert-content h4 { font-size: 16px; font-weight: 700; color: #FBBF24; }
+.alert-content p { font-size: 14px; color: var(--text-sub); margin-top: 4px; line-height: 1.5; }
+.alert-badge {
+  display: inline-block; margin-top: 10px; padding: 4px 12px; border-radius: 99px;
+  background: rgba(245, 158, 11, 0.15); color: #FBBF24; font-size: 12px; font-weight: 700;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+/* Voice Assistant Orb Modal Showcase */
+.voice-demo-card {
+  padding: 24px; border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, rgba(255, 107, 75, 0.12) 0%, rgba(16, 185, 129, 0.08) 100%);
+  border: 1px solid var(--border-glass);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.voice-orb {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #FF8A65, #FF6B4B);
+  box-shadow: 0 0 25px var(--coral-glow), 0 0 50px rgba(255, 107, 75, 0.2);
+  display: grid; place-items: center; font-size: 24px; color: #FFF;
+  animation: float-orb 3s ease-in-out infinite;
+}
+@keyframes float-orb {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.voice-info h4 { font-size: 16px; font-weight: 700; }
+.voice-info p { font-size: 13.5px; color: var(--text-sub); margin-top: 2px; }
+
+</style>
+</head>
+<body>
+
+<div class="ambient-mesh">
+  <div class="glow-orb-1"></div>
+  <div class="glow-orb-2"></div>
+  <div class="glow-orb-3"></div>
+</div>
+
+<header>
+  <div class="nav-wrap">
+    <div class="brand">
+      <div class="brand-icon">N</div>
+      <div class="brand-text">
+        <h1>Sức Khỏe Nhà</h1>
+        <span>Gia đình là nguồn sống</span>
+      </div>
+    </div>
+    <div class="style-badge">
+      <div class="pulsing-dot"></div>
+      Futuristic Warm Visual Style v4
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  
+  <div class="sec-title">
+    <h2>Trải nghiệm Giao diện 2 Màn hình (Con cái ↔ Ba mẹ)</h2>
+    <p>Được thiết kế theo gu **Hiện đại - Futuristic - Ấm áp - Nịnh mắt**</p>
+  </div>
+
+  <div class="demo-grid">
+    
+    <!-- LEFT: PARENT'S APP (P2) -->
+    <div class="phone-wrapper">
+      <div class="phone-label">
+        <h3>App Android — Ba mẹ (P2)</h3>
+        <span>Giao diện cực giản, nút to, zero-input</span>
+      </div>
+      
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          
+          <div class="app-header">
+            <div class="app-user-info">
+              <span>Chào buổi sáng,</span>
+              <h4>Bác Mười ❤️</h4>
+            </div>
+            <div class="app-avatar">M</div>
+          </div>
+          
+          <!-- 4 Dots Progress Bar -->
+          <div class="prog-bar">
+            <div class="prog-dot-item done">
+              <div class="prog-dot"></div>
+              <div class="prog-lbl">Sáng</div>
+            </div>
+            <div class="prog-dot-item current">
+              <div class="prog-dot"></div>
+              <div class="prog-lbl">Trưa</div>
+            </div>
+            <div class="prog-dot-item">
+              <div class="prog-dot"></div>
+              <div class="prog-lbl">Chiều</div>
+            </div>
+            <div class="prog-dot-item">
+              <div class="prog-dot"></div>
+              <div class="prog-lbl">Tối</div>
+            </div>
+          </div>
+          
+          <!-- Large Action Pill Card -->
+          <div class="parent-card">
+            <div class="time-tag">⏰ Uống lúc 11:30 Trưa</div>
+            
+            <div class="pill-3d-box">
+              <div class="pill-graphic"></div>
+            </div>
+            
+            <div class="pill-name">Amlodipine 5mg</div>
+            <div class="pill-nick">Viên huyết áp trắng tròn</div>
+            <div class="pill-dosage">Uống 1 viên sau khi ăn trưa</div>
+            
+            <button class="btn-parent-action">✓ ĐÃ UỐNG RỒI</button>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+    
+    <!-- RIGHT: CHILDREN'S WEB DASHBOARD (P1) -->
+    <div class="web-dashboard">
+      
+      <div class="glass-card web-top-bar">
+        <div>
+          <h3 style="font-size: 18px; font-weight: 700;">Hồ sơ Gia đình</h3>
+          <span style="font-size: 13px; color: var(--text-sub);">Đang xem tổng quan sức khỏe</span>
+        </div>
+        <div class="member-selector">
+          <div class="member-chip active">
+            <div class="member-avatar">M</div>
+            Ba Mười (68 tuổi)
+          </div>
+          <div class="member-chip">
+            <div class="member-avatar" style="background:#3B82F6">L</div>
+            Mẹ Lan (65 tuổi)
+          </div>
+        </div>
+      </div>
+      
+      <!-- Upload Prescription Dropzone -->
+      <div class="glass-card dropzone-card">
+        <div class="dropzone-info">
+          <h4>📷 Scan Đơn thuốc / Vỏ thuốc mới</h4>
+          <p>Tải ảnh đơn thuốc hoặc vỏ thuốc lên. Gemini Vision AI sẽ tự động đọc, giải thích và lên lịch nhắc cho ba mẹ.</p>
+        </div>
+        <button class="btn-upload">
+          <span>+ Tải ảnh lên</span>
+        </button>
+      </div>
+      
+      <!-- Quick Metrics -->
+      <div class="status-grid">
+        <div class="stat-box">
+          <div class="stat-box-title">Tỷ lệ tuân thủ</div>
+          <div class="stat-box-value" style="color: #34D399;">96%</div>
+          <div class="stat-box-sub">✓ Ba Mười uống rất đúng giờ</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-title">Thuốc đang uống</div>
+          <div class="stat-box-value">3 loại</div>
+          <div class="stat-box-sub" style="color: var(--text-sub);">Huyết áp · Mỡ máu · Khớp</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-title">Tủ thuốc nhà</div>
+          <div class="stat-box-value" style="color: #FBBF24;">Hết sau 5 ngày</div>
+          <div class="stat-box-sub" style="color: #FBBF24;">⚠️ Nhắc mua thêm Amlodipine</div>
+        </div>
+      </div>
+      
+      <!-- Signature AI Warning Card (T15 & M12) -->
+      <div class="glass-card alert-signature-card">
+        <div class="alert-icon-box">⚠️</div>
+        <div class="alert-content">
+          <h4>Cảnh báo Tương tác & Kiêng ăn (Signature AI Feature)</h4>
+          <p><strong>Trùng hoạt chất (T15):</strong> Đơn thuốc mới chứa <i>Efferalgan 500mg</i> trùng hoạt chất Paracetamol với <i>Panadol Extra</i> đang uống ở nhà. Đã tự động hợp nhất lịch nhắc để tránh quá liều.</p>
+          <p style="margin-top: 6px;"><strong>Kiêng ăn (M12):</strong> Thuốc mỡ máu Atorvastatin kiêng dùng chung với <strong>Bưởi tươi</strong>.</p>
+          <div class="alert-badge">Verified by AI & Knowledge Base</div>
+        </div>
+      </div>
+      
+      <!-- Voice Assistant Card -->
+      <div class="glass-card voice-demo-card">
+        <div style="display:flex; align-items:center; gap:16px;">
+          <div class="voice-orb">🎙️</div>
+          <div class="voice-info">
+            <h4>Trợ lý Giọng nói (4 Mức câu hỏi)</h4>
+            <p>"Cháu Bi" sẵn sàng trả lời thắc mắc của ba mẹ bằng giọng nói ấm áp, chuẩn y khoa.</p>
+          </div>
+        </div>
+        <button class="btn-upload" style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-glass); box-shadow:none;">
+          Nghe thử Demo
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

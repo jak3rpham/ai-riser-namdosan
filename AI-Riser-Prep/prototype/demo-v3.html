@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nhà Mình — Prototype v3 (ấm, đất nung)</title>
+<style>
+:root{
+  --paper:#FBF6EF; --surface:#FFFFFF; --ink:#2C221A; --muted:#8A7A6B; --line:#EBE0D3;
+  --accent:#C25E3A; --accent-deep:#A34B2B; --accent-soft:#FBEDE4; --accent-tint:#F5DCCB;
+  --ok:#4A7C59; --ok-soft:#EAF2EA;
+  --warn:#B5761F; --warn-soft:#FBF0DC;
+  --alert:#A63D2F; --alert-soft:#FAEAE6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding:0 24px 90px}
+
+header{position:sticky;top:0;z-index:50;background:rgba(251,246,239,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:15px 0;margin-bottom:42px}
+.hdr{max-width:1280px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px}
+.mark{width:40px;height:40px;border-radius:13px;background:var(--accent);display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px}
+.brand h1{font-size:17px;font-weight:800;letter-spacing:-.2px}
+.brand span{display:block;font-size:11.5px;color:var(--muted);font-weight:500}
+.langsw{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px}
+.langsw button{border:none;background:none;padding:7px 16px;border-radius:999px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit}
+.langsw button.on{background:var(--ink);color:#fff}
+
+.sec{margin-bottom:70px}
+.sec-h{margin-bottom:24px;max-width:760px}
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--accent-deep);background:var(--accent-soft);padding:5px 11px;border-radius:999px;margin-bottom:10px}
+.sec-h h2{font-size:26px;font-weight:800;letter-spacing:-.6px}
+.sec-h p{color:var(--muted);font-size:14.5px;margin-top:6px}
+
+.phones{display:flex;gap:28px;flex-wrap:wrap;justify-content:center}
+.pcol{width:300px}
+.plabel{text-align:center;margin-bottom:13px}
+.plabel .nm{font-size:14px;font-weight:800}
+.plabel .ds{font-size:11.5px;color:var(--muted);margin-top:2px}
+.phone{width:300px;height:610px;background:#211A14;border-radius:42px;padding:11px;box-shadow:0 24px 48px rgba(44,34,26,.20)}
+.scr{width:100%;height:100%;background:var(--paper);border-radius:32px;overflow:hidden;display:flex;flex-direction:column;position:relative}
+.sb{display:flex;justify-content:space-between;padding:14px 22px 2px;font-size:11.5px;color:var(--muted);font-weight:600}
+.pc{flex:1;padding:6px 20px 14px;display:flex;flex-direction:column;overflow:hidden}
+
+/* progress dots — tinh thần "hộp thuốc" nhưng chỉ để NHÌN */
+.prog{display:flex;justify-content:space-between;margin:10px 2px 0;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.pstep{text-align:center;flex:1}
+.pdot{width:15px;height:15px;border-radius:50%;margin:0 auto 6px;border:2.5px solid var(--line);background:var(--surface)}
+.pstep.done .pdot{background:var(--ok);border-color:var(--ok)}
+.pstep.now .pdot{background:var(--accent);border-color:var(--accent);box-shadow:0 0 0 5px var(--accent-soft)}
+.pstep .plb{font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.3px}
+.pstep.now .plb{color:var(--accent-deep)}
+.pstep.done .plb{color:var(--ok)}
+
+.hey{font-size:13.5px;color:var(--muted);margin-top:16px}
+.who2{font-size:26px;font-weight:800;letter-spacing:-.7px;line-height:1.15;margin-top:2px}
+
+/* thẻ thuốc — ảnh TO */
+.medcard{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:18px;text-align:center;box-shadow:0 6px 18px rgba(194,94,58,.07)}
+.photo{width:112px;height:112px;border-radius:22px;margin:0 auto 14px;background:linear-gradient(160deg,#F7F1E9,#EFE5D8);display:grid;place-items:center;border:1px solid var(--line);position:relative}
+.tablet{width:56px;height:56px;border-radius:50%;background:linear-gradient(150deg,#fff,#EFEAE2);box-shadow:inset 0 -3px 7px rgba(0,0,0,.07),0 3px 9px rgba(0,0,0,.11);position:relative}
+.tablet::after{content:'';position:absolute;left:50%;top:9px;bottom:9px;width:2px;background:rgba(0,0,0,.08);transform:translateX(-50%)}
+.photo .realtag{position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:9.5px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.mname{font-size:22px;font-weight:800;line-height:1.25}
+.mgen{font-size:12.5px;color:var(--muted);margin-top:3px}
+.mdose{display:inline-block;margin-top:11px;background:var(--accent-soft);color:var(--accent-deep);font-size:14px;font-weight:700;padding:7px 15px;border-radius:12px}
+
+.spacer{flex:1}
+.bigbtn{width:100%;border:none;border-radius:20px;padding:19px;font-size:19px;font-weight:800;font-family:inherit;cursor:pointer;background:var(--accent);color:#fff;box-shadow:0 8px 20px rgba(194,94,58,.28)}
+.subbtn{width:100%;margin-top:11px;border-radius:18px;padding:14px;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer;background:var(--surface);border:1.5px solid var(--line);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:9px}
+.nav2{display:flex;justify-content:space-around;padding:12px 4px 2px;border-top:1px solid var(--line);margin-top:12px}
+.nv{text-align:center;font-size:10.5px;color:var(--muted);font-weight:600}
+.nv .i{font-size:18px;display:block;margin-bottom:2px}
+.nv.on{color:var(--accent)}
+
+/* success screen */
+.okwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 8px}
+.okcircle{width:112px;height:112px;border-radius:50%;background:var(--ok-soft);display:grid;place-items:center;font-size:50px;color:var(--ok);margin-bottom:22px;box-shadow:0 0 0 12px rgba(74,124,89,.07)}
+.okh{font-size:24px;font-weight:800;letter-spacing:-.4px}
+.okp{font-size:14.5px;color:var(--muted);margin-top:9px;line-height:1.55}
+.oknext{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 17px;font-size:13.5px;width:100%}
+.oknext b{display:block;font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.4px;margin-bottom:3px}
+.sent{margin-top:14px;font-size:12.5px;color:var(--ok);font-weight:700}
+
+/* voice */
+.voicescr{background:linear-gradient(172deg,#A34B2B,#C25E3A 55%,#D5794F)}
+.voicescr .sb{color:rgba(255,255,255,.78)}
+.vw{flex:1;padding:14px 22px 20px;display:flex;flex-direction:column;color:#fff}
+.vtag{font-size:12px;opacity:.85;font-weight:600}
+.vq{font-size:18px;font-weight:700;line-height:1.4;margin-top:11px;background:rgba(255,255,255,.16);padding:14px 16px;border-radius:18px 18px 18px 5px}
+.va{font-size:15.5px;line-height:1.6;margin-top:13px;background:#fff;color:var(--ink);padding:15px 16px;border-radius:18px 18px 5px 18px;font-weight:500}
+.orb{width:92px;height:92px;border-radius:50%;margin:auto auto 10px;background:radial-gradient(circle at 33% 30%,#fff,rgba(255,255,255,.4) 46%,rgba(255,255,255,.14));display:grid;place-items:center;font-size:32px;box-shadow:0 0 0 12px rgba(255,255,255,.1),0 0 0 26px rgba(255,255,255,.05)}
+.vhint{text-align:center;font-size:12px;opacity:.85;padding-bottom:4px}
+
+/* ===== WEB ===== */
+.browser{background:var(--surface);border:1px solid var(--line);border-radius:26px;overflow:hidden;box-shadow:0 20px 46px rgba(44,34,26,.09)}
+.bbar{display:flex;align-items:center;gap:7px;padding:13px 18px;border-bottom:1px solid var(--line);background:#FDFAF6}
+.dot{width:10px;height:10px;border-radius:50%}
+.url{flex:1;margin-left:12px;background:var(--paper);border-radius:8px;padding:5px 12px;font-size:12px;color:var(--muted)}
+.app{display:flex;min-height:500px}
+.side{width:206px;border-right:1px solid var(--line);padding:20px 13px;background:#FDFAF6}
+.side .nav{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;font-size:13.5px;font-weight:600;color:var(--muted);margin-bottom:3px}
+.side .nav.on{background:var(--accent);color:#fff}
+.main{flex:1;padding:26px 30px}
+.mh{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.mh h3{font-size:22px;font-weight:800;letter-spacing:-.4px}
+.mh .date{font-size:13px;color:var(--muted);margin-top:2px}
+.pillok{background:var(--ok-soft);color:var(--ok);font-size:12.5px;font-weight:700;padding:8px 14px;border-radius:999px;white-space:nowrap}
+
+/* T15 alert — tính năng đặc trưng */
+.bigalert{background:var(--alert-soft);border:1.5px solid #F0CFC7;border-left:5px solid var(--alert);border-radius:16px;padding:16px 18px;margin-bottom:16px;display:flex;gap:13px}
+.bigalert .ic{font-size:22px;line-height:1}
+.bigalert .ttl{font-size:14px;font-weight:800;color:var(--alert);margin-bottom:5px}
+.bigalert p{font-size:13.5px;color:#7C3125;line-height:1.6}
+.bigalert .drugs{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.dchip{background:#fff;border:1px solid #EFCFC6;border-radius:10px;padding:6px 11px;font-size:12.5px;font-weight:700;color:var(--alert)}
+.dchip small{display:block;font-weight:500;color:var(--muted);font-size:10.5px}
+.bigalert .act{display:inline-block;margin-top:4px;font-size:13px;font-weight:800;color:#fff;background:var(--alert);padding:9px 15px;border-radius:11px}
+
+.cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.card{flex:1;min-width:168px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px}
+.card .top{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.ava{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-size:18px;background:var(--accent-soft)}
+.card .nm{font-size:14px;font-weight:700}.card .rel{font-size:11.5px;color:var(--muted)}
+.bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin:9px 0 7px}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--ok)}
+.card .meta{font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+.course{margin-top:9px;font-size:11.5px;background:var(--accent-soft);color:var(--accent-deep);padding:6px 10px;border-radius:9px;font-weight:600}
+
+.foodcard{background:var(--warn-soft);border:1px solid #F0DFC0;border-radius:16px;padding:15px 17px}
+.foodcard .hd{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--warn);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.foodcard p{font-size:13.5px;color:#6E4A14;line-height:1.55}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{background:#fff;border:1px solid #EEDDBE;border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;color:#7A5518}
+
+/* confirm */
+.wiz{display:flex;gap:20px;flex-wrap:wrap}
+.wcol{flex:1;min-width:290px}
+.scan{background:#F5EFE6;border:2px dashed var(--line);border-radius:18px;height:300px;display:grid;place-items:center;overflow:hidden;position:relative}
+.doc{width:76%;background:#fff;border-radius:8px;padding:16px;font-size:10.5px;color:#5B5148;line-height:1.8;box-shadow:0 8px 22px rgba(0,0,0,.08);transform:rotate(-1deg)}
+.scanline{position:absolute;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);animation:sc 2.8s ease-in-out infinite}
+@keyframes sc{0%,100%{top:12%}50%{top:86%}}
+.ext{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:17px}
+.ext h4{font-size:13.5px;font-weight:800;margin-bottom:13px}
+.fld{padding:10px 12px;border-radius:11px;background:var(--paper);margin-bottom:7px;border:1px solid transparent}
+.fld.low{background:var(--warn-soft);border-color:#EFDCB8}
+.fld .k{font-size:11px;color:var(--muted);font-weight:600}
+.fld .v{font-size:13.5px;font-weight:600;margin-top:1px}
+.fld .conf{float:right;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--ok-soft);color:var(--ok)}
+.fld.low .conf{background:#F3E0BC;color:var(--warn)}
+.btnrow{display:flex;gap:9px;margin-top:14px}
+.btn{flex:1;padding:13px;border-radius:13px;border:none;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff}
+.btn.ghost{background:var(--surface);border:1.5px solid var(--line);color:var(--ink)}
+.genned{margin-top:14px;background:var(--accent-soft);border-radius:13px;padding:13px 15px;font-size:12.5px;color:var(--accent-deep)}
+.genned b{display:block;margin-bottom:6px}
+.genned .g{display:flex;justify-content:space-between;padding:3px 0;font-weight:600;gap:10px}
+
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px 23px;margin-top:24px}
+.notes h4{font-size:14px;font-weight:800;margin-bottom:11px}
+.notes ul{padding-left:19px;font-size:13.5px;color:#57493D;line-height:1.8}
+@media(max-width:760px){.app{flex-direction:column}.side{width:100%;border-right:none;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow-x:auto}.side .nav{white-space:nowrap}}
+</style>
+</head>
+<body>
+
+<header><div class="hdr">
+  <div class="brand"><div class="mark">N</div>
+    <div><h1>Nhà Mình</h1><span data-vi="Prototype v3 · tông đất nung ấm" data-en="Prototype v3 · warm terracotta">Prototype v3 · tông đất nung ấm</span></div>
+  </div>
+  <div class="langsw">
+    <button class="on" onclick="setLang('vi',this)">🇻🇳 Tiếng Việt</button>
+    <button onclick="setLang('en',this)">🇬🇧 English</button>
+  </div>
+</div></header>
+
+<div class="wrap">
+
+<!-- APP BA MẸ -->
+<section class="sec">
+  <div class="sec-h">
+    <span class="tag" data-vi="Android · Dành cho ba mẹ" data-en="Android · For parents">Android · Dành cho ba mẹ</span>
+    <h2 data-vi="Bố cục lai: nhịp “hộp thuốc” + một việc duy nhất" data-en="Hybrid layout: pillbox rhythm + a single task">Bố cục lai: nhịp “hộp thuốc” + một việc duy nhất</h2>
+    <p data-vi="Bốn chấm tiến độ giữ tinh thần hộp chia thuốc nhưng chỉ để nhìn. Phần thân màn hình chỉ trả lời một câu: bây giờ bác cần làm gì." data-en="Four progress dots keep the pill-organiser feel but are display-only. The body answers one question: what do I need to do right now.">Bốn chấm tiến độ giữ tinh thần hộp chia thuốc nhưng chỉ để nhìn.</p>
+  </div>
+
+  <div class="phones">
+    <!-- 1. HOME -->
+    <div class="pcol">
+      <div class="plabel"><div class="nm" data-vi="Màn hình chính" data-en="Home">Màn hình chính</div><div class="ds" data-vi="Ảnh viên thuốc thật, cỡ lớn" data-en="Real pill photo, large">Ảnh viên thuốc thật, cỡ lớn</div></div>
+      <div class="phone"><div class="scr">
+        <div class="sb"><span>7:00</span><span>▮▮▮ ▮</span></div>
+        <div class="pc">
+          <div class="prog">
+            <div class="pstep now"><div class="pdot"></div><div class="plb" data-vi="SÁNG" data-en="MORN">SÁNG</div></div>
+            <div class="pstep"><div class="pdot"></div><div class="plb" data-vi="TRƯA" data-en="NOON">TRƯA</div></div>
+            <div class="pstep"><div class="pdot"></div><div class="plb" data-vi="CHIỀU" data-en="AFTN">CHIỀU</div></div>
+            <div class="pstep"><div class="pdot"></div><div class="plb" data-vi="TỐI" data-en="EVE">TỐI</div></div>
+          </div>
+          <div class="hey" data-vi="Chào buổi sáng ☀️" data-en="Good morning ☀️">Chào buổi sáng ☀️</div>
+          <div class="who2" data-vi="Bác Hùng ơi!" data-en="Morning, Hùng!">Bác Hùng ơi!</div>
+          <div class="medcard">
+            <div class="photo"><div class="tablet"></div><div class="realtag" data-vi="ảnh thuốc nhà mình" data-en="your own photo">ảnh thuốc nhà mình</div></div>
+            <div class="mname" data-vi="Viên huyết áp trắng" data-en="White blood-pressure pill">Viên huyết áp trắng</div>
+            <div class="mgen">Amlodipine 5mg</div>
+            <div class="mdose" data-vi="1 viên · sau bữa sáng" data-en="1 tablet · after breakfast">1 viên · sau bữa sáng</div>
+          </div>
+          <div class="spacer"></div>
+          <button class="bigbtn" data-vi="✓ Đã uống rồi" data-en="✓ I've taken it">✓ Đã uống rồi</button>
+          <button class="subbtn">🎙️ <span data-vi="Hỏi về thuốc của tôi" data-en="Ask about my medicine">Hỏi về thuốc của tôi</span></button>
+          <div class="nav2">
+            <div class="nv on"><span class="i">☀</span><span data-vi="Hôm nay" data-en="Today">Hôm nay</span></div>
+            <div class="nv"><span class="i">◫</span><span data-vi="Thuốc" data-en="Medicine">Thuốc</span></div>
+            <div class="nv"><span class="i">♡</span><span data-vi="Báo con" data-en="Family">Báo con</span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 2. SUCCESS -->
+    <div class="pcol">
+      <div class="plabel"><div class="nm" data-vi="Sau khi xác nhận" data-en="After confirming">Sau khi xác nhận</div><div class="ds" data-vi="Khen ngợi, không phải báo cáo" data-en="Warmth, not a report">Khen ngợi, không phải báo cáo</div></div>
+      <div class="phone"><div class="scr">
+        <div class="sb"><span>7:04</span><span>▮▮▮ ▮</span></div>
+        <div class="pc">
+          <div class="prog">
+            <div class="pstep done"><div class="pdot"></div><div class="plb" data-vi="SÁNG" data-en="MORN">SÁNG</div></div>
+            <div class="pstep"><div class="pdot"></div><div class="plb" data-vi="TRƯA" data-en="NOON">TRƯA</div></div>
+            <div class="pstep"><div class="pdot"></div><div class="plb" data-vi="CHIỀU" data-en="AFTN">CHIỀU</div></div>
+            <div class="pstep"><div class="pdot"></div><div class="plb" data-vi="TỐI" data-en="EVE">TỐI</div></div>
+          </div>
+          <div class="okwrap">
+            <div class="okcircle">✓</div>
+            <div class="okh" data-vi="Xong rồi bác ơi!" data-en="All done!">Xong rồi bác ơi!</div>
+            <div class="okp" data-vi="Bác uống thuốc sáng đúng giờ rồi.<br>Cả tuần nay bác giỏi lắm ạ 🎉" data-en="You took your morning pill on time.<br>You've done well all week 🎉">Bác uống thuốc sáng đúng giờ rồi.<br>Cả tuần nay bác giỏi lắm ạ 🎉</div>
+            <div class="oknext">
+              <b data-vi="LẦN UỐNG TIẾP THEO" data-en="NEXT DOSE">LẦN UỐNG TIẾP THEO</b>
+              <span data-vi="11:30 trưa — viên dạ dày cam (trước khi ăn)" data-en="11:30 — orange stomach pill (before eating)">11:30 trưa — viên dạ dày cam (trước khi ăn)</span>
+            </div>
+            <div class="sent" data-vi="❤️ Đã báo cho con gái rồi ạ" data-en="❤️ Your daughter has been notified">❤️ Đã báo cho con gái rồi ạ</div>
+          </div>
+          <div class="nav2">
+            <div class="nv on"><span class="i">☀</span><span data-vi="Hôm nay" data-en="Today">Hôm nay</span></div>
+            <div class="nv"><span class="i">◫</span><span data-vi="Thuốc" data-en="Medicine">Thuốc</span></div>
+            <div class="nv"><span class="i">♡</span><span data-vi="Báo con" data-en="Family">Báo con</span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- 3. VOICE -->
+    <div class="pcol">
+      <div class="plabel"><div class="nm" data-vi="Trợ lý giọng nói" data-en="Voice companion">Trợ lý giọng nói</div><div class="ds" data-vi="Chỉ biết hồ sơ của chính bác" data-en="Knows only your own records">Chỉ biết hồ sơ của chính bác</div></div>
+      <div class="phone"><div class="scr voicescr">
+        <div class="sb"><span>7:06</span><span>▮▮▮ ▮</span></div>
+        <div class="vw">
+          <div class="vtag" data-vi="Đang nghe bác nói…" data-en="Listening…">Đang nghe bác nói…</div>
+          <div class="vq" data-vi="“Trưa nay tôi ăn bưởi được không con?”" data-en="“Can I have grapefruit at lunch today?”">“Trưa nay tôi ăn bưởi được không con?”</div>
+          <div class="va" data-vi="Dạ trưa nay bác tránh bưởi giúp con nha. Thuốc mỡ máu bác đang uống mà gặp bưởi thì ngấm mạnh hơn mức cần. Bác ăn cam hay táo thì thoải mái ạ." data-en="Please skip grapefruit today. It makes your cholesterol medicine absorb more strongly than it should. Oranges or apples are perfectly fine.">Dạ trưa nay bác tránh bưởi giúp con nha. Thuốc mỡ máu bác đang uống mà gặp bưởi thì ngấm mạnh hơn mức cần. Bác ăn cam hay táo thì thoải mái ạ.</div>
+          <div class="orb">🎙️</div>
+          <div class="vhint" data-vi="Chạm để nói tiếp" data-en="Tap to keep talking">Chạm để nói tiếp</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- WEB DASHBOARD -->
+<section class="sec">
+  <div class="sec-h">
+    <span class="tag" data-vi="Web · Dành cho con cái" data-en="Web · For adult children">Web · Dành cho con cái</span>
+    <h2 data-vi="Cảnh báo trùng hoạt chất — tính năng cứu mạng" data-en="Duplicate ingredient alert — the safety feature">Cảnh báo trùng hoạt chất — tính năng cứu mạng</h2>
+    <p data-vi="Hai bác sĩ kê hai đơn, hai tên thuốc khác nhau, nhưng cùng một hoạt chất. Người nhà không thể tự nhận ra — hệ thống thì có." data-en="Two doctors, two prescriptions, two different brand names — but the same active ingredient. A family can't catch this. The system can.">Hai bác sĩ kê hai đơn, hai tên thuốc khác nhau, nhưng cùng một hoạt chất.</p>
+  </div>
+
+  <div class="browser">
+    <div class="bbar"><span class="dot" style="background:#E27C5F"></span><span class="dot" style="background:#E3B457"></span><span class="dot" style="background:#6FAE7F"></span>
+      <div class="url">nhamin.app/dashboard</div></div>
+    <div class="app">
+      <div class="side">
+        <div class="nav on"><span>◉</span><span data-vi="Tổng quan" data-en="Overview">Tổng quan</span></div>
+        <div class="nav"><span>☺</span><span data-vi="Thành viên" data-en="Members">Thành viên</span></div>
+        <div class="nav"><span>▤</span><span data-vi="Tài liệu y tế" data-en="Records">Tài liệu y tế</span></div>
+        <div class="nav"><span>◫</span><span data-vi="Tủ thuốc" data-en="Cabinet">Tủ thuốc</span></div>
+        <div class="nav"><span>▦</span><span data-vi="Lịch" data-en="Calendar">Lịch</span></div>
+      </div>
+      <div class="main">
+        <div class="mh">
+          <div><h3 data-vi="Nhà mình hôm nay" data-en="Our family today">Nhà mình hôm nay</h3>
+            <div class="date" data-vi="Thứ Hai, 11 tháng 8 · 3 thành viên" data-en="Monday, August 11 · 3 members">Thứ Hai, 11 tháng 8 · 3 thành viên</div></div>
+          <div class="pillok" data-vi="❤️ Ba báo “ổn” lúc 7:05" data-en="❤️ Dad said “I'm okay” at 7:05">❤️ Ba báo “ổn” lúc 7:05</div>
+        </div>
+
+        <div class="bigalert">
+          <div class="ic">⚠️</div>
+          <div>
+            <div class="ttl" data-vi="Hai thuốc này cùng một hoạt chất" data-en="These two contain the same active ingredient">Hai thuốc này cùng một hoạt chất</div>
+            <p data-vi="Đơn mới của Ba (phòng khám Hòa Bình) có Efferalgan. Ba đang uống Panadol từ đơn cũ — cả hai đều là paracetamol. Uống cả hai có thể quá liều." data-en="Dad's new prescription includes Efferalgan. He's already taking Panadol from an earlier prescription — both are paracetamol. Taking both may exceed the safe dose.">Đơn mới của Ba có Efferalgan. Ba đang uống Panadol từ đơn cũ — cả hai đều là paracetamol.</p>
+            <div class="drugs">
+              <div class="dchip">Panadol <small data-vi="đơn 02/08 · paracetamol 500mg" data-en="Aug 2 · paracetamol 500mg">đơn 02/08 · paracetamol 500mg</small></div>
+              <div class="dchip">Efferalgan <small data-vi="đơn 11/08 · paracetamol 500mg" data-en="Aug 11 · paracetamol 500mg">đơn 11/08 · paracetamol 500mg</small></div>
+            </div>
+            <span class="act" data-vi="Hỏi bác sĩ trước khi cho Ba uống cả hai" data-en="Ask the doctor before giving Dad both">Hỏi bác sĩ trước khi cho Ba uống cả hai</span>
+          </div>
+        </div>
+
+        <div class="cards">
+          <div class="card">
+            <div class="top"><div class="ava">👨</div><div><div class="nm" data-vi="Ba Hùng" data-en="Dad Hùng">Ba Hùng</div><div class="rel" data-vi="68 tuổi · 4 loại thuốc" data-en="68 · 4 medications">68 tuổi · 4 loại thuốc</div></div></div>
+            <div class="bar"><i style="width:92%"></i></div>
+            <div class="meta"><span data-vi="Đúng giờ 30 ngày" data-en="On time, 30 days">Đúng giờ 30 ngày</span><b>92%</b></div>
+            <div class="course" data-vi="💊 Đợt dạ dày: còn 2 ngày" data-en="💊 Stomach course: 2 days left">💊 Đợt dạ dày: còn 2 ngày</div>
+          </div>
+          <div class="card">
+            <div class="top"><div class="ava">👩</div><div><div class="nm" data-vi="Mẹ Lan" data-en="Mom Lan">Mẹ Lan</div><div class="rel" data-vi="63 tuổi · 2 loại thuốc" data-en="63 · 2 medications">63 tuổi · 2 loại thuốc</div></div></div>
+            <div class="bar"><i style="width:78%;background:var(--warn)"></i></div>
+            <div class="meta"><span data-vi="Hay uống trễ buổi tối" data-en="Often late in the evening">Hay uống trễ buổi tối</span><b>78%</b></div>
+            <div class="course" data-vi="🏥 Khám mắt: 14/8, 9:00" data-en="🏥 Eye check-up: Aug 14">🏥 Khám mắt: 14/8, 9:00</div>
+          </div>
+          <div class="card">
+            <div class="top"><div class="ava">🧑</div><div><div class="nm" data-vi="Tôi" data-en="Me">Tôi</div><div class="rel" data-vi="27 tuổi · tự quản" data-en="27 · self-managed">27 tuổi · tự quản</div></div></div>
+            <div class="bar"><i style="width:100%"></i></div>
+            <div class="meta"><span data-vi="Đợt dạ dày đã xong" data-en="Course completed">Đợt dạ dày đã xong</span><b>100%</b></div>
+            <div class="course" data-vi="✓ Tái khám 22/8" data-en="✓ Follow-up Aug 22">✓ Tái khám 22/8</div>
+          </div>
+        </div>
+
+        <div class="foodcard">
+          <div class="hd">🍽️ <span data-vi="Tuần này nhà mình nên tránh" data-en="What to avoid this week">Tuần này nhà mình nên tránh</span></div>
+          <p data-vi="Ba đang uống thuốc mỡ máu — tuần này tránh bưởi và nước ép bưởi. Cam, táo thì thoải mái." data-en="Dad is on a cholesterol medicine — avoid grapefruit this week. Oranges and apples are fine.">Ba đang uống thuốc mỡ máu — tuần này tránh bưởi và nước ép bưởi. Cam, táo thì thoải mái.</p>
+          <div class="chips">
+            <span class="chip" data-vi="🚫 Bưởi" data-en="🚫 Grapefruit">🚫 Bưởi</span>
+            <span class="chip" data-vi="🚫 Rượu bia" data-en="🚫 Alcohol">🚫 Rượu bia</span>
+            <span class="chip" data-vi="✓ Cam, táo" data-en="✓ Orange, apple">✓ Cam, táo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONFIRM -->
+<section class="sec">
+  <div class="sec-h">
+    <span class="tag" data-vi="Web · Luồng lõi" data-en="Web · Core flow">Web · Luồng lõi</span>
+    <h2 data-vi="AI đề xuất — người xác nhận" data-en="AI proposes — a human confirms">AI đề xuất — người xác nhận</h2>
+    <p data-vi="Ô nào AI không chắc thì tô vàng, bắt buộc chạm vào mới cho qua. Dữ liệu y tế không được phép sai." data-en="Low-confidence fields are highlighted and must be touched before continuing. Medical data must not be wrong.">Ô nào AI không chắc thì tô vàng, bắt buộc chạm vào mới cho qua.</p>
+  </div>
+  <div class="wiz">
+    <div class="wcol">
+      <div class="scan"><div class="scanline"></div>
+        <div class="doc">
+          <b data-vi="PHÒNG KHÁM ĐA KHOA HÒA BÌNH" data-en="HOA BINH GENERAL CLINIC">PHÒNG KHÁM ĐA KHOA HÒA BÌNH</b><br>
+          <span data-vi="Họ tên: Phạm Văn Hùng — 68 tuổi" data-en="Name: Pham Van Hung — 68">Họ tên: Phạm Văn Hùng — 68 tuổi</span><br>
+          <span data-vi="Chẩn đoán: Viêm dạ dày" data-en="Diagnosis: Gastritis">Chẩn đoán: Viêm dạ dày</span><br>
+          <span>1. Omeprazole 20mg — SL 14</span><br>
+          <span data-vi="&nbsp;&nbsp;&nbsp;Ngày 2 lần, trước ăn 30 phút" data-en="&nbsp;&nbsp;&nbsp;Twice daily, 30 min before meals">&nbsp;&nbsp;&nbsp;Ngày 2 lần, trước ăn 30 phút</span><br>
+          <span>2. Efferalgan 500mg — SL 10</span><br>
+          <span data-vi="&nbsp;&nbsp;&nbsp;Khi đau, tối đa 3 lần/ngày" data-en="&nbsp;&nbsp;&nbsp;As needed, max 3×/day">&nbsp;&nbsp;&nbsp;Khi đau, tối đa 3 lần/ngày</span><br>
+          <span data-vi="Tái khám sau 7 ngày" data-en="Follow-up in 7 days">Tái khám sau 7 ngày</span>
+        </div>
+      </div>
+    </div>
+    <div class="wcol">
+      <div class="ext">
+        <h4>✨ <span data-vi="AI đã đọc được" data-en="AI extracted">AI đã đọc được</span></h4>
+        <div class="fld"><span class="conf">98%</span><div class="k" data-vi="Bệnh nhân" data-en="Patient">Bệnh nhân</div><div class="v">Phạm Văn Hùng · 68</div></div>
+        <div class="fld"><span class="conf">96%</span><div class="k" data-vi="Thuốc 1" data-en="Medication 1">Thuốc 1</div><div class="v" data-vi="Omeprazole 20mg — 2 lần/ngày, trước ăn · đợt 7 ngày" data-en="Omeprazole 20mg — twice daily, before meals · 7-day course">Omeprazole 20mg — 2 lần/ngày, trước ăn · đợt 7 ngày</div></div>
+        <div class="fld"><span class="conf">94%</span><div class="k" data-vi="Thuốc 2" data-en="Medication 2">Thuốc 2</div><div class="v" data-vi="Efferalgan 500mg — khi đau (paracetamol)" data-en="Efferalgan 500mg — as needed (paracetamol)">Efferalgan 500mg — khi đau (paracetamol)</div></div>
+        <div class="fld low"><span class="conf" data-vi="71% · kiểm lại" data-en="71% · review">71% · kiểm lại</span><div class="k" data-vi="Ngày tái khám" data-en="Follow-up date">Ngày tái khám</div><div class="v" data-vi="18/08 (chữ viết tay mờ)" data-en="Aug 18 (handwriting unclear)">18/08 (chữ viết tay mờ)</div></div>
+        <div class="btnrow">
+          <button class="btn ghost" data-vi="Sửa lại" data-en="Edit">Sửa lại</button>
+          <button class="btn primary" data-vi="Xác nhận đúng ✓" data-en="Confirm ✓">Xác nhận đúng ✓</button>
+        </div>
+        <div class="genned">
+          <b data-vi="→ Sau khi xác nhận" data-en="→ After you confirm">→ Sau khi xác nhận</b>
+          <div class="g"><span data-vi="Omeprazole · 6:30 & 17:30" data-en="Omeprazole · 6:30 & 17:30">Omeprazole · 6:30 & 17:30</span><span data-vi="7 ngày rồi DỪNG" data-en="7 days then STOP">7 ngày rồi DỪNG</span></div>
+          <div class="g"><span data-vi="Efferalgan" data-en="Efferalgan">Efferalgan</span><span data-vi="không nhắc — thuốc khi cần" data-en="no reminder — as needed">không nhắc — thuốc khi cần</span></div>
+          <div class="g" style="color:var(--alert)"><span data-vi="⚠️ Trùng hoạt chất với Panadol" data-en="⚠️ Same ingredient as Panadol">⚠️ Trùng hoạt chất với Panadol</span><span data-vi="sẽ cảnh báo" data-en="will warn">sẽ cảnh báo</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h4 data-vi="Ghi chú thiết kế v3" data-en="Design notes v3">Ghi chú thiết kế v3</h4>
+    <ul>
+      <li data-vi="<b>Tông đất nung</b> — vẫn là cam như Thanh muốn, nhưng trầm và ấm (gốm, đất) thay vì cam bão hòa kiểu thể thao. Nền kem, chữ nâu đậm, một màu nhấn duy nhất." data-en="<b>Terracotta</b> — still orange, but earthy and muted (pottery, clay) rather than saturated sport-orange. Cream base, deep brown text, a single accent."><b>Tông đất nung</b> — vẫn là cam nhưng trầm và ấm thay vì cam bão hòa kiểu thể thao.</li>
+      <li data-vi="<b>Bốn chấm tiến độ</b> giữ tinh thần hộp chia thuốc mà không gánh nhược điểm của lưới 4 ngăn: ảnh thuốc vẫn to, lịch không theo 4 cữ vẫn hiển thị được." data-en="<b>Four progress dots</b> keep the pill-organiser feel without the drawbacks of a 4-cell grid: the pill photo stays large and non-4×/day schedules still work."><b>Bốn chấm tiến độ</b> giữ tinh thần hộp chia thuốc mà không gánh nhược điểm của lưới 4 ngăn.</li>
+      <li data-vi="<b>Kiến thức dược chỉ hiện ra dưới dạng một câu hành động được.</b> Trợ lý không giảng về dược động học — chỉ nói “trưa nay bác tránh bưởi giúp con nha”." data-en="<b>Pharmacological knowledge surfaces as one actionable sentence.</b> The assistant doesn't lecture on pharmacokinetics — it just says “skip grapefruit today.”"><b>Kiến thức dược chỉ hiện ra dưới dạng một câu hành động được.</b></li>
+      <li data-vi="<b>Màn hình sau khi uống là lời khen, không phải báo cáo.</b> Người già cần cảm giác làm tốt, không cần bảng số liệu tuân thủ." data-en="<b>The post-dose screen is praise, not a report.</b> Older adults need to feel they did well, not to read adherence statistics."><b>Màn hình sau khi uống là lời khen, không phải báo cáo.</b></li>
+      <li data-vi="<b>Cảnh báo nặng đẩy hết về phía con cái.</b> Màn hình ba mẹ không bao giờ có màu đỏ báo động." data-en="<b>Serious warnings go to the children's side only.</b> The parent's screen never shows alarming red."><b>Cảnh báo nặng đẩy hết về phía con cái.</b></li>
+    </ul>
+  </div>
+</section>
+</div>
+
+<script>
+function setLang(l,btn){
+  document.querySelectorAll('.langsw button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.documentElement.lang=l;
+  document.querySelectorAll('[data-vi]').forEach(el=>{
+    const v=el.getAttribute('data-'+l); if(v!==null) el.innerHTML=v;
+  });
+}
+</script>
+</body>
+</html>

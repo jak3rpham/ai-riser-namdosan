@@ -4,22 +4,27 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
+    "dev:https": "VITE_HTTPS=true vite --host",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --host",
+    "deploy": "npm run build && python3 scripts/deploy.py",
+    "test:safety": "esbuild tests/safety.test.mjs --bundle --platform=node --format=esm --outfile=node_modules/.cache/safety.test.mjs --log-level=error && node node_modules/.cache/safety.test.mjs"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.17.0",
     "canvas-confetti": "^1.9.3",
     "firebase": "^10.13.0",
     "lucide-react": "^0.427.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.18.2"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-basic-ssl": "^1.2.0",
     "@vitejs/plugin-react": "^4.3.1",
+    "firebase-tools": "^15.26.0",
     "vite": "^5.4.1"
   }
 }

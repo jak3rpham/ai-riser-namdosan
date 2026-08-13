@@ -20,3 +20,12 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+.env
+.env.local
+node_modules/.cache/
+
+# Secrets — KHÔNG BAO GIỜ commit / upload lên AI Studio
+client_secret_*.json
+*-service-account*.json
+serviceAccountKey*.json

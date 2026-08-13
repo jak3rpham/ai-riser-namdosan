@@ -1,184 +1,240 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { SEED_MEDICATIONS } from './mockData';
-
-// API Key resolution (tries environment variable or prompt fallback)
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
-const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+import { isSpecialMissedDose, plainNameFor, resolveGenerics } from './medicalKnowledge';
+import {
+  activeGenericsFrom,
+  buildTriageResponse,
+  classifyUtterance,
+  OUTCOME,
+  runTriage
+} from './symptomTriage';
+import { apiPost } from './apiClient';
 
 /**
- * Extract structured medication list from prescription or medicine package image
+ * Tầng AI phía trình duyệt — giờ chỉ là client gọi backend.
+ *
+ * ═══════════════════════════════════════════════════════════════════
+ * THAY ĐỔI LỚN (mốc B3, doc 41): khoá Gemini đã rời khỏi trình duyệt.
+ *
+ * Trước:  trình duyệt giữ VITE_GEMINI_API_KEY, tự dựng prompt, gọi thẳng Google
+ * Sau:    trình duyệt gọi /api/ai/*, backend giữ khoá và dựng prompt
+ *
+ * Vì sao prompt cũng chuyển sang server: nếu client dựng prompt rồi gửi lên
+ * proxy thì ai cũng sửa được rào an toàn trước khi gửi — proxy lúc đó chỉ giấu
+ * được khoá chứ không bảo vệ được gì.
+ * ═══════════════════════════════════════════════════════════════════
+ *
+ * Phần Ở LẠI trình duyệt, có chủ ý:
+ *   · phân loại câu nói và bảng luật triệu chứng — chạy tức thì, offline vẫn được
+ *   · chặn xin đổi liều — câu trả lời cố định, không cần mạng
+ * Đây là các quyết định an toàn tất định, không phụ thuộc AI (doc 39 mục 3).
  */
+
+/** Có backend là có AI — không còn phụ thuộc khoá phía client */
+export const isAiConfigured = () => true;
+
+/* ════════════════════════════════════════════════════════════════
+ * 1. Trích xuất đơn thuốc từ ảnh
+ * ════════════════════════════════════════════════════════════════ */
 export async function extractPrescriptionFromImage(base64Image) {
-  if (!genAI) {
-    console.warn("Gemini API Key missing, returning intelligent fallback parsing.");
-    return getFallbackExtractionResult();
-  }
+  const res = await apiPost('/ai/extract-prescription', { image: base64Image });
 
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `Bạn là chuyên gia y tế hỗ trợ gia đình. Hãy phân tích ảnh đơn thuốc hoặc vỏ thuốc tiếng Việt này và trích xuất đúng định dạng JSON không chứa markdown:
-{
-  "doctor_name": "Tên bác sĩ (nếu có)",
-  "facility_name": "Tên phòng khám/bệnh viện",
-  "diagnosis": "Chẩn đoán bệnh ghi trên đơn",
-  "medications": [
-    {
-      "name": "Tên thương mại của thuốc",
-      "generic": "Hoạt chất chính (nếu biết)",
-      "strength": "Hàm lượng (vd: 500mg, 5mg)",
-      "dosage": "Liều dùng (vd: Uống 1 viên)",
-      "timing": "Thời điểm (Sáng/Trưa/Chiều/Tối, Trước/Sau ăn)",
-      "frequency": "Số lần/ngày",
-      "duration_days": 14,
-      "confidence": "HIGH"
-    }
-  ]
-}`;
-
-    const imagePart = {
-      inlineData: {
-        data: base64Image.replace(/^data:image\/\w+;base64,/, ""),
-        mimeType: "image/jpeg"
-      }
+  if (!res.ok) {
+    return {
+      ok: false,
+      error_code: res.error_code || 'UNKNOWN',
+      error_message: res.error_message || 'Không đọc được ảnh. Bạn nhập tay giúp nhé.',
+      unreadable_parts: res.unreadable_parts || []
     };
-
-    const result = await model.generateContent([prompt, imagePart]);
-    const responseText = result.response.text();
-    const cleanJson = responseText.replace(/```json/g, "").replace(/```/g, "").trim();
-    return JSON.parse(cleanJson);
-  } catch (err) {
-    console.error("Gemini Vision extraction error:", err);
-    return getFallbackExtractionResult();
   }
+
+  return res;
 }
 
-/**
- * Generate friendly plain-language explanation of prescription for parents
- */
-export async function generatePlainExplanation(medications, patientName = "Bác") {
-  if (!genAI) {
-    return `${patientName} ơi, đây là đơn thuốc giúp ổn định huyết áp và bảo vệ sức khỏe. Bác nhớ uống đúng giờ sau bữa ăn nha!`;
+export async function readDeviceImage(base64Image) {
+  const res = await apiPost('/ai/read-device', { image: base64Image });
+
+  if (!res.ok) {
+    return {
+      ok: false,
+      error_code: res.error_code || 'UNKNOWN',
+      error_message: res.error_message || 'Không đọc được màn hình máy đo. Bạn nhập tay giúp nhé.'
+    };
   }
 
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const prompt = `Hãy giải thích đơn thuốc sau cho người lớn tuổi (${patientName}) bằng giọng thân mật, ấm áp, ngắn gọn 3 câu, hoàn toàn dễ hiểu: ${JSON.stringify(medications)}`;
-    const result = await model.generateContent(prompt);
-    return result.response.text();
-  } catch (err) {
-    return `${patientName} ơi, đây là đơn thuốc giúp ổn định sức khỏe. Bác nhớ uống đúng giờ theo hướng dẫn của con cái nha!`;
-  }
+  return res;
 }
 
-/**
- * Check T15 (Duplicate Active Ingredients) and M12 (Food Interactions)
- */
-export function checkSafetyWarnings(newMedications, existingMedications = []) {
-  const warnings = [];
-  const allMeds = [...existingMedications, ...newMedications];
 
-  // 1. T15 Check: Active ingredient collision
-  const activeIngredientMap = {};
-  allMeds.forEach(med => {
-    const nameLower = (med.name || "").toLowerCase();
-    const genericLower = (med.generic || "").toLowerCase();
+/* ════════════════════════════════════════════════════════════════
+ * 2. Giải thích đơn thuốc bằng lời bình dân
+ * ════════════════════════════════════════════════════════════════ */
+export async function generatePlainExplanation(medications = [], patientName = 'Bác') {
+  const names = medications.map(m => plainNameFor(m)).filter(Boolean);
+  const fallback = names.length
+    ? `${patientName} ơi, đợt này bác uống ${[...new Set(names)].slice(0, 3).join(', ')}. Bác uống đúng giờ theo lịch con đặt sẵn nha.`
+    : `${patientName} ơi, con đã lưu đơn thuốc rồi ạ. Bác uống theo đúng lịch con đặt nha.`;
 
-    let matchedGeneric = genericLower;
-    if (nameLower.includes("panadol") || nameLower.includes("efferalgan") || nameLower.includes("hapacol") || nameLower.includes("tylenol")) {
-      matchedGeneric = "paracetamol";
-    }
-
-    if (matchedGeneric) {
-      if (activeIngredientMap[matchedGeneric]) {
-        warnings.push({
-          type: "DUPLICATE_ACTIVE_INGREDIENT",
-          severity: "HIGH",
-          title: `Cảnh báo trùng hoạt chất (${matchedGeneric.toUpperCase()})`,
-          description: `Đơn mới chứa "${med.name}" bị trùng hoạt chất ${matchedGeneric} với "${activeIngredientMap[matchedGeneric].name}" đang dùng ở nhà. Tránh uống cùng lúc để không gây quá liều nguy hiểm.`,
-          action_recommended: "Gộp lịch nhắc thành 1 liều duy nhất."
-        });
-      } else {
-        activeIngredientMap[matchedGeneric] = med;
-      }
-    }
+  const res = await apiPost('/ai/explain', {
+    medications: medications.map(toWireMed)
   });
 
-  // 2. M12 Check: Food interactions from seed catalog
-  allMeds.forEach(med => {
-    const nameLower = (med.name || "").toLowerCase();
-    SEED_MEDICATIONS.forEach(seed => {
-      const isMatch = seed.names.some(n => nameLower.includes(n.toLowerCase())) || nameLower.includes(seed.slug);
-      if (isMatch && seed.food_interactions) {
-        seed.food_interactions.forEach(fi => {
-          warnings.push({
-            type: "FOOD_INTERACTION",
-            severity: fi.severity,
-            title: `Cảnh báo kiêng ăn: ${med.name} ↔ ${fi.food}`,
-            description: fi.plain_explanation,
-            alternative: fi.alternative
-          });
-        });
-      }
-    });
-  });
-
-  return warnings;
+  return res.ok ? applyName(res.text, patientName) : fallback;
 }
 
-/**
- * Voice Assistant Q&A for parents ("Cháu Bi")
- */
-export async function askVoiceAssistant(question, memberProfile) {
-  if (!genAI) {
-    return `Dạ ${memberProfile.display_name || "bác"}, thuốc huyết áp Amlodipine bác uống 1 viên sau ăn trưa nha. Bác yên tâm nghỉ ngơi ạ!`;
-  }
+/* ════════════════════════════════════════════════════════════════
+ * 3. Trợ lý "Cháu Bi"
+ *
+ * Thứ tự xử lý — quyết định an toàn luôn nằm TRƯỚC lời gọi AI:
+ *   Mức 4a  chặn xin đổi liều           → câu cố định, ngay tại máy
+ *   Mức 4b  câu rõ ràng là cấp cứu      → câu cố định + nút 115
+ *   Mức 3   có nhắc tới triệu chứng     → chuyển sang bộ hỏi cấu trúc
+ *   Mức 1–2 còn lại                     → gọi backend
+ * ════════════════════════════════════════════════════════════════ */
 
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const systemContext = `Bạn là "Cháu Bi", người cháu trong gia đình đang lễ phép hỗ trợ ${memberProfile.display_name}.
-Chỉ trả lời dựa trên hồ sơ thuốc sau:
-Dị ứng: ${JSON.stringify(memberProfile.allergies || [])}
-Bệnh nền: ${JSON.stringify(memberProfile.conditions || [])}
-Thuốc đang uống: Amlodipine 5mg (trưa), Atorvastatin 10mg (tối), Panadol Extra (khi đau).
+const DOSE_CHANGE_PATTERNS = [
+  'uong 2 vien', 'uong hai vien', 'tang lieu', 'gap doi', 'uong them vien',
+  'uong bu', 'uong don', 'nhieu hon cho nhanh khoi', 'uong gop'
+];
 
-Quy tắc:
-1. Trả lời dứt khoát, ấm áp, ngắn gọn 2-3 câu.
-2. Không thay đổi liều, không chẩn đoán bệnh.
-3. Nếu triệu chứng cấp cứu -> khuyên gọi 115 và con cái.`;
+const OTHERS_MEDS_PATTERNS = ['thuoc cua ba', 'thuoc cua ong', 'thuoc cua me', 'thuoc cua bo', 'uong thuoc cua'];
 
-    const result = await model.generateContent(`${systemContext}\n\nCâu hỏi: "${question}"`);
-    return result.response.text();
-  } catch (err) {
-    return `Dạ bác, thuốc huyết áp bác nên uống đúng giờ sau ăn trưa nha bác.`;
-  }
+function normalize(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
 }
 
-function getFallbackExtractionResult() {
+/** Thay {{XUNG_HO}} bằng tên thật — ngay trên máy, tên không rời thiết bị */
+function applyName(text, displayName) {
+  return (text || '').replace(/\{\{\s*XUNG_HO\s*\}\}/g, displayName || 'bác');
+}
+
+/** Chỉ gửi trường cần cho lâm sàng. Backend còn cắt thêm lần nữa. */
+function toWireMed(m) {
   return {
-    doctor_name: "BS. Nguyễn Thị Mai",
-    facility_name: "Bệnh viện Đa Khoa Quốc Tế",
-    diagnosis: "Tăng huyết áp độ 1 & Rối loạn lipid máu nhẹ",
-    medications: [
-      {
-        name: "Amlodipine 5mg",
-        generic: "Amlodipine",
-        strength: "5mg",
-        dosage: "Uống 1 viên",
-        timing: "Trưa (sau ăn)",
-        frequency: "1 lần/ngày",
-        duration_days: 30,
-        confidence: "HIGH"
-      },
-      {
-        name: "Atorvastatin 10mg",
-        generic: "Atorvastatin",
-        strength: "10mg",
-        dosage: "Uống 1 viên",
-        timing: "Tối (sau ăn)",
-        frequency: "1 lần/ngày",
-        duration_days: 30,
-        confidence: "HIGH"
-      }
-    ]
+    name: m.name || null,
+    generic: resolveGenerics(m).join(' + ') || m.generic || null,
+    strength: m.strength || null,
+    dosage: m.dosage || null,
+    timing: m.timing || null,
+    frequency: m.frequency || null,
+    est_remaining: Number.isFinite(m.est_remaining) ? m.est_remaining : null,
+    special_missed_dose: isSpecialMissedDose(resolveGenerics(m))
   };
+}
+
+/** Hồ sơ gửi lên: KHÔNG kèm tên, ngày sinh chính xác, hay ảnh đại diện */
+function toWireProfile(memberProfile = {}) {
+  return {
+    birth_year: memberProfile.birth_year || null,
+    conditions: memberProfile.conditions || [],
+    allergies: memberProfile.allergies || []
+  };
+}
+
+function medsOf(memberProfile, prescriptions) {
+  return prescriptions
+    .filter(p => !memberProfile.id || p.member_id === memberProfile.id)
+    .flatMap(p => p.medications || []);
+}
+
+export async function askVoiceAssistant(question, memberProfile = {}, prescriptions = [], language = 'vi') {
+  const q = normalize(question);
+  const name = memberProfile.display_name || 'bác';
+
+  // ── Mức 4a: xin đổi liều ──
+  if (DOSE_CHANGE_PATTERNS.some(p => q.includes(p))) {
+    return {
+      tier: 4, isEmergency: false, source: 'RULE:DOSE_CHANGE',
+      text: language === 'vi'
+        ? 'Dạ không nên bác ơi. Liều bác sĩ đã tính riêng theo cân nặng và sức khỏe gan thận của bác rồi ạ. Bác uống đúng như toa nha, con nhắc giờ cho bác.'
+        : 'Please do not change your dose on your own — it was calculated specifically for you.'
+    };
+  }
+
+  // ── Mức 4b: xin uống thuốc của người khác ──
+  if (OTHERS_MEDS_PATTERNS.some(p => q.includes(p))) {
+    return {
+      tier: 4, isEmergency: false, source: 'RULE:OTHERS_MEDS',
+      text: 'Dạ không được đâu bác ơi. Đơn của bác khác đơn của người khác, cùng tên bệnh nhưng liều vẫn khác nhau ạ.'
+    };
+  }
+
+  // ── Mức 3–4: có nhắc tới triệu chứng ──
+  const classification = classifyUtterance(question);
+
+  if (classification.kind === 'EMERGENCY') {
+    const decision = {
+      outcome: OUTCOME.EMERGENCY_115,
+      rule_id: 'LEXICON:' + classification.matched,
+      reason: 'Người dùng mô tả rõ một dấu hiệu cấp cứu.',
+      advice: 'Bác gọi 115 ngay, hoặc gọi người nhà tới liền giúp con ạ.'
+    };
+    return { ...buildTriageResponse(decision, name), source: 'TRIAGE:LEXICON' };
+  }
+
+  if (classification.kind === 'PAST_TENSE_CHECK') {
+    return {
+      tier: 3, isEmergency: false, source: 'TRIAGE:PAST_TENSE',
+      text: 'Dạ con nghe rồi ạ. Cho con hỏi lại cho chắc: bây giờ bác còn thấy vậy nữa không ạ?',
+      quickReplies: [
+        { label: 'Giờ vẫn còn', action: 'START_INTAKE' },
+        { label: 'Hết rồi, chuyện cũ thôi', action: 'DISMISS' }
+      ]
+    };
+  }
+
+  if (classification.kind === 'NEEDS_INTAKE') {
+    return {
+      tier: 3, isEmergency: false, source: 'TRIAGE:NEEDS_INTAKE', startIntake: true,
+      text: 'Dạ con ghi lại rồi ạ. Để con hỏi bác vài câu ngắn cho rõ, rồi con biết nên làm gì nha bác.'
+    };
+  }
+
+  // ── Mức 1–2: câu hỏi về thuốc → backend ──
+  const meds = medsOf(memberProfile, prescriptions);
+
+  const res = await apiPost('/ai/ask', {
+    question,
+    profile: toWireProfile(memberProfile),
+    medications: meds.map(toWireMed)
+  });
+
+  if (res.ok) {
+    return { tier: 1, isEmergency: false, source: 'AI', text: applyName(res.text, name) };
+  }
+
+  // Backend hỏng → trả lời bằng dữ liệu có sẵn tại máy, và nói thật là đang hạn chế
+  const next = meds[0];
+  return {
+    tier: 1,
+    isEmergency: false,
+    source: `FALLBACK:${res.error_code}`,
+    text: next
+      ? `Dạ ${name}, hôm nay bác có ${next.name} — ${next.dosage || ''} ${next.timing || ''} ạ. Con đang không hỏi được trợ lý (${res.error_message}), bác hỏi kỹ hơn thì nhắn con cái giúp con nha.`
+      : `Dạ con đang không kết nối được ạ. ${res.error_message}`
+  };
+}
+
+/* ════════════════════════════════════════════════════════════════
+ * 4. Diễn đạt lại triệu chứng ở nhánh NHẸ
+ * AI chỉ được gọi SAU khi bảng luật tĩnh đã kết luận là nhánh nhẹ.
+ * ════════════════════════════════════════════════════════════════ */
+export async function narrateMildSymptom(answersDescription, memberProfile = {}, prescriptions = []) {
+  const name = memberProfile.display_name || 'bác';
+  const fallback = 'Dạ con ghi lại rồi ạ và con nhắn cho con cái của bác luôn. Bác nghỉ ngơi, uống đủ nước nha. Nếu qua 3 ngày không đỡ, hoặc bác thấy nặng hơn, thì mình đi khám ạ.';
+
+  const res = await apiPost('/ai/narrate-symptom', {
+    summary: answersDescription,
+    profile: toWireProfile(memberProfile),
+    medications: medsOf(memberProfile, prescriptions).map(toWireMed)
+  });
+
+  return res.ok ? applyName(res.text, name) : fallback;
+}
+
+/* ════════════════════════════════════════════════════════════════
+ * 5. Phân loại triệu chứng — chạy hoàn toàn tại máy, không gọi mạng
+ * ════════════════════════════════════════════════════════════════ */
+export function evaluateSymptomAnswers(answers, memberProfile = {}, prescriptions = []) {
+  const age = memberProfile.birth_year ? new Date().getFullYear() - memberProfile.birth_year : null;
+  const generics = activeGenericsFrom(prescriptions, memberProfile.id);
+  return runTriage(answers, { generics, age });
 }

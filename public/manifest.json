@@ -1,0 +1,18 @@
+{
+  "short_name": "An Nhà",
+  "name": "An Nhà — Sức Khỏe Gia Đình",
+  "description": "Nền tảng hỗ trợ con cái theo dõi, nhắc nhở và chăm sóc sức khỏe ba mẹ với trí tuệ nhân tạo Gemini AI.",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512 192x192",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/parent",
+  "background_color": "#F8FAFC",
+  "theme_color": "#FF6B4B",
+  "display": "standalone",
+  "orientation": "portrait"
+}

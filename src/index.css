@@ -146,3 +146,102 @@ body {
   background: #FFF; color: var(--coral-main);
   box-shadow: 0 4px 16px rgba(255, 107, 75, 0.15);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Responsive cho điện thoại — thêm ngày 12/08 để test trên iPhone.
+   Trước đó file này không có một @media nào; app chỉ dùng được trên
+   màn hình rộng. Xem doc 34-Testing-On-iPhone.md.
+   ═══════════════════════════════════════════════════════════ */
+
+/* Chế độ xem 2 màn hình: xếp dọc trên máy hẹp */
+.split-view {
+  display: grid;
+  /* minmax(0, 1fr) chứ không phải 1fr: track "1fr" không co được xuống dưới
+     min-content, nên khung điện thoại bên trong đẩy cả trang rộng ra và gây
+     trượt ngang trên iPhone. */
+  grid-template-columns: 350px minmax(0, 1fr);
+  gap: 32px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+/* Khung điện thoại giả trong ParentHomeView */
+.phone-frame {
+  width: 340px;
+  height: 680px;
+}
+
+@media (max-width: 900px) {
+  .split-view { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .stat-grid { grid-template-columns: minmax(0, 1fr); }
+  .role-btn { padding: 10px 14px; font-size: 13px; }
+  .role-toggle { flex-wrap: wrap; justify-content: center; border-radius: 24px; }
+  .app-container { padding-left: 14px; padding-right: 14px; }
+
+  /* Chừa chỗ cho tai thỏ / thanh home khi thêm vào màn hình chính */
+  @supports (padding: max(0px)) {
+    .app-container {
+      padding-left: max(14px, env(safe-area-inset-left));
+      padding-right: max(14px, env(safe-area-inset-right));
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  /* Trên điện thoại, bỏ khung "điện thoại trong điện thoại" — cho app ba mẹ
+     chiếm trọn màn hình, đây mới là cách nó thật sự được dùng. */
+  .phone-frame {
+    width: 100%;
+    /* min() để không bao giờ vượt quá bề rộng màn hình — 420px cứng làm
+       trang tràn ngang trên iPhone 375px và kéo theo cả các modal */
+    max-width: min(420px, 100%);
+    height: auto;
+    min-height: 78vh;
+    border-width: 1px !important;
+    border-radius: 28px !important;
+  }
+  .phone-frame .notch { display: none; }
+
+  /* iOS Safari tự phóng to trang khi focus vào ô nhập có cỡ chữ < 16px.
+     Ép 16px để không bị giật màn hình khi bấm vào ô. */
+  input, select, textarea { font-size: 16px !important; }
+
+  /* Vùng chạm tối thiểu — người lớn tuổi ngón tay không chính xác */
+  button { min-height: 44px; }
+
+  .liquid-card { padding: 18px !important; }
+}
+
+/* Nút hành động chính trong app ba mẹ.
+   Class này được ParentHomeView dùng nhưng chưa bao giờ được định nghĩa —
+   nút quan trọng nhất của giao diện người lớn tuổi đang render mặc định
+   trình duyệt. Cỡ chữ và vùng chạm để to theo đúng chủ trương "nút to". */
+.btn-parent-action {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 20px;
+  background: var(--coral-grad);
+  color: #FFF;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  min-height: 56px;
+  box-shadow: 0 10px 24px var(--coral-glow);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-parent-action:active {
+  transform: scale(0.98);
+  box-shadow: 0 6px 16px var(--coral-glow);
+}
+
+/* Chốt chặn cuối: không cho trang trượt ngang trên điện thoại.
+   Bảng rộng / thẻ rộng phải tự cuộn trong khung của nó. */
+html, body { max-width: 100%; overflow-x: hidden; }

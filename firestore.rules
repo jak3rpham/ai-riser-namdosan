@@ -1,57 +1,78 @@
 rules_version = '2';
+
+/**
+ * Mô hình `households` theo doc 39 mục 2.
+ *
+ * NGUYÊN TẮC: deny-by-default. Không có `allow read, write: if true` ở đâu cả,
+ * và không có `if request.auth != null` đứng một mình — "đã đăng nhập" KHÔNG
+ * phải là quyền, vì ai cũng đăng nhập ẩn danh được (doc 23 mục 2, rủi ro T1).
+ *
+ * Giai đoạn hiện tại: mã mời CHÍNH LÀ id của nhà. Id do Firestore sinh, 20 ký
+ * tự ngẫu nhiên — biết id nghĩa là đã được ai đó trong nhà đưa cho. Khi làm
+ * luồng mời đầy đủ (doc 39 mục 7) sẽ thay bằng mã có hạn dùng và bước duyệt.
+ *
+ * Khi backend tiếp quản việc ghi (doc 41 mục 7.3), phần `write` ở đây chuyển
+ * thành `if false` — Admin SDK bỏ qua rules nên server vẫn ghi được.
+ */
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Check if authenticated user belongs to family
-    function inFamily(familyId) {
-      return request.auth != null && 
-        exists(/databases/$(database)/documents/families/$(familyId)/access/$(request.auth.uid));
-    }
-    
-    function isManager(familyId) {
-      return inFamily(familyId) && 
-        get(/databases/$(database)/documents/families/$(familyId)/access/$(request.auth.uid)).data.role == 'manager';
+
+    function signedIn() {
+      return request.auth != null;
     }
 
-    // Public Medication & Interaction Catalogs (Anonymized Global Cache)
-    match /med_catalog/{slug} {
-      allow read: if true;
-      allow write: if false; // Only backend/admin writes
+    function inHousehold(hid) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/households/$(hid)/members/$(request.auth.uid));
     }
-    
-    match /interactions_cache/{pairHash} {
+
+    // ── Nhà ──
+    match /households/{hid} {
+      allow read: if inHousehold(hid);
+      allow create: if signedIn();
+      allow update: if inHousehold(hid);
+      allow delete: if false;
+
+      // Thành viên: tự thêm chính mình khi có mã nhà, không thêm hộ người khác
+      match /members/{uid} {
+        allow read: if inHousehold(hid);
+        allow create: if signedIn() && request.auth.uid == uid;
+        allow update: if signedIn() && request.auth.uid == uid;
+        allow delete: if inHousehold(hid);
+      }
+
+      // Người được chăm sóc + toàn bộ dữ liệu y tế bên dưới
+      match /subjects/{sid} {
+        allow read, write: if inHousehold(hid);
+
+        match /{document=**} {
+          allow read, write: if inHousehold(hid);
+        }
+      }
+
+      // Dòng sự kiện: đã uống thuốc, cảnh báo an toàn, cấp cứu
+      match /feed/{eventId} {
+        allow read: if inHousehold(hid);
+        allow create: if inHousehold(hid);
+        allow update, delete: if false;   // chỉ thêm, không sửa — để làm bằng chứng
+      }
+    }
+
+    // ── Bộ đếm hạn mức: CHỈ backend ghi, client không đọc được của người khác ──
+    match /usage_counters/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // ── Kho kiến thức dùng chung: đọc công khai, ghi chỉ từ server ──
+    match /med_catalog/{slug} {
       allow read: if true;
       allow write: if false;
     }
 
-    // Family Data Partition
-    match /families/{familyId} {
-      allow read: if inFamily(familyId);
-      allow create: if request.auth != null;
-      allow update, delete: if isManager(familyId);
-
-      // Access Subcollection
-      match /access/{userId} {
-        allow read: if inFamily(familyId);
-        allow write: if isManager(familyId);
-      }
-
-      // Family Members & Subcollections
-      match /members/{memberId} {
-        allow read: if inFamily(familyId);
-        allow write: if isManager(familyId);
-
-        match /{document=**} {
-          allow read: if inFamily(familyId);
-          allow write: if inFamily(familyId);
-        }
-      }
-      
-      // Real-time Status Feed
-      match /status_feed/{feedId} {
-        allow read: if inFamily(familyId);
-        allow create, update: if inFamily(familyId);
-      }
+    match /interactions_cache/{pairHash} {
+      allow read: if true;
+      allow write: if false;
     }
   }
 }

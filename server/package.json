@@ -1,0 +1,19 @@
+{
+  "name": "airiser-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.17.0",
+    "fastify": "^4.28.1",
+    "firebase-admin": "^12.5.0",
+    "zod": "^3.23.8"
+  }
+}

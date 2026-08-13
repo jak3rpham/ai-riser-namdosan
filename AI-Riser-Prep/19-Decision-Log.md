@@ -118,6 +118,20 @@
 | 105 | 11/08 | 🔲 **Tên sản phẩm PENDING** — Tạm hoãn chốt tên chính thức, sẽ quyết định sau ở giai đoạn build | Giữ linh hoạt lựa chọn tên theo góp ý và cảm nhận thực tế khi xem bản chạy thật | Thanh 🔲 |
 | 106 | 11/08 | 🎨 **Visual Style: Modern + Futuristic nhẹ + Warm (Ấm áp, nịnh mắt)** | Thanh yêu cầu style hiện đại, có nét futuristic nhẹ (nhưng thân thiện, nịnh mắt, tương phản cao); đã dựng bản prototype v4 (`demo-v4.html`) với hiệu ứng Dark Glassmorphism, Ambient Coral/Amber glow, viền tinh tế và typography Plus Jakarta Sans/Outfit | Thanh ✅ (Antigravity thực thi) |
 | 107 | 11/08 | 💧 **CHỐT PHƯƠNG ÁN TƯƠI SÁNG: Apple Liquid Glass Style** | Thanh feedback bản Dark v4 chưa đẹp & thích phong cách tươi sáng, chọn style **Apple Liquid Glass** (macOS/VisionOS/iOS 18 translucent glass, background nền pastel mượt tràn viền, viền kính bóng bẩy `backdrop-filter: blur(24px)`, điểm nhấn Liquid Coral ấm áp, tương phản chữ siêu rõ). Đã dựng prototype v5 (`demo-v5-liquid-glass.html`) | Thanh ✅ (Antigravity thực thi) |
+| 108 | 12/08 | 🏥 **Thực thi M22 — Chế độ Nhà thuốc (Pharmacy Mode)** | Antigravity tạo modal toàn màn hình chữ to `PharmacyModeModal`, phân loại phi phán xét Thuốc kê đơn (Rx) ↔ Không kê đơn (OTC), trình bày minh bạch dị ứng/bệnh nền để đưa cho dược sĩ/bác sĩ xem trực tiếp | Antigravity ✅ |
+| 109 | 12/08 | ⏳ **Thực thi M18 — Vòng đời Đợt thuốc (Prescription Lifecycle)** | Thêm tiến trình đợt dùng (Days Elapsed / Total Duration), thanh tiến độ và nhãn trạng thái đợt vào Tủ Thuốc Nhà (`MedicineCabinet`) | Antigravity ✅ |
+| 110 | 12/08 | 🌐 **Thực thi Song ngữ VI/EN (Decision #45)** | Quản lý state `language` độc lập ở cấp ứng dụng, cho phép chuyển đổi VI ↔ EN linh hoạt trên thanh Navbar mà không phá vỡ dữ liệu lõi | Antigravity ✅ |
+| 111 | 12/08 | 🎙️ **Thực thi Động cơ 4 Mức Cố vấn Trợ lý Voice (M13/M31)** | Nâng cấp `askVoiceAssistant` với rào đánh chặn cấp cứu ☠️ Mức 4 (đau ngực, khó thở, ngất -> hiện banner cảnh báo đỏ + nút bấm gọi 115 lập tức), tích hợp Web Speech API (STT nhận diện tiếng Việt + TTS đọc giọng trả lời) | Antigravity ✅ |
+| 112 | 12/08 | 📍 **Thực thi M16 — Google Maps Nearby Healthcare Finder** | Thêm modal `NearbyHealthcareModal` lọc nhà thuốc (Long Châu, An Khang), bệnh viện, phòng khám mở cửa/trực đêm 24/7 kèm nút chỉ đường Google Maps | Antigravity ✅ |
+| 113 | 12/08 | 📊 **Thực thi M17 — Nhật ký & Quét màn hình máy đo sức khỏe** | Tạo `HealthTrackerCard` hỗ trợ lưu chỉ số huyết áp, đường huyết, cân nặng & giả lập scan ảnh mặt máy đo bằng Gemini Vision AI | Antigravity ✅ |
+| 114 | 12/08 | 🏆 **Thực thi Bộ công cụ Golden Set AI Benchmark Metric (Decision #59)** | Thêm `GoldenSetBenchmarkModal` và `benchmarkService.js` chấm thử nghiệm tự động 15 mẫu đơn thuốc thật tiếng Việt, đo tỷ lệ chính xác (Avg Accuracy %) & latency cho Ban giám khảo AI Riser | Antigravity ✅ |
+| 115 | 12/08 | 🔔 **Thực thi Giả lập Hệ thông báo & Escalation (20-Notification-Design.md)** | Tạo `NotificationCenterModal` hỗ trợ bắn thử N1 (nhắc nhở 0 token), N2 (Grace Window 15p), N3 (Báo cáo tối cho con) và Bậc thang Escalation (gợi ý gọi Zalo) | Antigravity ✅ |
+| 116 | 12/08 | 🔥 **Khởi tạo & Deploy Firestore Database Live (`ai-riser-namdosan-fa737`)** | Bật Cloud Firestore API, khởi tạo database `(default)` vùng `asia-southeast1`, cấu hình `firebase.json` và deploy thành công bộ `firestore.rules` bảo mật trực tiếp lên Firebase Cloud Console | Antigravity ✅ |
+| 117 | 12/08 | 🔄 **Thực thi Firestore Real-time Service (`firebaseService.js`)** | Xây dựng dịch vụ `firebaseService.js` lắng nghe `onSnapshot` thời gian thực cho `status_feed` và `prescriptions`, đồng bộ tức thì cữ thuốc giữa máy ba mẹ (P2) và dashboard con cái (P1) | Antigravity ✅ |
+| 118 | 12/08 | 👤 **Thực thi Hồ sơ & Cấu hình Cấp độ Khả năng (`UserProfileModal.jsx`)** | Tạo `UserProfileModal` cho phép tùy chỉnh thông tin cá nhân, danh sách dị ứng/bệnh nền, số khẩn cấp và lựa chọn Cấp độ Khả năng C1–C4 để tối ưu giao diện app | Antigravity ✅ |
+| 119 | 12/08 | 🍲 **Thực thi M19 — Cảnh báo Tương tác Thuốc ↔ Thức ăn (`FoodInteractionCard.jsx`)** | Thêm component rà soát dinh dưỡng kiêng khem (bưởi ↔ Amlodipine, rượu bia ↔ Metformin), khuyên dùng hướng dẫn ăn uống an toàn từ AI | Antigravity ✅ |
+| 120 | 12/08 | 🩺 **Thực thi M20 — Lịch Tái khám Bác sĩ & Đồng bộ (`AppointmentTrackerCard.jsx`)** | Tạo component theo dõi lịch hẹn tái khám bác sĩ, hướng dẫn chuẩn bị nhịn ăn xét nghiệm & nút đồng bộ một chạm Google Calendar | Antigravity ✅ |
+| 121 | 12/08 | 📶 **Thực thi M21 — Bộ chỉ báo Offline Resilience & Sync Queue (`SyncStatusBadge.jsx`)** | Thêm badge hiển thị kết nối mạng Online ↔ Offline linh hoạt trên Header, đảm bảo hoạt động không gián đoạn cho người già ở vùng sóng yếu | Antigravity ✅ |
 
 ## Backlog câu hỏi mở (chưa quyết)
 - [ ] Nhắc thuốc khi ba mẹ **không có internet**? (offline cache lịch trên app — cần Antigravity kiểm tra khả năng của AI Studio Android)
@@ -127,4 +141,9 @@
 - [ ] Nguồn & kiểm chứng dữ liệu tương tác thuốc↔thức ăn (M12): seed từ nguồn y khoa nào? Gemini generate thì verify sao? (an toàn = ưu tiên)
 - [ ] Vòng khai thác tiếp theo (Thanh hẹn): **notification design** (nhắc kiểu gì, giọng đọc, tần suất, ngữ cảnh) + **UI exploration** — chưa brainstorm sâu
 - [ ] Feature list "chưa đủ" (lời Thanh) — còn ít nhất 1 vòng mở rộng nữa trước khi khóa MVP
+
+
+
+
+
 

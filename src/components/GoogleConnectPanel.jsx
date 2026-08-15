@@ -112,7 +112,7 @@ export default function GoogleConnectPanel({ onConnected }) {
     if (which === 'calendar') {
       const r = await testCalendarConnection();
       setCalendarState(r.ok
-        ? { state: 'ok', detail: `Đọc được lịch của tài khoản${r.primary ? ` — "${r.primary}"` : ''}` }
+        ? { state: 'ok', detail: 'Đọc và tạo được sự kiện trên lịch của bác' }
         : { state: 'error', detail: r.error_message });
       if (!r.ok && r.error_code === 'TOKEN_EXPIRED') setConnected(false);
     } else {

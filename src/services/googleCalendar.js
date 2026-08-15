@@ -234,13 +234,34 @@ export async function deleteEvent(eventId, calendarId = 'primary') {
   );
 }
 
-/** Kiểm tra kết nối bằng một lệnh đọc nhẹ — dùng cho nút "Kiểm tra kết nối" */
+/**
+ * Kiểm tra kết nối bằng một lệnh đọc nhẹ — dùng cho nút "Kiểm tra kết nối".
+ *
+ * ⚠️ Phải đọc SỰ KIỆN, không đọc danh sách lịch.
+ *
+ * Bản trước gọi `/users/me/calendarList`, mà endpoint đó đòi scope
+ * `calendar.readonly` hoặc `calendar` — app chỉ xin `calendar.events`, đúng
+ * nguyên tắc xin ít quyền nhất. Hậu quả: nút Kiểm tra luôn trả 403 và giao
+ * diện báo "Tài khoản chưa cấp đủ quyền", trong khi quyền đã cấp đủ và việc
+ * tạo lịch uống thuốc vẫn chạy bình thường. Người dùng đi ngắt kết nối rồi
+ * cấp lại nhiều lần mà không bao giờ hết lỗi.
+ *
+ * Đọc sự kiện của lịch chính thì nằm gọn trong `calendar.events`.
+ */
 export async function testCalendarConnection() {
-  const res = await googleApiFetch(`${CAL_BASE}/users/me/calendarList?maxResults=1`);
+  const params = new URLSearchParams({
+    maxResults: '1',
+    timeMin: new Date().toISOString(),
+    singleEvents: 'true',
+    orderBy: 'startTime'
+  });
+
+  const res = await googleApiFetch(`${CAL_BASE}/calendars/primary/events?${params}`);
   if (!res.ok) return res;
+
   return {
     ok: true,
-    calendar_count: (res.data.items || []).length,
-    primary: res.data.items?.[0]?.summary || null
+    upcoming_count: (res.data.items || []).length,
+    primary: res.data.summary || 'Lịch chính'
   };
 }

@@ -3,6 +3,7 @@ import {
   activeGenericsFrom,
   buildTriageResponse,
   classifyUtterance,
+  traumaResponse,
   OUTCOME,
   runTriage
 } from './symptomTriage';
@@ -168,6 +169,18 @@ export async function askVoiceAssistant(question, memberProfile = {}, prescripti
       advice: 'Bác gọi 115 ngay, hoặc gọi người nhà tới liền giúp con ạ.'
     };
     return { ...buildTriageResponse(decision, name), source: 'TRIAGE:LEXICON' };
+  }
+
+  // ── Chấn thương: trả lời cố định, KHÔNG qua bộ hỏi, KHÔNG qua model ──
+  // Nguyên nhân đã rõ là té ngã. Chạy bộ hỏi triệu chứng ở đây sẽ dẫn tới
+  // việc đi tìm một nguyên nhân khác — bản trước đã gán đau gối sau khi té
+  // cho "tác dụng phụ của thuốc mỡ máu" rồi khuyên chườm ấm.
+  if (classification.kind === 'TRAUMA') {
+    const decision = {
+      ...traumaResponse({ severe: classification.severe }),
+      rule_id: 'TRAUMA:' + classification.matched
+    };
+    return { ...buildTriageResponse(decision, name), source: 'TRIAGE:TRAUMA' };
   }
 
   if (classification.kind === 'PAST_TENSE_CHECK') {

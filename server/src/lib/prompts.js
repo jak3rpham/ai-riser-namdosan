@@ -136,10 +136,17 @@ Triệu chứng đã ghi nhận: ${answersDescription}
 
 Viết đúng 3 câu:
   1. Ghi nhận đã lưu lại và đã báo cho người nhà.
-  2. Một việc làm được ngay để dễ chịu hơn. Nếu đây là tác dụng phụ THƯỜNG GẶP
-     của một thuốc CÓ trong hồ sơ thì được nhắc, nhưng phải nói là "thường gặp",
-     không khẳng định đó là nguyên nhân.
-  3. Mốc cụ thể để đi khám.`;
+  2. Nhắc lại đúng những gì bác vừa mô tả, bằng lời của bác. Không thêm thông tin.
+  3. Mốc cụ thể để đi khám.
+
+TUYỆT ĐỐI KHÔNG, kể cả khi nghe có vẻ hữu ích:
+  - Gán triệu chứng cho tác dụng phụ của bất kỳ thuốc nào. Kể cả nói "thường gặp"
+    cũng là đang đưa ra một nguyên nhân, và bác sẽ hiểu thành nguyên nhân.
+  - Khuyên bất kỳ việc gì tác động lên chỗ đau: chườm nóng, chườm lạnh, xoa bóp,
+    băng, kê cao, tập vận động. Chưa ai xem chỗ đau thì không được khuyên can thiệp.
+  - Khuyên uống thêm bất cứ thứ gì, kể cả nước, trà, hay thuốc không kê đơn.
+
+Câu 2 chỉ được là lời ghi nhận, không phải lời chỉ dẫn.`;
 }
 
 export const DEVICE_READ_PROMPT = `Bạn là chuyên gia thị giác máy tính y tế.

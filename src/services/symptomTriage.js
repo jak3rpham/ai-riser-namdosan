@@ -69,8 +69,32 @@ const IMMEDIATE_EMERGENCY_PHRASES = [
 ];
 
 /**
+ * Chấn thương — té, ngã, va đập.
+ *
+ * ⚠️ Tách riêng khỏi bộ hỏi triệu chứng thông thường vì bản trước xử lý sai
+ * nguy hiểm: bác nói "mới bị té, đau đầu gối", app bỏ qua chữ "té", chạy bộ
+ * hỏi đau khớp, rồi kết luận đau khớp là "tác dụng phụ thường gặp của thuốc
+ * mỡ máu" và khuyên chườm ấm. Một cái gối vừa bị té có thể đang nứt xương.
+ *
+ * Té ở người lớn tuổi là dấu hiệu cần người xem, không phải chuyện tự xử lý
+ * tại nhà. Và nguyên nhân đã rõ là chấn thương — không được đi tìm nguyên
+ * nhân khác, càng không được gán cho thuốc.
+ */
+const TRAUMA_PHRASES = [
+  'te nga', 'bi te', 'moi te', 'vua te', 'te xuong', 'truot te', 'vap te',
+  'bi nga', 'moi nga', 'vua nga', 'nga xuong', 'truot nga', 'vap nga',
+  'nga cau thang', 'te cau thang', 'va dap', 'dung dau', 'dap dau', 'dap mat'
+];
+
+/** Chấn thương kèm những thứ này thì không chờ được. */
+const TRAUMA_EMERGENCY_MARKERS = [
+  'dau dau', 'dung dau', 'dap dau', 'chay mau', 'khong dung day duoc',
+  'khong di duoc', 'khong dung len duoc', 'bat tinh', 'ngat', 'non', 'lu lan'
+];
+
+/**
  * Phân loại nhanh một câu nói tự do.
- * Trả về: 'EMERGENCY' | 'NEEDS_INTAKE' | 'PAST_TENSE_CHECK' | 'NOT_SYMPTOM'
+ * Trả về: 'EMERGENCY' | 'TRAUMA' | 'NEEDS_INTAKE' | 'PAST_TENSE_CHECK' | 'NOT_SYMPTOM'
  *
  * Lưu ý: KHÔNG kết luận cấp cứu chỉ từ một từ khoá đơn lẻ như "đau ngực".
  * Từ khoá đơn lẻ → chuyển sang bộ hỏi để làm rõ, vì "đau ngực" có thể là
@@ -80,10 +104,18 @@ export function classifyUtterance(text) {
   const t = normalizeText(text);
   if (!t) return { kind: 'NOT_SYMPTOM' };
 
+  const pastMarker = NEGATION_PAST_MARKERS.find(m => t.includes(m));
+
+  // Chấn thương xét TRƯỚC từ điển triệu chứng: "mới bị té" có thể không chứa
+  // từ đau nào, mà vẫn là việc phải xử lý.
+  const trauma = TRAUMA_PHRASES.find(pz => t.includes(pz));
+  if (trauma && !pastMarker) {
+    const severe = TRAUMA_EMERGENCY_MARKERS.find(m => t.includes(m));
+    return { kind: 'TRAUMA', matched: trauma, severe: severe || null };
+  }
+
   const hasSymptomWord = SYMPTOM_LEXICON.some(w => t.includes(w));
   if (!hasSymptomWord) return { kind: 'NOT_SYMPTOM' };
-
-  const pastMarker = NEGATION_PAST_MARKERS.find(m => t.includes(m));
   const immediate = IMMEDIATE_EMERGENCY_PHRASES.find(p => t.includes(p));
 
   // Câu nói về quá khứ / phủ định: KHÔNG bắn báo động (tránh alarm fatigue),
@@ -168,6 +200,28 @@ export const OUTCOME = {
   SEE_DOCTOR_24H: 'SEE_DOCTOR_24H',
   LOG_AND_NOTIFY: 'LOG_AND_NOTIFY'
 };
+
+/**
+ * Câu trả lời CỐ ĐỊNH cho chấn thương. Không đưa qua model.
+ *
+ * Không có "việc làm được ngay để dễ chịu hơn" ở đây — chườm, xoa, nghỉ đều
+ * là can thiệp, mà chưa ai xem chỗ đau thì không được khuyên can thiệp.
+ */
+export function traumaResponse({ severe } = {}) {
+  if (severe) {
+    return {
+      outcome: OUTCOME.EMERGENCY_115,
+      reason: 'Té kèm chấn thương đầu, chảy máu, hoặc không đứng dậy được.',
+      advice: 'Bác nằm yên, đừng cố đứng dậy, và gọi 115 ngay ạ. Con báo người nhà cùng lúc.'
+    };
+  }
+  return {
+    outcome: OUTCOME.SEE_DOCTOR_24H,
+    reason: 'Người lớn tuổi bị té cần được khám, kể cả khi lúc đầu thấy đau ít.',
+    advice: 'Con báo người nhà ngay rồi ạ. Bác ngồi nghỉ, đừng tự xoa bóp hay chườm chỗ đau, '
+          + 'và nhờ người nhà đưa đi khám trong hôm nay giúp con nhé.'
+  };
+}
 
 const has = (arr, id) => Array.isArray(arr) && arr.includes(id);
 const takes = (ctx, ...gs) => gs.some(g => (ctx.generics || []).includes(g));

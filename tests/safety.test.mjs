@@ -1,4 +1,4 @@
-import { runTriage, classifyUtterance, OUTCOME } from '../src/services/symptomTriage.js';
+import { runTriage, classifyUtterance, traumaResponse, OUTCOME } from '../src/services/symptomTriage.js';
 import { resolveGenerics, isSpecialMissedDose } from '../src/services/medicalKnowledge.js';
 import { checkAllergies, checkDuplicateIngredients, checkDrugInteractions, evaluateVital } from '../src/services/safetyChecks.js';
 
@@ -10,6 +10,11 @@ const t = (name, actual, expected) => {
 };
 
 const cardiacCtx = { generics: ['amlodipine', 'atorvastatin'], age: 68 };
+
+/** Bỏ dấu để kiểm tra nội dung lời khuyên không phụ thuộc cách gõ dấu */
+function normalize(t) {
+  return String(t).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').toLowerCase();
+}
 
 console.log('\n── A. Ca mà bộ keyword cũ BỎ SÓT ──');
 
@@ -72,6 +77,34 @@ t('"thuốc này uống trước hay sau ăn" → không phải triệu chứng'
 
 t('"tức ngực, hụt hơi" (cách nói người già) → bắt được',
   classifyUtterance('Bác thấy tức ngực với hụt hơi').kind, 'NEEDS_INTAKE');
+
+console.log('\n── C2. Té ngã: không đi qua bộ hỏi triệu chứng thường ──');
+// Ca thật gặp khi thử trên máy: bác nói "mới bị té, đau đầu gối quá".
+// Bản trước bỏ qua chữ "té", chạy bộ hỏi đau khớp, rồi kết luận đau khớp là
+// "tác dụng phụ thường gặp của thuốc mỡ máu" và khuyên chườm ấm — trong khi
+// cái gối vừa bị té có thể đang nứt xương.
+t('"Bác mới bị té, đau đầu gối quá" → TRAUMA, không phải NEEDS_INTAKE',
+  classifyUtterance('Bác mới bị té, đau đầu gối quá').kind, 'TRAUMA');
+
+t('"vừa bị ngã trong nhà tắm" → TRAUMA',
+  classifyUtterance('bác vừa bị ngã trong nhà tắm').kind, 'TRAUMA');
+
+t('Té thường → phải đi khám trong 24h, không phải chỉ ghi nhận',
+  traumaResponse({ severe: null }).outcome, OUTCOME.SEE_DOCTOR_24H);
+
+t('Té kèm đập đầu → cấp cứu 115',
+  traumaResponse({ severe: 'dap dau' }).outcome, OUTCOME.EMERGENCY_115);
+
+// Không kiểm tra sự có mặt của từ "chườm" — lời khuyên CÓ chứa từ đó, ở dạng
+// cấm ("đừng tự xoa bóp hay chườm"). Điều cần khẳng định là lời cấm tồn tại.
+t('Lời khuyên khi té phải DẶN KHÔNG tự xoa bóp hay chườm',
+  /dung tu xoa bop hay chuom/.test(normalize(traumaResponse({}).advice)), true);
+
+t('Lời khuyên khi té KHÔNG được gợi ý uống thêm thứ gì',
+  /(uong them|uong thuoc giam dau|uong nuoc am)/.test(normalize(traumaResponse({}).advice)), false);
+
+t('Té hồi xưa → không kích hoạt nhánh chấn thương',
+  classifyUtterance('hồi năm ngoái bác bị té chứ giờ hết rồi').kind !== 'TRAUMA', true);
 
 console.log('\n── D. Ánh xạ biệt dược → hoạt chất ──');
 

@@ -3,7 +3,6 @@ import { Link2, CheckCircle2, AlertTriangle, LogOut, RefreshCw, Loader2, Calenda
 import { connectGoogle, disconnectGoogle, isGoogleConnected, subscribeAuthState } from '../services/googleAuth';
 import { testCalendarConnection } from '../services/googleCalendar';
 import { testTasksConnection } from '../services/googleTasks';
-import { isMapsConfigured } from '../services/googleMaps';
 import { isAiConfigured } from '../services/geminiService';
 
 /**
@@ -188,11 +187,9 @@ export default function GoogleConnectPanel({ onConnected }) {
 
         <ServiceRow
           icon={MapPin}
-          name="Google Maps — Places API"
-          state={isMapsConfigured() ? 'ok' : 'warn'}
-          detail={isMapsConfigured()
-            ? 'Đã có khoá. Dùng API key riêng, không cần đăng nhập.'
-            : 'Chưa có VITE_GOOGLE_MAPS_API_KEY trong .env — chưa tìm được nhà thuốc gần bạn'}
+          name="Tìm nhà thuốc gần đây"
+          state="ok"
+          detail="Dùng dữ liệu OpenStreetMap. Không cần khoá, không cần đăng nhập — Google Maps Platform không cấp cho tài khoản Việt Nam."
         />
 
         <ServiceRow

@@ -150,13 +150,23 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     <h4 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)' }}>{place.name}</h4>
-                    {place.is_open ? (
+                    {/* Ba trạng thái. `null` = không rõ giờ mở cửa — phần lớn điểm
+                        trên OpenStreetMap rơi vào đây. Không được hiển thị thành
+                        "đang mở" hay "đóng cửa": đoán sai kiểu nào cũng làm bác đi
+                        oan hoặc bỏ lỡ chỗ đang mở. */}
+                    {place.is_open === true && (
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: 'rgba(5,150,105,0.1)', color: 'var(--emerald-ok)', border: '1px solid rgba(5,150,105,0.2)' }}>
                         🟢 ĐANG MỞ CỬA
                       </span>
-                    ) : (
+                    )}
+                    {place.is_open === false && (
                       <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: '#F1F5F9', color: '#64748B' }}>
                         ⚪ ĐÓNG CỬA
+                      </span>
+                    )}
+                    {place.is_open == null && (
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: '#FFF7ED', color: '#C2410C', border: '1px solid rgba(194,65,12,0.15)' }}>
+                        ⏱ CHƯA RÕ GIỜ MỞ
                       </span>
                     )}
                   </div>

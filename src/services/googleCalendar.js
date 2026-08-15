@@ -86,11 +86,11 @@ export async function createMedicationEvent({
   const event = {
     summary: `💊 ${memberName} uống ${label} — cữ ${slot}`,
     description: [
-      includeMedName ? `Thuốc: ${medication.name}` : 'Chi tiết thuốc xem trong app Sức Khỏe Nhà.',
+      includeMedName ? `Thuốc: ${medication.name}` : 'Chi tiết thuốc xem trong app Nhà Mình.',
       medication.dosage ? `Liều: ${medication.dosage}` : null,
       medication.timing ? `Thời điểm: ${medication.timing}` : null,
       '',
-      'Sự kiện do app Sức Khỏe Nhà tạo. Xoá đợt thuốc trong app sẽ xoá luôn lịch này.'
+      'Sự kiện do app Nhà Mình tạo. Xoá đợt thuốc trong app sẽ xoá luôn lịch này.'
     ].filter(Boolean).join('\n'),
     start: { dateTime: start, timeZone: TIME_ZONE },
     end: { dateTime: end, timeZone: TIME_ZONE },
@@ -185,7 +185,7 @@ export async function createAppointmentEvent({
     body: JSON.stringify({
       summary: `🏥 ${title}`,
       location: facility || undefined,
-      description: [notes, '', 'Tạo bởi app Sức Khỏe Nhà.'].filter(Boolean).join('\n'),
+      description: [notes, '', 'Tạo bởi app Nhà Mình.'].filter(Boolean).join('\n'),
       start: { dateTime: start.toISOString(), timeZone: TIME_ZONE },
       end: { dateTime: end.toISOString(), timeZone: TIME_ZONE },
       reminders: {

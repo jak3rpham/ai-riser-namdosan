@@ -53,7 +53,7 @@ export default function LandingView({ onChoose }) {
           <Heart size={30} fill="#FFF" />
         </div>
         <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 30, fontWeight: 800, letterSpacing: '-0.6px', color: 'var(--text-dark)' }}>
-          Sức Khỏe Nhà
+          Nhà Mình
         </h1>
         <p style={{ fontSize: 15.5, color: 'var(--text-sub)', marginTop: 6, maxWidth: 460, lineHeight: 1.6 }}>
           Giúp cả nhà uống thuốc đúng giờ, đúng liều — và biết khi nào cần đi khám.

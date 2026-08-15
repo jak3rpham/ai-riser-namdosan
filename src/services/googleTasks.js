@@ -56,10 +56,10 @@ export async function createRefillTask({
     body: JSON.stringify({
       title: `🛒 Mua thêm ${label} cho ${memberName}`,
       notes: [
-        includeMedName ? `Thuốc: ${medicationName}` : 'Xem tên thuốc trong app Sức Khỏe Nhà.',
+        includeMedName ? `Thuốc: ${medicationName}` : 'Xem tên thuốc trong app Nhà Mình.',
         `Ước tính còn khoảng ${remainingDays} ngày.`,
         '',
-        'Tạo bởi app Sức Khỏe Nhà.'
+        'Tạo bởi app Nhà Mình.'
       ].join('\n'),
       due: due.toISOString()
     })
@@ -90,7 +90,12 @@ export async function listAiriserTasks(taskListId = null) {
   return {
     ok: true,
     tasks: (res.data.items || [])
-      .filter(t => (t.notes || '').includes('Sức Khỏe Nhà'))
+      // Nhận cả tên cũ "Sức Khỏe Nhà": task tạo trước lần đổi tên vẫn phải
+      // tìm lại được, nếu không người dùng sẽ thấy nhắc trùng trong Google Tasks.
+      .filter(t => {
+        const notes = t.notes || '';
+        return notes.includes('Nhà Mình') || notes.includes('Sức Khỏe Nhà');
+      })
       .map(t => ({ id: t.id, title: t.title, due: t.due, status: t.status }))
   };
 }

@@ -1,13 +1,25 @@
 {
-  "short_name": "An Nhà",
-  "name": "An Nhà — Sức Khỏe Gia Đình",
-  "description": "Nền tảng hỗ trợ con cái theo dõi, nhắc nhở và chăm sóc sức khỏe ba mẹ với trí tuệ nhân tạo Gemini AI.",
+  "short_name": "Nhà Mình",
+  "name": "Nhà Mình — Sức Khỏe Gia Đình",
+  "description": "Giúp cả nhà uống thuốc đúng giờ, đúng liều — và biết khi nào cần đi khám.",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "type": "image/svg+xml",
-      "sizes": "512x512 192x192",
-      "purpose": "any maskable"
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
   "start_url": "/parent",

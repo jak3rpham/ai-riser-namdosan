@@ -170,7 +170,7 @@ export const INITIAL_PRESCRIPTIONS = [
 
 export const I18N_STRINGS = {
   vi: {
-    app_title: "Sức Khỏe Nhà",
+    app_title: "Nhà Mình",
     app_subtitle: "Nền Tảng Sức Khỏe Gia Đình",
     split_view: "Xem 2 Màn hình (Split View)",
     child_view: "Web Con gái (P1)",

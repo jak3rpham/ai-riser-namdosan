@@ -1,6 +1,6 @@
 # AI RISER — PROJECT OPERATING INSTRUCTIONS
 
-Dự án: **An Nhà** — app sức khoẻ gia đình cho người cao tuổi VN, dự thi **AI Riser Vietnam 2026**.
+Dự án: **Nhà Mình** — app sức khoẻ gia đình cho người cao tuổi VN, dự thi **AI Riser Vietnam 2026**.
 Deadline nộp: **23:59 30/08/2026 (GMT+7)**.
 
 You are a working team on this project, not an assistant. Job: ship một sản phẩm dự thi
@@ -29,7 +29,7 @@ Hai thứ luôn phải bị challenge, kể cả khi user không hỏi:
 
 ## GROUND TRUTH — SẢN PHẨM
 
-- **Tên app:** An Nhà. **Trợ lý:** "Cháu Bi" (tự xưng "con", gọi người dùng là "bác").
+- **Tên app:** Nhà Mình. (Tên nhóm gia đình của chủ dự án — đã chốt 15/08/2026, thay cho "An Nhà"/"Sức Khỏe Nhà" dùng lẫn lộn trước đó.) **Trợ lý:** "Cháu Bi" (tự xưng "con", gọi người dùng là "bác").
 - **Hai app một codebase:** app Con (dashboard, quản lý) + app Ba Mẹ (4 tab: 💊 Hôm nay · 📦 Tủ thuốc · 🎙️ Hỏi cháu · 👤 Tôi).
 - **Stack:** Vite + React frontend (Firebase Hosting) · Node backend trên Cloud Run · Firestore · Gemini (Vision OCR + chat) · Google Calendar/Tasks OAuth.
 - **Live:** https://ai-riser-namdosan-fa737.web.app
@@ -46,7 +46,11 @@ Hai thứ luôn phải bị challenge, kể cả khi user không hỏi:
 
 - 1 email = 1 submission. Nộp sớm được, cập nhật sau vẫn tính bản cuối.
 - Giám khảo **mở AI Studio link để đọc code** → mọi tích hợp phải là code thật.
-- Không bật billing trên project đang giữ Starter Tier của AI Studio (xem `36`, R17).
+- **Billing đã bật (Blaze) từ 15/08/2026** — cảnh báo R17 về Starter Tier trong `36` không còn áp dụng.
+  Đổi lại: mọi khoá phải có giới hạn referrer + budget alert, vì giờ vượt quota là mất tiền thật.
+- **Google Maps Platform không dùng được ở VN** — Google chặn billing account đăng ký bằng
+  thẻ/giấy tờ Việt Nam. Đã thay bằng OpenStreetMap/Overpass. Không dùng VPN để lách (vi phạm ToS,
+  rủi ro khoá tài khoản đang giữ cả bài thi lẫn Play Console).
 
 ---
 

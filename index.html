@@ -3,14 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <!-- iOS bỏ qua icon trong manifest, chỉ đọc thẻ này. Thiếu nó thì
+         "Thêm vào MH chính" sẽ lấy ảnh chụp màn hình làm icon. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Sức Khỏe Nhà — Nền tảng chăm sóc sức khỏe gia đình</title>
+    <title>Nhà Mình — Cả nhà uống thuốc đúng giờ</title>
 
     <!-- iOS: cho phép "Thêm vào MH chính" chạy toàn màn hình như app thật -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Sức Khỏe Nhà" />
+    <meta name="apple-mobile-web-app-title" content="Nhà Mình" />
     <meta name="theme-color" content="#FF6B4B" />
     <meta name="description" content="Nền tảng hỗ trợ con cái theo dõi, nhắc nhở và chăm sóc sức khỏe ba mẹ với trí tuệ nhân tạo Gemini AI." />
     

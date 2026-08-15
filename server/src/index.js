@@ -3,6 +3,7 @@ import { config, assertConfig } from './lib/config.js';
 import './plugins/auth.js'; // khởi tạo Firebase Admin sớm
 import aiRoutes from './routes/ai.js';
 import placesRoutes from './routes/places.js';
+import householdRoutes from './routes/household.js';
 
 assertConfig();
 
@@ -42,6 +43,7 @@ app.get('/api/health', async () => ({
 
 await app.register(aiRoutes, { prefix: '/api/ai' });
 await app.register(placesRoutes, { prefix: '/api/places' });
+await app.register(householdRoutes, { prefix: '/api/household' });
 
 
 /* Bắt mọi lỗi chưa xử lý về đúng hợp đồng lỗi — không rò chi tiết nội bộ */

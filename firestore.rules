@@ -7,12 +7,21 @@ rules_version = '2';
  * và không có `if request.auth != null` đứng một mình — "đã đăng nhập" KHÔNG
  * phải là quyền, vì ai cũng đăng nhập ẩn danh được (doc 23 mục 2, rủi ro T1).
  *
- * Giai đoạn hiện tại: mã mời CHÍNH LÀ id của nhà. Id do Firestore sinh, 20 ký
- * tự ngẫu nhiên — biết id nghĩa là đã được ai đó trong nhà đưa cho. Khi làm
- * luồng mời đầy đủ (doc 39 mục 7) sẽ thay bằng mã có hạn dùng và bước duyệt.
+ * ─────────────────────────────────────────────────────────────────
+ * THAY ĐỔI 15/08/2026 — BỎ "ID NHÀ CHÍNH LÀ MÃ MỜI"
  *
- * Khi backend tiếp quản việc ghi (doc 41 mục 7.3), phần `write` ở đây chuyển
- * thành `if false` — Admin SDK bỏ qua rules nên server vẫn ghi được.
+ * Bản trước cho phép bất kỳ ai đã đăng nhập tự ghi mình vào
+ * `households/{hid}/members/{uid}`. Vì đăng nhập ẩn danh là đủ, nên biết id
+ * nhà = có toàn quyền đọc và GHI hồ sơ y tế của nhà đó, vĩnh viễn, không thu
+ * hồi được. Mà id đó lại hiện trên màn hình dưới dạng "mã mời người nhà" —
+ * lọt vào một khung hình video demo là mất.
+ *
+ * Giờ việc kết nạp thành viên do backend làm (Admin SDK, bỏ qua rules), sau
+ * khi kiểm tra mã mời có hạn dùng và thu hồi được. Client chỉ còn ĐỌC
+ * `members`. Xem `server/src/routes/household.js`.
+ *
+ * Hệ quả cần nhớ: KHÔNG tạo hay vào nhà được từ client nữa. Mọi luồng đó phải
+ * đi qua `/api/household/*`.
  */
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -29,16 +38,14 @@ service cloud.firestore {
     // ── Nhà ──
     match /households/{hid} {
       allow read: if inHousehold(hid);
-      allow create: if signedIn();
       allow update: if inHousehold(hid);
-      allow delete: if false;
+      allow create, delete: if false;   // tạo nhà: qua POST /api/household/create
 
-      // Thành viên: tự thêm chính mình khi có mã nhà, không thêm hộ người khác
+      // Thành viên: chỉ đọc. Kết nạp và rời nhà đều đi qua backend, vì rules
+      // không kiểm chứng được mã mời (hạn dùng, số lượt, thu hồi).
       match /members/{uid} {
         allow read: if inHousehold(hid);
-        allow create: if signedIn() && request.auth.uid == uid;
-        allow update: if signedIn() && request.auth.uid == uid;
-        allow delete: if inHousehold(hid);
+        allow write: if false;
       }
 
       // Người được chăm sóc + toàn bộ dữ liệu y tế bên dưới
@@ -56,6 +63,18 @@ service cloud.firestore {
         allow create: if inHousehold(hid);
         allow update, delete: if false;   // chỉ thêm, không sửa — để làm bằng chứng
       }
+    }
+
+    // ── Mã mời: client KHÔNG bao giờ chạm tới ──
+    // Đọc được một lời mời là biết nó thuộc nhà nào; liệt kê được là quét sạch
+    // mọi mã đang mở. Toàn bộ vòng đời do backend giữ.
+    match /invites/{code} {
+      allow read, write: if false;
+    }
+
+    // ── Bộ đếm chặn đoán mò mã mời: chỉ backend ──
+    match /join_attempts/{uid} {
+      allow read, write: if false;
     }
 
     // ── Bộ đếm hạn mức: CHỈ backend ghi, client không đọc được của người khác ──

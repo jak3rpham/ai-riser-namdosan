@@ -1,9 +1,9 @@
 import {
-  collection, doc, setDoc, getDoc, addDoc, deleteDoc,
+  collection, doc, setDoc, addDoc,
   onSnapshot, query, orderBy, limit, serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
-import { ensureUser } from './apiClient';
+import { apiPost, ensureUser } from './apiClient';
 
 /**
  * Lưu trữ thật bằng Firestore, đồng bộ tức thời giữa web con cái và app ba mẹ.
@@ -19,8 +19,12 @@ import { ensureUser } from './apiClient';
  *       doses/{id}                  log đã uống
  *     feed/{id}                     dòng sự kiện, chỉ thêm không sửa
  *
- * Giai đoạn này **id của nhà chính là mã mời**. Firestore sinh id ngẫu nhiên
- * 20 ký tự nên không đoán được; biết id nghĩa là đã được người trong nhà đưa.
+ * Tạo nhà, mời, và vào nhà đều đi qua backend (`/api/household/*`).
+ * Trước đây id của nhà CHÍNH LÀ mã mời và client tự ghi mình vào `members`,
+ * nghĩa là ai biết id — kể cả khi nó lọt vào một khung hình video — đều có
+ * toàn quyền đọc và ghi hồ sơ y tế của nhà đó, vĩnh viễn. Giờ mã mời là vật
+ * riêng, có hạn dùng, giới hạn lượt, thu hồi được. Firestore rules đã chặn
+ * client ghi `members`, nên không còn đường tắt nào.
  *
  * ⚠️ Mọi hàm ở đây trả về `{ ok, ... }` và KHÔNG BAO GIỜ rơi về dữ liệu mẫu
  * khi lỗi — nguyên tắc đã chốt ở doc 35 mục 5. Lỗi phải nhìn thấy được.
@@ -40,77 +44,63 @@ export function forgetHousehold() {
   try { localStorage.removeItem(HOUSEHOLD_KEY); } catch { /* bỏ qua */ }
 }
 
-/** Ghi tên mình vào danh sách thành viên — bước bắt buộc để rules cho phép đọc */
-async function joinAsMember(hid, role) {
-  const user = await ensureUser();
-  if (!user) return { ok: false, error_code: 'NO_SESSION', error_message: 'Chưa tạo được phiên. Bạn tải lại trang nhé.' };
+/**
+ * Tạo nhà mới. Người tạo thành chủ nhà.
+ *
+ * `subjects` là những người được chăm sóc cần tạo sẵn hồ sơ. Backend chỉ dựng
+ * nhà và thành viên; hồ sơ người được chăm sóc ghi từ client vì lúc đó đã là
+ * thành viên nên rules cho phép.
+ */
+export async function createHousehold({ name, displayName, subjects = [] } = {}) {
+  const res = await apiPost('/household/create', { name, display_name: displayName });
+  if (!res.ok) return res;
 
-  await setDoc(
-    doc(db, 'households', hid, 'members', user.uid),
-    { role, joined_at: serverTimestamp(), anonymous: !!user.isAnonymous },
-    { merge: true }
-  );
-  return { ok: true, uid: user.uid };
-}
+  const hid = res.household_id;
 
-/** Tạo nhà mới. Người tạo là `host` (doc 39: thường là con cái). */
-export async function createHousehold({ role = 'host', subjects = [] } = {}) {
-  try {
-    const user = await ensureUser();
-    if (!user) return { ok: false, error_code: 'NO_SESSION', error_message: 'Chưa tạo được phiên làm việc.' };
-
-    const ref = doc(collection(db, 'households'));
-    await setDoc(ref, {
-      host_uid: user.uid,
-      name: 'Nhà mình',
+  for (const s of subjects) {
+    await setDoc(doc(db, 'households', hid, 'subjects', s.id), {
+      display_name: s.display_name,
+      relation: s.relation || null,
+      birth_year: s.birth_year || null,
+      capability: s.capability || 'C2',
+      conditions: s.conditions || [],
+      allergies: s.allergies || [],
+      avatar_color: s.avatar_color || null,
       created_at: serverTimestamp()
     });
-
-    const joined = await joinAsMember(ref.id, role);
-    if (!joined.ok) return joined;
-
-    // Tạo sẵn hồ sơ người được chăm sóc
-    for (const s of subjects) {
-      await setDoc(doc(db, 'households', ref.id, 'subjects', s.id), {
-        display_name: s.display_name,
-        relation: s.relation || null,
-        birth_year: s.birth_year || null,
-        capability: s.capability || 'C2',
-        conditions: s.conditions || [],
-        allergies: s.allergies || [],
-        avatar_color: s.avatar_color || null,
-        created_at: serverTimestamp()
-      });
-    }
-
-    saveHouseholdId(ref.id);
-    return { ok: true, household_id: ref.id };
-  } catch (err) {
-    return { ok: false, error_code: err.code || 'FIRESTORE_ERROR', error_message: describe(err) };
   }
+
+  saveHouseholdId(hid);
+  return { ok: true, household_id: hid };
 }
 
-/** Vào một nhà đã có bằng mã mời */
-export async function joinHousehold(hid, role = 'family') {
-  try {
-    const clean = (hid || '').trim();
-    if (!clean) return { ok: false, error_code: 'BAD_CODE', error_message: 'Bạn nhập mã mời giúp nhé.' };
+/** Tạo mã mời mới. Chỉ người đã ở trong nhà mới gọi được. */
+export async function createInvite(hid, { maxUses } = {}) {
+  return apiPost('/household/invite', { household_id: hid, max_uses: maxUses });
+}
 
-    const joined = await joinAsMember(clean, role);
-    if (!joined.ok) return joined;
+/** Thu hồi mã mời. Người đã vào nhà bằng mã này vẫn ở lại. */
+export async function revokeInvite(code) {
+  return apiPost('/household/invite/revoke', { code });
+}
 
-    const snap = await getDoc(doc(db, 'households', clean));
-    if (!snap.exists()) {
-      // Dọn lại bản ghi thành viên vừa tạo để không để rác
-      try { await deleteDoc(doc(db, 'households', clean, 'members', joined.uid)); } catch { /* bỏ qua */ }
-      return { ok: false, error_code: 'NOT_FOUND', error_message: 'Không tìm thấy nhà với mã này. Bạn kiểm tra lại mã nhé.' };
-    }
-
-    saveHouseholdId(clean);
-    return { ok: true, household_id: clean };
-  } catch (err) {
-    return { ok: false, error_code: err.code || 'FIRESTORE_ERROR', error_message: describe(err) };
+/**
+ * Dùng mã mời để vào nhà.
+ *
+ * Backend kiểm tra hạn dùng, số lượt còn lại, và trạng thái thu hồi trong một
+ * transaction — rules không làm được việc đếm lượt một cách an toàn.
+ */
+export async function joinHousehold(code, displayName) {
+  const clean = (code || '').trim();
+  if (!clean) {
+    return { ok: false, error_code: 'BAD_CODE', error_message: 'Bạn nhập mã mời giúp nhé.' };
   }
+
+  const res = await apiPost('/household/join', { code: clean, display_name: displayName });
+  if (!res.ok) return res;
+
+  saveHouseholdId(res.household_id);
+  return { ok: true, household_id: res.household_id };
 }
 
 /* ── Theo dõi thời gian thực ── */

@@ -17,6 +17,13 @@ export const config = {
     'ai-riser-namdosan-fa737',
 
   geminiApiKey: process.env.GEMINI_API_KEY || '',
+
+  /**
+   * Mật khẩu dùng chung cho các tài khoản demo (tên đăng nhập cố định trong
+   * `routes/demo.js`). Không đặt biến này thì chế độ dùng thử tắt hẳn — đó là
+   * mặc định an toàn, không phải lỗi.
+   */
+  demoPassword: process.env.DEMO_PASSWORD || '',
   googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || process.env.VITE_GOOGLE_MAPS_API_KEY || '',
 
   /** Model ghim cứng — phải khớp với GEMINI_MODEL phía frontend */

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, LogIn, Eye, Loader2, ArrowLeft, Users } from 'lucide-react';
+import { Home, LogIn, Loader2, ArrowLeft, Users } from 'lucide-react';
 
 /**
  * Màn hình đầu tiên khi máy chưa thuộc nhà nào.
@@ -7,15 +7,18 @@ import { Home, LogIn, Eye, Loader2, ArrowLeft, Users } from 'lucide-react';
  * Thay cho hành vi cũ: tự tạo một nhà rồi nạp sẵn hồ sơ "Ba Mười", "Mẹ Lan" —
  * người dùng thật mở app ra thấy hai người lạ và không hiểu chuyện gì.
  *
- * Ba lối vào, tách theo đúng ba tình huống có thật:
- *   - Con cái cài lần đầu           → tạo nhà
- *   - Ba mẹ được con đưa mã          → nhập mã
- *   - Người tò mò / giám khảo chấm   → xem thử nhà mẫu
+ * Hai lối vào, tách theo đúng hai tình huống có thật của người dùng:
+ *   - Con cái cài lần đầu   → tạo nhà
+ *   - Ba mẹ được con đưa mã → nhập mã
+ *
+ * Không có nút "xem thử" ở đây. App chính phải trông như một sản phẩm thật,
+ * không phải bản trình diễn. Người chấm bài dùng đường riêng `/demo` với tài
+ * khoản dùng thử.
  *
  * Chữ to, mỗi lựa chọn một khối, không có bước nào bắt nhập trước khi hiểu
  * mình đang chọn gì.
  */
-export default function OnboardingView({ onCreate, onJoin, onTryDemo, busy, error }) {
+export default function OnboardingView({ onCreate, onJoin, busy, error }) {
   const [mode, setMode] = useState(null); // null | 'create' | 'join'
   const [householdName, setHouseholdName] = useState('');
   const [code, setCode] = useState('');
@@ -46,7 +49,7 @@ export default function OnboardingView({ onCreate, onJoin, onTryDemo, busy, erro
           <p style={{ fontSize: 15.5, color: 'var(--text-sub)', lineHeight: 1.5 }}>
             {mode === 'create' && 'Đặt tên cho nhà mình, xong là dùng được ngay.'}
             {mode === 'join' && 'Nhập mã người nhà đã đưa cho bạn.'}
-            {!mode && 'Bạn chọn một trong ba cách dưới đây nhé.'}
+            {!mode && 'Bạn chọn một trong hai cách dưới đây nhé.'}
           </p>
         </div>
 
@@ -64,13 +67,6 @@ export default function OnboardingView({ onCreate, onJoin, onTryDemo, busy, erro
               title="Tôi có mã mời"
               detail="Người nhà đã tạo nhà rồi và đưa bạn một mã 8 ký tự."
               onClick={() => setMode('join')}
-            />
-            <ChoiceCard
-              icon={Eye}
-              title="Xem thử trước"
-              detail="Dựng một nhà mẫu với hồ sơ hư cấu, để xem app hoạt động thế nào. Không ảnh hưởng gì tới dữ liệu thật."
-              onClick={onTryDemo}
-              disabled={busy}
             />
           </div>
         )}

@@ -12,6 +12,7 @@ import HouseholdBar from './components/HouseholdBar';
 import OnboardingView from './components/OnboardingView';
 import AddSubjectModal from './components/AddSubjectModal';
 import EmptyHouseholdView from './components/EmptyHouseholdView';
+import DemoLoginView from './components/DemoLoginView';
 import { useHousehold } from './hooks/useHousehold';
 import { INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS, I18N_STRINGS } from './services/mockData';
 import { LayoutGrid, Smartphone, Eye, UserPlus } from 'lucide-react';
@@ -88,7 +89,6 @@ function ManagerWeb({ language, setLanguage }) {
       <OnboardingView
         onCreate={state.createOwn}
         onJoin={state.join}
-        onTryDemo={state.tryDemo}
         busy={state.busy}
         error={state.error}
       />
@@ -176,6 +176,22 @@ function ManagerWeb({ language, setLanguage }) {
   );
 }
 
+/**
+ * Đường riêng cho người chấm bài: /demo
+ *
+ * Không có liên kết nào từ app chính trỏ tới đây. Người dùng thật đi qua màn
+ * onboarding bình thường và không bao giờ thấy khái niệm "tài khoản dùng thử".
+ */
+function DemoEntry() {
+  const navigate = useNavigate();
+  return (
+    <DemoLoginView
+      onSuccess={() => navigate('/app')}
+      onBack={() => navigate('/')}
+    />
+  );
+}
+
 /* ── APP cho ba mẹ — toàn màn hình, không khung giả ── */
 function ParentApp({ language }) {
   const state = useHousehold();
@@ -185,7 +201,6 @@ function ParentApp({ language }) {
       <OnboardingView
         onCreate={state.createOwn}
         onJoin={state.join}
-        onTryDemo={state.tryDemo}
         busy={state.busy}
         error={state.error}
       />
@@ -298,6 +313,7 @@ function Shell() {
       <Route path="/" element={<Landing />} />
       <Route path="/app" element={<ManagerWeb language={language} setLanguage={setLanguage} />} />
       <Route path="/parent" element={<ParentApp language={language} />} />
+      <Route path="/demo" element={<DemoEntry />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

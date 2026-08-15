@@ -42,6 +42,20 @@ function ensureUser() {
  * Gọi backend. Luôn trả về `{ ok, ... }` — không bao giờ ném lỗi ra ngoài,
  * và không bao giờ trả dữ liệu bịa khi hỏng (doc 35 mục 5).
  */
+/**
+ * GET không cần đăng nhập. Chỉ dùng cho dữ liệu công khai — hiện là danh sách
+ * tên tài khoản dùng thử, để màn hình đăng nhập gợi ý sẵn. Không bao giờ gọi
+ * chỗ này cho dữ liệu y tế.
+ */
+export async function apiGet(path) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`);
+    return await res.json();
+  } catch {
+    return { ok: false, error_code: 'NETWORK_ERROR', error_message: 'Chưa kết nối được máy chủ.' };
+  }
+}
+
 export async function apiPost(path, body) {
   const user = await ensureUser();
 

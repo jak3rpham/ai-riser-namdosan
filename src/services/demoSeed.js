@@ -42,7 +42,30 @@ export async function createDemoHousehold() {
 
   if (!res.ok) return res;
 
-  const hid = res.household_id;
+  await seedDemoData(res.household_id);
+  return { ok: true, household_id: res.household_id };
+}
+
+/**
+ * Nạp dữ liệu hư cấu vào một nhà ĐÃ tồn tại.
+ *
+ * Tách riêng vì tài khoản demo (`/api/demo/login`) được backend dựng nhà sẵn
+ * lúc đăng nhập lần đầu; client chỉ cần nạp nội dung vào. Mọi thao tác ghi
+ * vẫn đi qua Firestore rules như người dùng thật.
+ */
+export async function seedDemoData(hid) {
+  for (const s of INITIAL_FAMILY_MEMBERS) {
+    await setDoc(doc(db, 'households', hid, 'subjects', s.id), {
+      display_name: s.display_name,
+      relation: s.relation || null,
+      birth_year: s.birth_year || null,
+      capability: s.capability || 'C2',
+      conditions: s.conditions || [],
+      allergies: s.allergies || [],
+      avatar_color: s.avatar_color || null,
+      created_at: serverTimestamp()
+    }, { merge: true });
+  }
 
   // Đánh dấu để giao diện nói thẳng "đây là dữ liệu mẫu", không để người dùng
   // tưởng là hồ sơ thật của nhà mình rồi nhập thuốc thật vào đây.
@@ -84,5 +107,5 @@ export async function createDemoHousehold() {
     status: 'UPCOMING'
   });
 
-  return { ok: true, household_id: hid };
+  return { ok: true };
 }

@@ -245,3 +245,23 @@ body {
 /* Chốt chặn cuối: không cho trang trượt ngang trên điện thoại.
    Bảng rộng / thẻ rộng phải tự cuộn trong khung của nó. */
 html, body { max-width: 100%; overflow-x: hidden; }
+
+/* ──────────────────────────────────────────────────────────────
+   Thanh tiêu đề
+
+   Bo góc kiểu viên thuốc (99px) chỉ đúng khi thanh nằm gọn một dòng.
+   Trên điện thoại các nút xuống dòng, khối cao lên, mà bán kính vẫn 99px
+   → góc bo ăn vào nội dung và tên app bị ép xuống hai dòng.
+   Màn hẹp dùng bo vừa phải; từ tablet trở lên mới trả về dạng viên thuốc.
+   ────────────────────────────────────────────────────────────── */
+.app-header-bar {
+  padding: 12px 18px;
+  border-radius: 24px;
+}
+
+@media (min-width: 768px) {
+  .app-header-bar {
+    padding: 12px 24px;
+    border-radius: 99px;
+  }
+}

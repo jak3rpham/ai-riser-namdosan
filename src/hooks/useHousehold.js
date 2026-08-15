@@ -28,7 +28,6 @@ export function useHousehold(role = 'host') {
       if (householdId) { setStatus('ready'); return; }
 
       const res = await createHousehold({
-        role,
         subjects: INITIAL_FAMILY_MEMBERS.map(m => ({ ...m }))
       });
 
@@ -170,7 +169,7 @@ export function useHousehold(role = 'host') {
     },
 
     join: async code => {
-      const res = await joinHousehold(code, role);
+      const res = await joinHousehold(code);
       if (res.ok) {
         setHouseholdId(res.household_id);
         setStatus('ready');

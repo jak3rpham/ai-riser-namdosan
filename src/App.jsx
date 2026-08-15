@@ -146,6 +146,8 @@ function ManagerWeb({ language, setLanguage }) {
         members={state.members}
         selectedMember={state.selectedMember}
         onSelectMember={state.setSelectedMember}
+        readings={state.readings}
+        onSaveReading={state.addReading}
         prescriptions={state.prescriptions}
         onAddPrescription={state.addPrescription}
         appointments={state.appointments}

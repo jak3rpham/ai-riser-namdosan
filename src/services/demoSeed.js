@@ -1,7 +1,10 @@
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
-import { createHousehold, savePrescription, saveAppointment } from './householdService';
-import { INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS } from './mockData';
+import { createHousehold, savePrescription, saveAppointment, saveReading, logDose } from './householdService';
+import {
+  INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS,
+  DEMO_PRESCRIPTION_MOM, DEMO_READINGS
+} from './mockData';
 
 /**
  * "Xem thử với nhà mẫu" — dựng một nhà RIÊNG cho người đang bấm, có sẵn hai
@@ -49,9 +52,26 @@ export async function createDemoHousehold() {
     { merge: true }
   );
 
-  for (const p of INITIAL_PRESCRIPTIONS) {
+  for (const p of [...INITIAL_PRESCRIPTIONS, DEMO_PRESCRIPTION_MOM]) {
     await savePrescription(hid, p.member_id, p);
   }
+
+  // Số đo tại nhà — để màn hình sức khoẻ không trống khi vừa mở nhà mẫu
+  for (const [subjectId, list] of Object.entries(DEMO_READINGS)) {
+    for (const r of list) {
+      await saveReading(hid, subjectId, r);
+    }
+  }
+
+  // Lịch sử uống thuốc, để dòng sự kiện gia đình có nội dung. Ghi qua đúng
+  // hàm logDose như khi bác bấm nút thật, không viết thẳng vào feed.
+  const [ba, me] = INITIAL_FAMILY_MEMBERS;
+  const firstDoc = INITIAL_PRESCRIPTIONS[0];
+
+  for (const med of (firstDoc?.medications || []).slice(0, 2)) {
+    await logDose(hid, ba.id, med, ba.display_name);
+  }
+  await logDose(hid, me.id, DEMO_PRESCRIPTION_MOM.medications[0], me.display_name);
 
   await saveAppointment(hid, INITIAL_FAMILY_MEMBERS[0].id, {
     id: 'app_demo_1',

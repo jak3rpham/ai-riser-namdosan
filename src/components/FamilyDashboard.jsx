@@ -18,6 +18,8 @@ export default function FamilyDashboard({
   members = [],
   selectedMember,
   onSelectMember,
+  readings = [],
+  onSaveReading,
   prescriptions = [],
   onAddPrescription,
   appointments = [],
@@ -157,7 +159,7 @@ export default function FamilyDashboard({
 
 
       {/* Health Metrics (M17) */}
-      <HealthTrackerCard selectedMember={selectedMember} language={language} />
+      <HealthTrackerCard selectedMember={selectedMember} readings={readings} onSaveReading={onSaveReading} language={language} />
 
       {/* Medicine Cabinet */}
       <MedicineCabinet medications={activeMeds} language={language} />

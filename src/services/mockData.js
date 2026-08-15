@@ -168,6 +168,95 @@ export const INITIAL_PRESCRIPTIONS = [
   }
 ];
 
+/**
+ * Đơn thuốc thứ hai — cho Mẹ Lan (mem_02), CHỈ dùng ở nhà mẫu.
+ *
+ * Trước đây chỉ có đúng một đơn và chỉ cho Ba Mười, nên bấm "Xem thử trước"
+ * rồi chuyển sang Mẹ Lan là thấy một nửa app trống trơn.
+ *
+ * Thuốc chọn có chủ ý: Ibuprofen ở đây tương tác với Warfarin trong bộ kiểm
+ * tra an toàn — nhưng Mẹ Lan không dùng Warfarin, nên đây là ca AN TOÀN. Muốn
+ * xem app cảnh báo thì thêm thuốc ở màn hình chụp đơn, để cảnh báo là thứ
+ * người xem tự tạo ra chứ không phải thứ được dàn dựng sẵn.
+ */
+export const DEMO_PRESCRIPTION_MOM = {
+  id: "doc_201",
+  member_id: "mem_02",
+  document_title: "Đơn khám cơ xương khớp — Bệnh viện Nhân dân Gia Định",
+  doctor_name: "BS.CKI Trần Thị Bình",
+  created_at: "2026-08-05",
+  start_date: "2026-08-05",
+  duration_days: 21,
+  end_date: "2026-08-26",
+  status: "ACTIVE",
+  medications: [
+    {
+      id: "m21",
+      name: "Ibuprofen 400mg",
+      nick_name: "Viên giảm đau khớp màu trắng",
+      generic: "Ibuprofen",
+      type: "RX",
+      strength: "400mg",
+      dosage: "Uống 1 viên",
+      timing: "Sáng (sau khi ăn no)",
+      time_slot: "Sáng",
+      frequency: "1 lần/ngày",
+      duration_days: 21,
+      days_elapsed: 10,
+      est_remaining: 11
+    },
+    {
+      id: "m22",
+      name: "Calcium D3",
+      nick_name: "Viên canxi to màu trắng đục",
+      generic: "Calcium carbonate",
+      type: "OTC",
+      strength: "500mg",
+      dosage: "Uống 1 viên",
+      timing: "Sáng (sau khi ăn)",
+      time_slot: "Sáng",
+      frequency: "1 lần/ngày",
+      duration_days: 21,
+      days_elapsed: 10,
+      est_remaining: 11
+    },
+    {
+      id: "m23",
+      name: "Glucosamine 1500mg",
+      nick_name: "Viên khớp màu vàng nhạt",
+      generic: "Glucosamine sulfate",
+      type: "OTC",
+      strength: "1500mg",
+      dosage: "Uống 1 viên",
+      timing: "Tối (sau khi ăn)",
+      time_slot: "Tối",
+      frequency: "1 lần/ngày",
+      duration_days: 21,
+      days_elapsed: 10,
+      est_remaining: 11
+    }
+  ]
+};
+
+/**
+ * Số đo tại nhà cho nhà mẫu. Cố ý nằm TRONG ngưỡng bình thường và có dao động
+ * nhẹ như đo thật, để không biến bản demo thành màn hình đầy cảnh báo đỏ.
+ * Việc phân loại cao/thấp do `safetyChecks` tính, không phải do dữ liệu này
+ * gán sẵn nhãn.
+ */
+export const DEMO_READINGS = {
+  mem_01: [
+    { type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: 128, dia: 84, pulse: 74, time: 'Hôm nay, 07:20' },
+    { type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: 134, dia: 86, pulse: 78, time: 'Hôm qua, 07:05' },
+    { type: 'BLOOD_SUGAR', label: 'Đường huyết', val: 5.6, time: 'Hôm nay, 06:50' },
+    { type: 'WEIGHT', label: 'Cân nặng', val: 63.8, time: 'Hôm qua' }
+  ],
+  mem_02: [
+    { type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: 122, dia: 79, pulse: 71, time: 'Hôm nay, 07:40' },
+    { type: 'WEIGHT', label: 'Cân nặng', val: 54.2, time: 'Hôm qua' }
+  ]
+};
+
 export const I18N_STRINGS = {
   vi: {
     app_title: "Nhà Mình",

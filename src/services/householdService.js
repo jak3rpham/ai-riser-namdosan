@@ -148,6 +148,41 @@ export async function saveSubject(hid, subject) {
   }
 }
 
+/**
+ * Ghi một lần đo tại nhà (huyết áp, đường huyết, cân nặng).
+ *
+ * ⚠️ Trước đây HealthTrackerCard giữ chỉ số trong useState, tải lại trang là
+ * mất — và tệ hơn, nó khởi tạo sẵn ba chỉ số BỊA CỨNG trong code (125/82,
+ * đường huyết 5.8, cân nặng 64.5) hiện cho mọi người được chăm sóc. Khai báo
+ * mẹ mình vào app là thấy ngay "huyết áp của mẹ" mà không ai từng đo.
+ *
+ * App KHÔNG diễn giải chỉ số ở đây. Việc phân loại cao/thấp do `safetyChecks`
+ * làm bằng ngưỡng cứng, không do model ngôn ngữ.
+ */
+export async function saveReading(hid, subjectId, reading) {
+  try {
+    await addDoc(collection(db, 'households', hid, 'subjects', subjectId, 'readings'), {
+      ...reading,
+      at: serverTimestamp()
+    });
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error_code: err.code || 'FIRESTORE_ERROR', error_message: describe(err) };
+  }
+}
+
+export function subscribeReadings(hid, subjectId, cb, onError) {
+  return onSnapshot(
+    query(
+      collection(db, 'households', hid, 'subjects', subjectId, 'readings'),
+      orderBy('at', 'desc'),
+      limit(30)
+    ),
+    snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+    err => onError?.({ ok: false, error_code: err.code, error_message: describe(err) })
+  );
+}
+
 /* ── Theo dõi thời gian thực ── */
 
 export function subscribeSubjects(hid, cb, onError) {

@@ -3,6 +3,7 @@ import {
   createHousehold, joinHousehold, getSavedHouseholdId, forgetHousehold,
   checkMembership, saveSubject,
   subscribeSubjects, subscribePrescriptions, subscribeFeed, subscribeAppointments,
+  subscribeReadings, saveReading,
   savePrescription, saveAppointment, logDose, sendAlert
 } from '../services/householdService';
 import { createDemoHousehold } from '../services/demoSeed';
@@ -39,6 +40,7 @@ export function useHousehold() {
   const [prescriptions, setPrescriptions] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [feed, setFeed] = useState([]);
+  const [readings, setReadings] = useState([]);
 
   const presUnsubs = useRef([]);
   const appUnsubs = useRef([]);
@@ -125,6 +127,12 @@ export function useHousehold() {
     return () => unsubs.forEach(u => u && u());
   }, [householdId, subjects.map(s => s.id).join(',')]);
 
+  /* ── Nghe số đo tại nhà của người đang xem ── */
+  useEffect(() => {
+    if (!householdId || !selectedId) { setReadings([]); return; }
+    return subscribeReadings(householdId, selectedId, setReadings, e => setError(e.error_message));
+  }, [householdId, selectedId]);
+
   /* ── Nghe dòng sự kiện (đã uống thuốc, cảnh báo) ── */
   useEffect(() => {
     if (!householdId || status !== 'ready') return;
@@ -159,6 +167,7 @@ export function useHousehold() {
     prescriptions,
     appointments,
     feed,
+    readings,
 
     /* ── Ba lối vào ở màn onboarding ── */
 
@@ -182,6 +191,13 @@ export function useHousehold() {
     },
 
     /* ── Ghi dữ liệu ── */
+
+    addReading: async reading => {
+      if (!householdId || !selectedMember) {
+        return { ok: false, error_message: 'Chưa chọn được người để ghi số đo.' };
+      }
+      return saveReading(householdId, selectedMember.id, reading);
+    },
 
     addSubject: async subject => {
       if (!householdId) return { ok: false, error_message: 'Chưa kết nối được nhà.' };

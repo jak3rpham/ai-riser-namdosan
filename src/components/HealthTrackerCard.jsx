@@ -18,12 +18,20 @@ const nowLabel = () => {
   return `Hôm nay, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-export default function HealthTrackerCard({ selectedMember, language = 'vi' }) {
-  const [metrics, setMetrics] = useState([
-    { type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: 125, dia: 82, pulse: 75, time: 'Hôm nay, 08:15' },
-    { type: 'BLOOD_SUGAR', label: 'Đường huyết', val: 5.8, time: 'Hôm nay, 07:30' },
-    { type: 'WEIGHT', label: 'Cân nặng', val: 64.5, time: 'Hôm qua' }
-  ]);
+export default function HealthTrackerCard({ selectedMember, readings = [], onSaveReading, language = 'vi' }) {
+  /**
+   * ⚠️ Bản trước khởi tạo sẵn ba chỉ số BỊA CỨNG (125/82, đường huyết 5.8,
+   * cân nặng 64.5) và hiện chúng cho MỌI người được chăm sóc. Khai báo mẹ
+   * mình vào app là thấy ngay "huyết áp của mẹ" mà không ai từng đo — vi phạm
+   * ranh giới y tế số 5. Ngoài ra chỉ số nằm trong useState nên tải lại trang
+   * là mất.
+   *
+   * Giờ đọc từ Firestore. Chưa đo lần nào thì hiện trống, không đoán hộ.
+   * Dữ liệu hư cấu chỉ nằm ở nhà mẫu (`demoSeed.js`), không nằm trong code
+   * của component.
+   */
+  const metrics = readings;
+  const [saveError, setSaveError] = useState(null);
 
   const [showForm, setShowForm] = useState(false);
   const [formType, setFormType] = useState('BLOOD_PRESSURE');
@@ -68,8 +76,9 @@ export default function HealthTrackerCard({ selectedMember, language = 'vi' }) {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setFormError(null);
+    setSaveError(null);
 
     if (formType === 'BLOOD_PRESSURE') {
       const s = parseInt(sys, 10);
@@ -80,7 +89,8 @@ export default function HealthTrackerCard({ selectedMember, language = 'vi' }) {
       if (s < 50 || s > 300 || d < 30 || d > 200) return setFormError('Số này nằm ngoài khoảng máy đo thường cho ra. Bạn kiểm tra lại giúp nhé.');
       if (d >= s) return setFormError('Số dưới phải nhỏ hơn số trên. Bạn xem lại giúp nhé.');
 
-      setMetrics([{ type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: s, dia: d, pulse: p, time: nowLabel() }, ...metrics]);
+      const res = await onSaveReading?.({ type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: s, dia: d, pulse: p, time: nowLabel() });
+      if (res && !res.ok) return setSaveError(res.error_message || 'Chưa lưu được số đo. Bạn thử lại nhé.');
     } else {
       const v = parseFloat(val);
       if (!Number.isFinite(v)) return setFormError('Bạn nhập số đo giúp mình nhé.');
@@ -89,7 +99,8 @@ export default function HealthTrackerCard({ selectedMember, language = 'vi' }) {
       if (formType === 'WEIGHT' && (v < 20 || v > 250)) return setFormError('Cân nặng nằm ngoài khoảng thường gặp.');
 
       const labels = { BLOOD_SUGAR: 'Đường huyết', TEMPERATURE: 'Nhiệt độ', WEIGHT: 'Cân nặng' };
-      setMetrics([{ type: formType, label: labels[formType], val: v, time: nowLabel() }, ...metrics]);
+      const res = await onSaveReading?.({ type: formType, label: labels[formType], val: v, time: nowLabel() });
+      if (res && !res.ok) return setSaveError(res.error_message || 'Chưa lưu được số đo. Bạn thử lại nhé.');
     }
 
     resetForm();
@@ -199,6 +210,25 @@ export default function HealthTrackerCard({ selectedMember, language = 'vi' }) {
               {formError}
             </div>
           )}
+        </div>
+      )}
+
+      {saveError && (
+        <div style={{ padding: '11px 14px', borderRadius: 12, background: '#FEF2F2', border: '1px solid #FCA5A5', marginBottom: 12, fontSize: 13.5, color: '#B91C1C', fontWeight: 700 }}>
+          {saveError}
+        </div>
+      )}
+
+      {/* Chưa đo lần nào — nói thẳng là chưa có, không đoán hộ một con số nào */}
+      {metrics.length === 0 && !showForm && (
+        <div style={{ padding: '18px 16px', borderRadius: 14, background: 'rgba(241,245,249,0.7)', textAlign: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 4 }}>
+            Chưa có số đo nào
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.5 }}>
+            Đo huyết áp hay đường huyết ở nhà xong, bấm "Ghi số đo" để lưu lại.
+            Chụp luôn mặt máy đo cũng được.
+          </div>
         </div>
       )}
 

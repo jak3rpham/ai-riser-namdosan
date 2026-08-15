@@ -66,7 +66,7 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'var(--sky-soft, #E0F2FE)', color: 'var(--sky-blue, #0284C7)', fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
-              <Navigation size={14} /> Google Places API (Thật)
+              <Navigation size={14} /> Dữ liệu OpenStreetMap
             </div>
             <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-dark)' }}>📍 Tìm Nhà thuốc & Cơ sở Y tế gần đây</h3>
             <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
@@ -132,7 +132,7 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
         {loading && (
           <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-sub)', fontWeight: 600 }}>
             <Loader2 className="animate-spin" size={28} style={{ margin: '0 auto 12px', color: 'var(--coral-main)' }} />
-            Đang lấy vị trí GPS và truy vấn địa điểm từ Google Places API...
+            Đang lấy vị trí và tìm cơ sở y tế quanh bác...
           </div>
         )}
 

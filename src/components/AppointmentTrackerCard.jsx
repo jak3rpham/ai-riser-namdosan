@@ -3,18 +3,14 @@ import { Calendar, MapPin, Bell, CheckCircle2, ExternalLink, Loader2, AlertCircl
 import { isGoogleConnected } from '../services/googleAuth';
 import { createAppointmentEvent } from '../services/googleCalendar';
 
-const DEFAULT_APPOINTMENTS = [
-  {
-    id: "app_1",
-    doctor: "TS.BS Nguyễn Văn An — Chuyên khoa Tim Mạch",
-    hospital: "Bệnh viện Đại học Y Dược TP.HCM",
-    date: "18/08/2026",
-    time: "08:30 AM",
-    dateTimeIso: "2026-08-18T08:30:00+07:00",
-    prep_instructions: "Nhịn ăn sáng trước 07:00 để lấy máu xét nghiệm đường huyết & mỡ máu. Mang theo sổ khám cũ và đơn thuốc hiện tại.",
-    status: "UPCOMING"
-  }
-];
+/**
+ * ⚠️ Ở đây từng có `DEFAULT_APPOINTMENTS` — một cuộc hẹn bịa với bác sĩ bịa,
+ * hiện ra khi hồ sơ chưa có lịch nào. Nguy hiểm không nằm ở cái tên bác sĩ mà
+ * ở dòng `prep_instructions`: "Nhịn ăn sáng trước 07:00 để lấy máu". Một bác
+ * 70 tuổi đọc được là nhịn ăn thật, cho một cuộc hẹn không tồn tại.
+ *
+ * Chưa có lịch thì nói là chưa có. Dữ liệu hư cấu chỉ nằm ở nhà mẫu.
+ */
 
 export default function AppointmentTrackerCard({
   selectedMember,
@@ -22,9 +18,8 @@ export default function AppointmentTrackerCard({
   onSaveAppointment,
   language = 'vi'
 }) {
-  const memberAppointments = (propsAppointments && propsAppointments.length > 0)
-    ? propsAppointments.filter(a => !a.member_id || a.member_id === selectedMember?.id)
-    : DEFAULT_APPOINTMENTS;
+  const memberAppointments = (propsAppointments || [])
+    .filter(a => !a.member_id || a.member_id === selectedMember?.id);
 
   const [syncingId, setSyncingId] = useState(null);
   const [syncResults, setSyncResults] = useState({}); // { [appId]: { ok, link, error } }
@@ -93,6 +88,18 @@ export default function AppointmentTrackerCard({
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {memberAppointments.length === 0 && (
+          <div style={{ padding: '20px 16px', borderRadius: 14, background: 'rgba(241,245,249,0.7)', textAlign: 'center' }}>
+            <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 4 }}>
+              Chưa có lịch tái khám nào
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.5 }}>
+              Chụp giấy hẹn khám hoặc nhập tay, app sẽ nhắc trước ngày khám
+              và đồng bộ sang Google Calendar giúp bác.
+            </div>
+          </div>
+        )}
+
         {memberAppointments.map(app => {
           const syncState = syncResults[app.id] || (app.html_link ? { ok: true, link: app.html_link } : null);
           const isSyncing = syncingId === app.id;

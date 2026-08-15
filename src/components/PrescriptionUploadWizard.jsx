@@ -187,7 +187,7 @@ export default function PrescriptionUploadWizard({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
           <div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'var(--coral-soft)', color: 'var(--coral-main)', fontSize: 12, fontWeight: 800, marginBottom: 8 }}>
-              <Sparkles size={14} /> Gemini 1.5 Vision
+              <Sparkles size={14} /> Gemini Vision
             </div>
             <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>📷 {t.scan_prescription}</h3>
             <p style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 4, maxWidth: 460, lineHeight: 1.55 }}>

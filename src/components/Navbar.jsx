@@ -1,11 +1,12 @@
-import React from 'react';
-import { Heart, Sparkles, Shield, RefreshCw, Globe, Award, Bell } from 'lucide-react';
+import React, { useState } from 'react';
+import { Heart, Sparkles, Shield, RefreshCw, Globe, Award, Bell, Settings, Home, Smartphone, LogOut, X } from 'lucide-react';
 import { I18N_STRINGS } from '../services/mockData';
 import SyncStatusBadge from './SyncStatusBadge';
 import { showDevTools } from '../services/featureFlags';
 
-export default function Navbar({ activeRole, onToggleRole, onResetDemo, language = 'vi', onToggleLanguage, onOpenBenchmark, onOpenNotifs, onOpenProfile }) {
+export default function Navbar({ activeRole, onToggleRole, onResetDemo, language = 'vi', onToggleLanguage, onOpenBenchmark, onOpenNotifs, onOpenProfile, onGoHome, onGoParent, onLeaveHousehold }) {
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header style={{ position: 'sticky', top: '12px', zIndex: 100, marginBottom: '28px' }}>
@@ -70,6 +71,15 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
             </button>
           </div>
 
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="btn-secondary"
+            aria-label="Cài đặt"
+            style={{ padding: '8px 14px', borderRadius: 12, fontSize: 12.5 }}
+          >
+            <Settings size={15} /> Cài đặt
+          </button>
+
           {showDevTools && (
             <button onClick={onResetDemo} title="Khôi phục dữ liệu mẫu" className="btn-secondary" style={{ padding: '8px 14px', borderRadius: '99px', fontSize: 13 }}>
               <RefreshCw size={14} /> {t.reset_demo}
@@ -78,7 +88,66 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
         </div>
 
       </div>
+
+      {menuOpen && (
+        <SettingsSheet
+          onClose={() => setMenuOpen(false)}
+          onGoHome={onGoHome}
+          onGoParent={onGoParent}
+          onLeaveHousehold={onLeaveHousehold}
+        />
+      )}
     </header>
+  );
+}
+
+/**
+ * Bảng cài đặt.
+ *
+ * Trước đây vào /app là không có lối ra: không nút về trang chính, không đổi
+ * được nhà, không xem được giao diện ba mẹ. Người dùng phải sửa URL bằng tay.
+ */
+function SettingsSheet({ onClose, onGoHome, onGoParent, onLeaveHousehold }) {
+  const items = [
+    { icon: Home, label: 'Về trang chính', hint: 'Chọn lại vai con cái hay ba mẹ', onClick: onGoHome },
+    { icon: Smartphone, label: 'Xem giao diện Ba Mẹ', hint: 'Màn hình nút to dành cho người lớn tuổi', onClick: onGoParent },
+    { icon: LogOut, label: 'Đổi nhà khác', hint: 'Rời nhà này trên máy này. Dữ liệu trên máy chủ giữ nguyên.', onClick: onLeaveHousehold, danger: true }
+  ].filter(i => i.onClick);
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(15,23,42,0.35)', display: 'grid', placeItems: 'center', padding: 16 }}
+    >
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, background: '#FFF', borderRadius: 22, padding: '20px 18px', boxShadow: '0 24px 60px rgba(15,23,42,0.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>Cài đặt</h3>
+          <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 10 }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gap: 10 }}>
+          {items.map(({ icon: Icon, label, hint, onClick, danger }) => (
+            <button
+              key={label}
+              onClick={() => { onClose(); onClick(); }}
+              style={{
+                display: 'flex', gap: 12, alignItems: 'flex-start', textAlign: 'left',
+                padding: '14px 16px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
+                border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.85)'
+              }}
+            >
+              <Icon size={19} color={danger ? '#B91C1C' : 'var(--text-sub)'} style={{ flexShrink: 0, marginTop: 1 }} />
+              <div>
+                <div style={{ fontSize: 15.5, fontWeight: 800, color: danger ? '#B91C1C' : 'var(--text-dark)' }}>{label}</div>
+                <div style={{ fontSize: 12.5, color: 'var(--text-sub)', marginTop: 2, lineHeight: 1.45 }}>{hint}</div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 

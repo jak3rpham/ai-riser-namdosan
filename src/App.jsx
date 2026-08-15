@@ -76,6 +76,7 @@ function Landing() {
 /* ── WEB cho con cái ── */
 function ManagerWeb({ language, setLanguage }) {
   const state = useHousehold();
+  const navigate = useNavigate();
   const [isBenchmarkOpen, setBenchmark] = useState(false);
   const [isNotifsOpen, setNotifs] = useState(false);
   const [isProfileOpen, setProfile] = useState(false);
@@ -126,6 +127,9 @@ function ManagerWeb({ language, setLanguage }) {
         onOpenBenchmark={() => setBenchmark(true)}
         onOpenNotifs={() => setNotifs(true)}
         onOpenProfile={() => setProfile(true)}
+        onGoHome={() => navigate('/')}
+        onGoParent={() => navigate('/parent')}
+        onLeaveHousehold={state.leave}
       />
 
       <div style={{ marginBottom: 16 }}>

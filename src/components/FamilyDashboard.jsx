@@ -40,7 +40,12 @@ export default function FamilyDashboard({
   const dosesTakenCount = memberDoseLogs.length;
   // Giả định chuẩn 2 liều/ngày * số thuốc
   const expectedDoses = Math.max(1, activeMeds.length * 2);
-  const complianceRate = dosesTakenCount > 0 ? Math.min(100, Math.round((dosesTakenCount / expectedDoses) * 100)) : 96;
+  // Chưa ghi nhận lần uống nào thì KHÔNG có tỷ lệ. Bản trước rơi về 96% —
+  // một con số bịa, hiện ngay trên hồ sơ vừa tạo, kèm câu "uống rất đúng giờ"
+  // cho người chưa từng uống viên nào.
+  const complianceRate = dosesTakenCount > 0
+    ? Math.min(100, Math.round((dosesTakenCount / expectedDoses) * 100))
+    : null;
 
   // Tính số ngày hết thuốc nhỏ nhất từ danh sách thuốc
   const minDaysRemaining = activeMeds.reduce((min, med) => {
@@ -113,9 +118,13 @@ export default function FamilyDashboard({
       <div className="stat-grid">
         <div className="liquid-card" style={{ padding: 22 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>{t.compliance_rate}</span>
-          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--emerald-ok)', margin: '6px 0 2px' }}>{complianceRate}%</div>
-          <span style={{ fontSize: 13.5, color: 'var(--emerald-ok)', fontWeight: 700 }}>
-            {dosesTakenCount > 0 ? `✓ ${selectedMember.display_name} đã ghi nhận ${dosesTakenCount} lần uống` : `✓ ${selectedMember.display_name} uống rất đúng giờ`}
+          <div style={{ fontSize: 28, fontWeight: 800, color: complianceRate == null ? 'var(--text-muted)' : 'var(--emerald-ok)', margin: '6px 0 2px' }}>
+            {complianceRate == null ? '—' : `${complianceRate}%`}
+          </div>
+          <span style={{ fontSize: 13.5, color: complianceRate == null ? 'var(--text-sub)' : 'var(--emerald-ok)', fontWeight: 700 }}>
+            {complianceRate == null
+              ? 'Chưa có lần uống nào được ghi nhận'
+              : `✓ ${selectedMember.display_name} đã ghi nhận ${dosesTakenCount} lần uống`}
           </span>
         </div>
 
@@ -131,11 +140,13 @@ export default function FamilyDashboard({
 
         <div className="liquid-card" style={{ padding: 22 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>{t.medicine_cabinet}</span>
-          <div style={{ fontSize: 28, fontWeight: 800, color: (minDaysRemaining <= 5) ? 'var(--amber-warm)' : 'var(--emerald-ok)', margin: '6px 0 2px' }}>
-            {minDaysRemaining === Infinity ? 'Đủ điều trị' : `Hết sau ${minDaysRemaining} ngày`}
+          <div style={{ fontSize: 28, fontWeight: 800, color: activeMeds.length === 0 ? 'var(--text-muted)' : (minDaysRemaining <= 5 ? 'var(--amber-warm)' : 'var(--emerald-ok)'), margin: '6px 0 2px' }}>
+            {activeMeds.length === 0 ? 'Chưa có thuốc' : `Hết sau ${minDaysRemaining} ngày`}
           </div>
-          <span style={{ fontSize: 13.5, color: (minDaysRemaining <= 5) ? 'var(--amber-warm)' : 'var(--emerald-ok)', fontWeight: 700 }}>
-            {minDaysRemaining <= 5 ? '⚠️ Tự tạo Task nhắc mua thêm' : '✓ Lượng thuốc còn đầy đủ'}
+          <span style={{ fontSize: 13.5, color: activeMeds.length === 0 ? 'var(--text-sub)' : (minDaysRemaining <= 5 ? 'var(--amber-warm)' : 'var(--emerald-ok)'), fontWeight: 700 }}>
+            {activeMeds.length === 0
+              ? 'Thêm đơn thuốc để app tính giúp ngày hết'
+              : (minDaysRemaining <= 5 ? '⚠️ Tự tạo Task nhắc mua thêm' : '✓ Lượng thuốc còn đầy đủ')}
           </span>
         </div>
       </div>

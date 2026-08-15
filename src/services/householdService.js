@@ -1,5 +1,5 @@
 import {
-  collection, doc, setDoc, addDoc,
+  collection, doc, setDoc, getDoc, addDoc,
   onSnapshot, query, orderBy, limit, serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
@@ -101,6 +101,51 @@ export async function joinHousehold(code, displayName) {
 
   saveHouseholdId(res.household_id);
   return { ok: true, household_id: res.household_id };
+}
+
+/**
+ * Còn ở trong nhà này không?
+ *
+ * Cần thiết vì id nhà lưu ở máy, mà tài khoản thì đổi được: đăng nhập Google
+ * bằng mail khác trên cùng điện thoại là uid mới, không còn là thành viên.
+ * Bản trước không kiểm tra nên rơi thẳng vào màn hình lỗi đỏ và kẹt ở đó.
+ */
+export async function checkMembership(hid) {
+  try {
+    const user = await ensureUser();
+    if (!user) return { ok: false, member: false, error_code: 'NO_SESSION' };
+
+    const snap = await getDoc(doc(db, 'households', hid, 'members', user.uid));
+    return { ok: true, member: snap.exists() };
+  } catch (err) {
+    // permission-denied cũng nghĩa là không phải thành viên — rules chặn đọc
+    if (err.code === 'permission-denied') return { ok: true, member: false };
+    return { ok: false, member: false, error_code: err.code, error_message: describe(err) };
+  }
+}
+
+/** Thêm hoặc sửa hồ sơ một người được chăm sóc (ba, mẹ, ông, bà). */
+export async function saveSubject(hid, subject) {
+  try {
+    const id = subject.id || `sub_${Date.now().toString(36)}`;
+    await setDoc(
+      doc(db, 'households', hid, 'subjects', id),
+      {
+        display_name: subject.display_name,
+        relation: subject.relation || null,
+        birth_year: subject.birth_year || null,
+        capability: subject.capability || 'C2',
+        conditions: subject.conditions || [],
+        allergies: subject.allergies || [],
+        avatar_color: subject.avatar_color || null,
+        updated_at: serverTimestamp()
+      },
+      { merge: true }
+    );
+    return { ok: true, subject_id: id };
+  } catch (err) {
+    return { ok: false, error_code: err.code || 'FIRESTORE_ERROR', error_message: describe(err) };
+  }
 }
 
 /* ── Theo dõi thời gian thực ── */

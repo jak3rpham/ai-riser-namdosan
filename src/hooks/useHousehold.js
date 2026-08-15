@@ -1,15 +1,38 @@
-import { useEffect, useRef, useState } from 'react';
-import { INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS } from '../services/mockData';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  createHousehold, joinHousehold, getSavedHouseholdId,
+  createHousehold, joinHousehold, getSavedHouseholdId, forgetHousehold,
+  checkMembership, saveSubject,
   subscribeSubjects, subscribePrescriptions, subscribeFeed, subscribeAppointments,
   savePrescription, saveAppointment, logDose, sendAlert
 } from '../services/householdService';
+import { createDemoHousehold } from '../services/demoSeed';
 
-export function useHousehold(role = 'host') {
-  const [householdId, setHouseholdId] = useState(getSavedHouseholdId());
-  const [status, setStatus] = useState('connecting'); // connecting | ready | error
+/**
+ * Trạng thái dữ liệu của một nhà.
+ *
+ * ─────────────────────────────────────────────────────────────────
+ * BỎ VIỆC TỰ TẠO NHÀ KHI VÀO LẦN ĐẦU
+ *
+ * Bản trước: ai mở app mà chưa có nhà thì hook tự tạo một nhà rồi nạp sẵn hai
+ * hồ sơ mẫu và mấy đơn thuốc. Hai hậu quả:
+ *
+ *   1. Người dùng thật không bao giờ đi qua khâu khai báo. Họ mở app ra thấy
+ *      "Ba Mười" và "Mẹ Lan" — người lạ — rồi phải tự hiểu là phải sửa đè lên.
+ *   2. Đổi tài khoản Google trên cùng máy là kẹt cứng: id nhà cũ còn trong
+ *      localStorage, uid mới không phải thành viên, rules từ chối, màn hình
+ *      đỏ, không có lối ra.
+ *
+ * Giờ: kiểm tra tư cách thành viên trước. Không thuộc nhà nào thì vào
+ * `onboarding` và để người dùng chọn — tạo nhà, nhập mã mời, hay xem thử nhà
+ * mẫu. Dữ liệu mẫu chỉ xuất hiện khi có người chủ động bấm xin nó.
+ *
+ * Các trạng thái: connecting → onboarding | ready | error
+ */
+export function useHousehold() {
+  const [householdId, setHouseholdId] = useState(null);
+  const [status, setStatus] = useState('connecting');
   const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
 
   const [subjects, setSubjects] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -17,51 +40,44 @@ export function useHousehold(role = 'host') {
   const [appointments, setAppointments] = useState([]);
   const [feed, setFeed] = useState([]);
 
-  const presUnsubs = useRef({});
-  const appUnsubs = useRef({});
+  const presUnsubs = useRef([]);
+  const appUnsubs = useRef([]);
 
-  /* ── Có nhà chưa; chưa thì tạo ── */
+  /* ── Có thuộc nhà nào không? ── */
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      if (householdId) { setStatus('ready'); return; }
+      const saved = getSavedHouseholdId();
 
-      const res = await createHousehold({
-        subjects: INITIAL_FAMILY_MEMBERS.map(m => ({ ...m }))
-      });
+      if (!saved) {
+        if (!cancelled) setStatus('onboarding');
+        return;
+      }
 
+      const res = await checkMembership(saved);
       if (cancelled) return;
 
       if (!res.ok) {
-        setError(res.error_message);
+        setError(res.error_message || 'Chưa kết nối được dữ liệu.');
         setStatus('error');
         return;
       }
 
-      // Nạp sẵn đơn thuốc mẫu để màn hình không trống trơn lúc mới vào
-      for (const p of INITIAL_PRESCRIPTIONS) {
-        await savePrescription(res.household_id, p.member_id, p);
+      if (!res.member) {
+        // Id cũ của một tài khoản khác. Quên đi rồi hỏi lại từ đầu — đây chính
+        // là chỗ bản trước kẹt lại ở màn hình lỗi đỏ.
+        forgetHousehold();
+        setStatus('onboarding');
+        return;
       }
 
-      // Nạp sẵn lịch tái khám mẫu
-      await saveAppointment(res.household_id, 'm1', {
-        id: 'app_1',
-        doctor: 'TS.BS Nguyễn Văn An — Chuyên khoa Tim Mạch',
-        hospital: 'Bệnh viện Đại học Y Dược TP.HCM',
-        date: '18/08/2026',
-        time: '08:30 AM',
-        dateTimeIso: '2026-08-18T08:30:00+07:00',
-        prep_instructions: 'Nhịn ăn sáng trước 07:00 để lấy máu xét nghiệm đường huyết & mỡ máu. Mang theo sổ khám cũ và đơn thuốc hiện tại.',
-        status: 'UPCOMING'
-      });
-
-      setHouseholdId(res.household_id);
+      setHouseholdId(saved);
       setStatus('ready');
     })();
 
     return () => { cancelled = true; };
-  }, [householdId, role]);
+  }, []);
 
   /* ── Nghe danh sách người được chăm sóc ── */
   useEffect(() => {
@@ -79,7 +95,7 @@ export function useHousehold(role = 'host') {
 
   /* ── Nghe đơn thuốc của TỪNG người, gom lại ── */
   useEffect(() => {
-    if (!householdId || !subjects.length) return;
+    if (!householdId || !subjects.length) { setPrescriptions([]); return; }
 
     const byId = {};
     const unsubs = subjects.map(s =>
@@ -95,7 +111,7 @@ export function useHousehold(role = 'host') {
 
   /* ── Nghe lịch tái khám của TỪNG người, gom lại ── */
   useEffect(() => {
-    if (!householdId || !subjects.length) return;
+    if (!householdId || !subjects.length) { setAppointments([]); return; }
 
     const byId = {};
     const unsubs = subjects.map(s =>
@@ -115,12 +131,27 @@ export function useHousehold(role = 'host') {
     return subscribeFeed(householdId, setFeed, e => setError(e.error_message));
   }, [householdId, status]);
 
+  /** Dùng chung cho ba lối vào: tạo nhà, nhập mã, xem thử nhà mẫu */
+  const enter = useCallback(async run => {
+    setBusy(true);
+    setError(null);
+    const res = await run();
+    setBusy(false);
+
+    if (res.ok) {
+      setHouseholdId(res.household_id);
+      setStatus('ready');
+    }
+    return res;
+  }, []);
+
   const selectedMember = subjects.find(s => s.id === selectedId) || subjects[0] || null;
 
   return {
     householdId,
     status,
     error,
+    busy,
 
     members: subjects,
     selectedMember,
@@ -128,6 +159,34 @@ export function useHousehold(role = 'host') {
     prescriptions,
     appointments,
     feed,
+
+    /* ── Ba lối vào ở màn onboarding ── */
+
+    createOwn: ({ name, displayName } = {}) =>
+      enter(() => createHousehold({ name, displayName })),
+
+    join: code => enter(() => joinHousehold(code)),
+
+    tryDemo: () => enter(() => createDemoHousehold()),
+
+    /** Rời nhà trên máy này. Dữ liệu trên máy chủ giữ nguyên. */
+    leave: () => {
+      forgetHousehold();
+      setHouseholdId(null);
+      setSubjects([]);
+      setPrescriptions([]);
+      setAppointments([]);
+      setFeed([]);
+      setError(null);
+      setStatus('onboarding');
+    },
+
+    /* ── Ghi dữ liệu ── */
+
+    addSubject: async subject => {
+      if (!householdId) return { ok: false, error_message: 'Chưa kết nối được nhà.' };
+      return saveSubject(householdId, subject);
+    },
 
     /** Lưu đơn thuốc — trả về kết quả THẬT, UI phải hiển thị nếu hỏng */
     addPrescription: async doc => {
@@ -139,7 +198,6 @@ export function useHousehold(role = 'host') {
       if (!householdId) return { ok: false, error_message: 'Chưa kết nối được nhà.' };
       return saveAppointment(householdId, subjectId || selectedMember?.id, doc);
     },
-
 
     confirmDose: async (medication, memberName) => {
       if (!householdId || !selectedMember) return { ok: false };
@@ -157,25 +215,7 @@ export function useHousehold(role = 'host') {
 
     updateProfile: async updated => {
       if (!householdId || !updated?.id) return { ok: false };
-      try {
-        const { doc, setDoc } = await import('firebase/firestore');
-        const { db } = await import('../config/firebaseConfig');
-        const { id, ...rest } = updated;
-        await setDoc(doc(db, 'households', householdId, 'subjects', id), rest, { merge: true });
-        return { ok: true };
-      } catch (err) {
-        return { ok: false, error_message: err.message };
-      }
-    },
-
-    join: async code => {
-      const res = await joinHousehold(code);
-      if (res.ok) {
-        setHouseholdId(res.household_id);
-        setStatus('ready');
-        setError(null);
-      }
-      return res;
+      return saveSubject(householdId, updated);
     }
   };
 }

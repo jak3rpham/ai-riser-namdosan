@@ -9,9 +9,12 @@ import GoldenSetBenchmarkModal from './components/GoldenSetBenchmarkModal';
 import NotificationCenterModal from './components/NotificationCenterModal';
 import UserProfileModal from './components/UserProfileModal';
 import HouseholdBar from './components/HouseholdBar';
+import OnboardingView from './components/OnboardingView';
+import AddSubjectModal from './components/AddSubjectModal';
+import EmptyHouseholdView from './components/EmptyHouseholdView';
 import { useHousehold } from './hooks/useHousehold';
 import { INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS, I18N_STRINGS } from './services/mockData';
-import { LayoutGrid, Smartphone, Eye } from 'lucide-react';
+import { LayoutGrid, Smartphone, Eye, UserPlus } from 'lucide-react';
 
 /**
  * ⚠️ TÁCH HAI BỀ MẶT (doc 37 mục 1–2)
@@ -72,18 +75,44 @@ function Landing() {
 
 /* ── WEB cho con cái ── */
 function ManagerWeb({ language, setLanguage }) {
-  const state = useHousehold('host');
+  const state = useHousehold();
   const [isBenchmarkOpen, setBenchmark] = useState(false);
   const [isNotifsOpen, setNotifs] = useState(false);
   const [isProfileOpen, setProfile] = useState(false);
+  const [isAddSubjectOpen, setAddSubject] = useState(false);
 
-  if (!state.selectedMember && state.status === 'ready') {
-    return <div className="app-container" style={{ padding: 40 }}>Chưa có hồ sơ nào trong nhà.</div>;
+  // Chưa thuộc nhà nào → hỏi muốn làm gì, thay vì tự dựng nhà rồi nhồi hồ sơ mẫu
+  if (state.status === 'onboarding') {
+    return (
+      <OnboardingView
+        onCreate={state.createOwn}
+        onJoin={state.join}
+        onTryDemo={state.tryDemo}
+        busy={state.busy}
+        error={state.error}
+      />
+    );
   }
-  if (state.status !== 'ready' || !state.selectedMember) {
+
+  if (state.status !== 'ready') {
     return (
       <div className="app-container" style={{ paddingTop: 40 }}>
         <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} />
+      </div>
+    );
+  }
+
+  // Nhà mới tạo thì chưa có ai. Mời khai báo, không hiện dashboard trống hoác.
+  if (!state.selectedMember) {
+    return (
+      <div className="app-container" style={{ paddingTop: 40 }}>
+        <EmptyHouseholdView onAdd={() => setAddSubject(true)} onLeave={state.leave} />
+        <AddSubjectModal
+          isOpen={isAddSubjectOpen}
+          onClose={() => setAddSubject(false)}
+          onSave={state.addSubject}
+          existingCount={state.members.length}
+        />
       </div>
     );
   }
@@ -107,6 +136,12 @@ function ManagerWeb({ language, setLanguage }) {
         <GoogleConnectPanel />
       </div>
 
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+        <button className="btn-secondary" onClick={() => setAddSubject(true)} style={{ padding: '9px 16px', borderRadius: 12, fontSize: 13.5 }}>
+          <UserPlus size={15} /> Thêm người nhà
+        </button>
+      </div>
+
       <FamilyDashboard
         members={state.members}
         selectedMember={state.selectedMember}
@@ -120,6 +155,13 @@ function ManagerWeb({ language, setLanguage }) {
       />
 
 
+      <AddSubjectModal
+        isOpen={isAddSubjectOpen}
+        onClose={() => setAddSubject(false)}
+        onSave={state.addSubject}
+        existingCount={state.members.length}
+      />
+
       <GoldenSetBenchmarkModal isOpen={isBenchmarkOpen} onClose={() => setBenchmark(false)} />
       <NotificationCenterModal isOpen={isNotifsOpen} onClose={() => setNotifs(false)} selectedMember={state.selectedMember} feed={state.feed} language={language} />
 
@@ -130,7 +172,19 @@ function ManagerWeb({ language, setLanguage }) {
 
 /* ── APP cho ba mẹ — toàn màn hình, không khung giả ── */
 function ParentApp({ language }) {
-  const state = useHousehold('subject');
+  const state = useHousehold();
+
+  if (state.status === 'onboarding') {
+    return (
+      <OnboardingView
+        onCreate={state.createOwn}
+        onJoin={state.join}
+        onTryDemo={state.tryDemo}
+        busy={state.busy}
+        error={state.error}
+      />
+    );
+  }
 
   if (state.status !== 'ready' || !state.selectedMember) {
     return (

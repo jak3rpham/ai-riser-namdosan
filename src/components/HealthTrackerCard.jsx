@@ -76,7 +76,39 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
     reader.readAsDataURL(file);
   };
 
+  // Cùng lý do như nút "đã uống thuốc" trong app Ba Mẹ: chưa khoá thì mạng
+  // chậm một cái là người dùng bấm lại, và mỗi lần bấm ghi thêm một lần đo.
+  // Hai lần đo trùng giờ làm hỏng luôn cả biểu đồ lẫn cảnh báo ngưỡng.
+  //
+  // Chốt bằng ref chứ không bằng state — state đổi giá trị quá muộn, các lần
+  // bấm trong cùng một nhịp render đều lọt qua. Đã kiểm bằng ba lần bấm liên
+  // tiếp ở ParentHomeView và đúng là lọt cả ba.
+  const savingRef = useRef(false);
+  const [savingReading, setSavingReading] = useState(false);
+
+  /**
+   * Ghi một lần đo. Trả về true nếu đã lưu được.
+   *
+   * Cờ bật NGAY TRONG ĐÂY, không bật ở đầu `handleSave`: trên đó còn mấy nhánh
+   * kiểm tra số nhập vào, mà nhánh nào cũng `return` sớm. Bật cờ trước rồi
+   * thoát ra bằng một trong các nhánh đó là cờ kẹt ở true và nút Lưu chết hẳn
+   * cho tới khi tải lại trang. Phần kiểm tra chạy đồng bộ nên không có kẽ hở.
+   */
+  const persist = async (payload) => {
+    savingRef.current = true;
+    setSavingReading(true);
+    const res = await onSaveReading?.(payload);
+    setSavingReading(false);
+    savingRef.current = false;
+    if (res && !res.ok) {
+      setSaveError(res.error_message || 'Chưa lưu được số đo. Bạn thử lại nhé.');
+      return false;
+    }
+    return true;
+  };
+
   const handleSave = async () => {
+    if (savingRef.current) return;
     setFormError(null);
     setSaveError(null);
 
@@ -89,8 +121,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
       if (s < 50 || s > 300 || d < 30 || d > 200) return setFormError('Số này nằm ngoài khoảng máy đo thường cho ra. Bạn kiểm tra lại giúp nhé.');
       if (d >= s) return setFormError('Số dưới phải nhỏ hơn số trên. Bạn xem lại giúp nhé.');
 
-      const res = await onSaveReading?.({ type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: s, dia: d, pulse: p, time: nowLabel() });
-      if (res && !res.ok) return setSaveError(res.error_message || 'Chưa lưu được số đo. Bạn thử lại nhé.');
+      if (!(await persist({ type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: s, dia: d, pulse: p, time: nowLabel() }))) return;
     } else {
       const v = parseFloat(val);
       if (!Number.isFinite(v)) return setFormError('Bạn nhập số đo giúp mình nhé.');
@@ -99,8 +130,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
       if (formType === 'WEIGHT' && (v < 20 || v > 250)) return setFormError('Cân nặng nằm ngoài khoảng thường gặp.');
 
       const labels = { BLOOD_SUGAR: 'Đường huyết', TEMPERATURE: 'Nhiệt độ', WEIGHT: 'Cân nặng' };
-      const res = await onSaveReading?.({ type: formType, label: labels[formType], val: v, time: nowLabel() });
-      if (res && !res.ok) return setSaveError(res.error_message || 'Chưa lưu được số đo. Bạn thử lại nhé.');
+      if (!(await persist({ type: formType, label: labels[formType], val: v, time: nowLabel() }))) return;
     }
 
     resetForm();
@@ -196,7 +226,9 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
                 style={{ width: 200, padding: '12px 14px', borderRadius: 12, border: '1px solid var(--glass-border)', fontSize: 16, fontFamily: 'inherit' }} />
             )}
 
-            <button className="btn-primary" onClick={handleSave} style={{ padding: '12px 22px', borderRadius: 12 }}>Lưu</button>
+            <button className="btn-primary" onClick={handleSave} disabled={savingReading} style={{ padding: '12px 22px', borderRadius: 12, opacity: savingReading ? 0.7 : 1 }}>
+              {savingReading ? <><Loader2 className="animate-spin" size={16} /> Đang lưu...</> : 'Lưu'}
+            </button>
           </div>
 
           {VITAL_THRESHOLDS[formType]?.note && (

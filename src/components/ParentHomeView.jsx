@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { CheckCircle2, Mic, Heart, Pill, User, UserCheck, ShieldAlert, PhoneCall, Users } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { CheckCircle2, Mic, Heart, Pill, User, UserCheck, ShieldAlert, PhoneCall, Users, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import VoiceAssistantModal from './VoiceAssistantModal';
 import VoiceCaptureView from './VoiceCaptureView';
@@ -103,14 +103,46 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
   const currentSlot = slotOf(currentMed);
   const takenStatus = activeMeds.length > 0 && !currentMed;
 
+  /**
+   * ⚠️ Khoá nút trong lúc đang ghi.
+   *
+   * Đây là nút được bấm nhiều nhất trong cả app, và trước đây nó không có gì
+   * chặn bấm lại. Mạng 3G chập một cái là màn hình đứng im vài giây — mà người
+   * đứng im trước một cái nút vừa bấm thì bấm lại, đó là phản xạ bình thường,
+   * càng đúng với người lớn tuổi không chắc máy có nhận hay không.
+   *
+   * Hậu quả không phải phiền phức giao diện: mỗi lần bấm ghi một dòng
+   * DOSE_TAKEN vào Firestore. Bấm ba lần là hồ sơ ghi bác uống ba liều, và con
+   * cái đọc đúng con số đó trên thẻ "tỷ lệ tuân thủ" để yên tâm.
+   *
+   * ⚠️ Chốt chặn phải là REF, không phải state.
+   *
+   * Bản sửa đầu dùng `const [saving]` rồi `if (saving) return`. Kiểm bằng ba
+   * lần bấm liên tiếp: VẪN ghi đủ ba liều. Vì `setSaving(true)` không đổi giá
+   * trị ngay — ba lần bấm trong cùng một nhịp render đều đọc `saving === false`
+   * rồi cùng đi tiếp. Thuộc tính `disabled` cũng không cứu được: nó chỉ có hiệu
+   * lực sau khi React vẽ lại.
+   *
+   * Ref đổi giá trị ngay trong lần gọi đầu, nên lần thứ hai và thứ ba quay đầu
+   * đúng chỗ. State vẫn giữ, nhưng chỉ để vẽ vòng xoay.
+   */
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
+
   const handleTakePill = async () => {
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaveError(null);
     const slot = currentSlot || nowSlot;
     const remember = () => setJustTook(prev => (prev.includes(slot) ? prev : [...prev, slot]));
 
-    if (!onConfirmDose) { remember(); return; }
+    if (!onConfirmDose) { remember(); savingRef.current = false; return; }
 
+    setSaving(true);
     const res = await onConfirmDose(currentMed, selectedMember.display_name);
+    setSaving(false);
+    savingRef.current = false;
+
     if (res && res.ok === false) {
       setSaveError(res.error_message || say('Chưa lưu được lên đám mây. {{You}} thử lại giúp {{me}} {{nha}}.'));
       return;
@@ -120,13 +152,24 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   };
 
+  // Cùng lý do, và cùng cách chốt bằng ref: mỗi lần bấm là một dòng trong feed
+  // của con cái. Bấm ba lần thì con cái nhận ba lần cùng một lời nhắn.
+  const sendingRef = useRef(false);
+  const [sendingStatus, setSendingStatus] = useState(false);
+
   const handleSendStatus = async () => {
+    if (sendingRef.current) return;
+    sendingRef.current = true;
     if (!onAlert) {
+      sendingRef.current = false;
       setStatusMessage('❤️ Đã ghi nhận (chế độ trình diễn)');
       setTimeout(() => setStatusMessage(null), 4000);
       return;
     }
+    setSendingStatus(true);
     const res = await onAlert({ type: 'STATUS_OK', title: 'Hôm nay con thấy trong người ổn' });
+    setSendingStatus(false);
+    sendingRef.current = false;
     setStatusMessage(res?.ok
       ? say('❤️ Đã gửi lời nhắn cho người nhà rồi{{a}}')
       : say('⚠️ Chưa gửi được, {{you}} thử lại giúp {{me}} {{nha}}'));
@@ -208,24 +251,36 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
             <>
               {/* 4 chấm cữ trong ngày — trạng thái lấy từ dòng sự kiện thật */}
               <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 18px 12px', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.7)', border: '1px solid var(--glass-border)', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                {SLOTS.map(slot => {
+                {SLOTS.map((slot, i) => {
                   const done = takenSlotsToday.has(slot.id);
-                  const isNow = !done && slot.id === nowSlot;
                   const hasMed = activeMeds.some(m => slotOf(m) === slot.id);
 
-                  // Cữ không có thuốc nào thì để xám nhạt — không hứa hẹn gì cả
+                  /**
+                   * Cam = có thuốc cữ này mà chưa uống, VÀ cữ đó đã tới giờ.
+                   *
+                   * ⚠️ Trước đây chỉ tô cam đúng cữ hiện tại. Nên lúc 5 giờ
+                   * chiều, thuốc cữ Sáng chưa uống thì chấm Sáng vẫn xám như
+                   * không có gì — trong khi cái thẻ ngay dưới nó đang bảo uống
+                   * đúng viên thuốc cữ Sáng đó. Hai chỗ trên cùng một màn hình
+                   * nói hai chuyện khác nhau.
+                   *
+                   * Cữ chưa tới giờ thì để xám: chưa tới thì chưa nợ.
+                   */
+                  const nowIndex = SLOTS.findIndex(s => s.id === nowSlot);
+                  const due = hasMed && !done && i <= nowIndex;
+
                   const color = done ? 'var(--emerald-ok)'
-                    : isNow && hasMed ? 'var(--coral-main)'
+                    : due ? 'var(--coral-main)'
                     : 'var(--text-muted)';
 
                   return (
                     <div key={slot.id} style={{ textAlign: 'center', flex: 1 }}>
                       <div style={{
                         width: 14, height: 14, borderRadius: '50%', margin: '0 auto 4px',
-                        background: done ? 'var(--emerald-ok)' : isNow && hasMed ? 'var(--coral-main)' : '#E2E8F0',
-                        border: done || (isNow && hasMed) ? 'none' : '2px solid #CBD5E1',
+                        background: done ? 'var(--emerald-ok)' : due ? 'var(--coral-main)' : '#E2E8F0',
+                        border: done || due ? 'none' : '2px solid #CBD5E1',
                         boxShadow: done ? '0 0 10px rgba(5, 150, 105, 0.3)'
-                          : isNow && hasMed ? '0 0 12px var(--coral-glow)' : 'none'
+                          : due ? '0 0 12px var(--coral-glow)' : 'none'
                       }}></div>
                       <span style={{ fontSize: 11, fontWeight: 700, color }}>{t[slot.key]}</span>
                     </div>
@@ -247,7 +302,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                     <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--emerald-ok)', lineHeight: 1.35 }}>
                       {say('Hôm nay {{you}} uống đủ thuốc rồi{{a}}')}
                     </h3>
-                    <p style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 16, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
                       {say('{{Me}} đã báo cho người nhà biết. Tới cữ sau {{me}} nhắc tiếp {{nha}}.')}
                     </p>
                   </div>
@@ -257,13 +312,13 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                     <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.35 }}>
                       Hôm nay chưa có thuốc nào trong hồ sơ của {selectedMember.display_name}
                     </h3>
-                    <p style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 16, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
                       {say('Nhờ người nhà chụp đơn thuốc hoặc vỏ thuốc lên giúp {{you}} {{nha}}.')}
                     </p>
                   </div>
                 ) : (
                 <>
-                <div style={{ background: 'var(--coral-soft)', color: 'var(--coral-main)', fontSize: 13, fontWeight: 800, padding: '5px 14px', borderRadius: 99, border: '1px solid var(--coral-border)', marginBottom: 10 }}>
+                <div style={{ background: 'var(--coral-soft)', color: 'var(--coral-main)', fontSize: 16, fontWeight: 800, padding: '5px 14px', borderRadius: 99, border: '1px solid var(--coral-border)', marginBottom: 10 }}>
                   ⏰ {currentMed.timing || 'Chưa rõ giờ'}
                 </div>
 
@@ -272,19 +327,28 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                 </div>
 
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.2 }}>{currentMed.name}</h3>
-                <span style={{ fontSize: 13, color: 'var(--coral-main)', fontWeight: 700, marginTop: 2 }}>{currentMed.nick_name || currentMed.generic}</span>
-                <p style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 500, marginTop: 4 }}>{currentMed.dosage}</p>
+                <span style={{ fontSize: 16, color: 'var(--coral-main)', fontWeight: 700, marginTop: 2 }}>{currentMed.nick_name || currentMed.generic}</span>
+                <p style={{ fontSize: 16, color: 'var(--text-sub)', fontWeight: 500, marginTop: 4 }}>{currentMed.dosage}</p>
 
                 {saveError && (
-                  <div style={{ width: '100%', padding: 10, borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 13, fontWeight: 700, textAlign: 'center', marginTop: 'auto', marginBottom: 8 }}>
+                  <div style={{ width: '100%', padding: 10, borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 16, fontWeight: 700, textAlign: 'center', marginTop: 'auto', marginBottom: 8 }}>
                     {saveError}
                   </div>
                 )}
 
                 {/* Nhánh này chỉ chạy khi CÒN thuốc chưa uống — trạng thái "đã
                     uống xong" đã xử ở khối trên, theo dữ liệu thật. */}
-                <button onClick={handleTakePill} className="btn-parent-action" style={{ padding: 15, fontSize: 16, marginTop: 'auto' }}>
-                  {t.taken_btn}
+                <button
+                  onClick={handleTakePill}
+                  disabled={saving}
+                  className="btn-parent-action"
+                  style={{ padding: 15, fontSize: 16, marginTop: 'auto', opacity: saving ? 0.75 : 1 }}
+                >
+                  {saving
+                    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                        <Loader2 className="animate-spin" size={20} /> {say('{{Me}} đang ghi lại...')}
+                      </span>
+                    : t.taken_btn}
                 </button>
                 </>
                 )}
@@ -295,8 +359,10 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                 <button onClick={() => setIsVoiceOpen(true)} className="btn-secondary" style={{ flex: 1, padding: 11, borderRadius: 16, fontSize: 13 }}>
                   <Mic size={16} color="var(--coral-main)" /> {t.ask_bi_btn}
                 </button>
-                <button onClick={handleSendStatus} className="btn-secondary" style={{ flex: 1, padding: 11, borderRadius: 16, fontSize: 13 }}>
-                  <Heart size={16} color="#EF4444" fill="#EF4444" /> {t.send_status_btn}
+                <button onClick={handleSendStatus} disabled={sendingStatus} className="btn-secondary" style={{ flex: 1, padding: 11, borderRadius: 16, fontSize: 13, opacity: sendingStatus ? 0.7 : 1 }}>
+                  {sendingStatus
+                    ? <><Loader2 className="animate-spin" size={16} /> Đang gửi...</>
+                    : <><Heart size={16} color="#EF4444" fill="#EF4444" /> {t.send_status_btn}</>}
                 </button>
               </div>
             </>
@@ -319,8 +385,8 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                   {activeMeds.map((med, i) => (
                     <div key={i} style={{ padding: 16, borderRadius: 20, background: '#FFF', border: '1px solid var(--glass-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
                       <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)' }}>{med.name}</div>
-                      <div style={{ fontSize: 13, color: 'var(--coral-main)', fontWeight: 700, marginTop: 2 }}>{med.nick_name || med.generic}</div>
-                      <div style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 6, fontWeight: 600 }}>Liều: {med.dosage} · {med.timing || med.time_slot}</div>
+                      <div style={{ fontSize: 16, color: 'var(--coral-main)', fontWeight: 700, marginTop: 2 }}>{med.nick_name || med.generic}</div>
+                      <div style={{ fontSize: 16, color: 'var(--text-sub)', marginTop: 6, fontWeight: 600 }}>Liều: {med.dosage} · {med.timing || med.time_slot}</div>
                     </div>
                   ))}
                 </div>
@@ -334,12 +400,12 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
               <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 10 }}>🎙️ Trợ lý Cháu Bi</h3>
 
               <div style={{ flex: 1, padding: 16, borderRadius: 20, background: '#FFF', border: '1px solid var(--glass-border)', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ fontSize: 14, color: 'var(--text-dark)', background: '#F8FAFC', padding: 12, borderRadius: 16, fontWeight: 600 }}>
+                <div style={{ fontSize: 16, color: 'var(--text-dark)', background: '#F8FAFC', padding: 12, borderRadius: 16, fontWeight: 600 }}>
                   {say(`{{Da}} {{me}} chào ${selectedMember.display_name}! {{You}} cần hỏi gì về cách dùng thuốc hay kiêng kỵ gì không{{a}}?`)}
                 </div>
 
                 {askResponse && (
-                  <div style={{ fontSize: 14, color: 'var(--text-dark)', background: 'var(--coral-soft)', padding: 14, borderRadius: 16, fontWeight: 600, border: '1px solid var(--coral-border)' }}>
+                  <div style={{ fontSize: 16, color: 'var(--text-dark)', background: 'var(--coral-soft)', padding: 14, borderRadius: 16, fontWeight: 600, border: '1px solid var(--coral-border)' }}>
                     {askResponse}
                   </div>
                 )}
@@ -388,14 +454,14 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
 
                 <div>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Tiền sử Dị ứng:</span>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: selectedMember.allergies?.length ? '#DC2626' : 'var(--emerald-ok)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: selectedMember.allergies?.length ? '#DC2626' : 'var(--emerald-ok)' }}>
                     {selectedMember.allergies?.length ? selectedMember.allergies.join(', ') : 'Không có dị ứng'}
                   </div>
                 </div>
 
                 <div>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Bệnh nền:</span>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-dark)' }}>
                     {selectedMember.conditions?.length ? selectedMember.conditions.join(', ') : 'Bình thường'}
                   </div>
                 </div>
@@ -450,6 +516,11 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   style={{
+                    // flex: 1 để mỗi tab chiếm đúng một phần tư bề ngang.
+                    // Không có nó thì nút co theo độ dài chữ: tab "Tôi" rộng
+                    // đúng 22px — bằng nửa mức tối thiểu 44px — trong khi
+                    // khoảng trống hai bên nó thì không bấm được.
+                    flex: 1,
                     border: 'none', background: 'none', display: 'flex', flexDirection: 'column',
                     alignItems: 'center', gap: 3, cursor: 'pointer',
                     color: isActive ? 'var(--coral-main)' : 'var(--text-muted)',

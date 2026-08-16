@@ -12,10 +12,12 @@ import HouseholdBar from './components/HouseholdBar';
 import OnboardingView from './components/OnboardingView';
 import AddSubjectModal from './components/AddSubjectModal';
 import EmptyHouseholdView from './components/EmptyHouseholdView';
+import IdentityPickerView from './components/IdentityPickerView';
+import HouseholdManageModal from './components/HouseholdManageModal';
 import DemoLoginView from './components/DemoLoginView';
 import { useHousehold } from './hooks/useHousehold';
 import { INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS, I18N_STRINGS } from './services/mockData';
-import { LayoutGrid, Smartphone, Eye, UserPlus } from 'lucide-react';
+import { LayoutGrid, Smartphone, Eye, UserPlus, Users } from 'lucide-react';
 
 /**
  * ⚠️ TÁCH HAI BỀ MẶT (doc 37 mục 1–2)
@@ -82,6 +84,8 @@ function ManagerWeb({ language, setLanguage }) {
   const [isNotifsOpen, setNotifs] = useState(false);
   const [isProfileOpen, setProfile] = useState(false);
   const [isAddSubjectOpen, setAddSubject] = useState(false);
+  const [isManageOpen, setManage] = useState(false);
+  const [editingSubject, setEditingSubject] = useState(null);
 
   // Chưa thuộc nhà nào → hỏi muốn làm gì, thay vì tự dựng nhà rồi nhồi hồ sơ mẫu
   if (state.status === 'onboarding') {
@@ -104,7 +108,11 @@ function ManagerWeb({ language, setLanguage }) {
   }
 
   // Nhà mới tạo thì chưa có ai. Mời khai báo, không hiện dashboard trống hoác.
-  if (!state.selectedMember) {
+  //
+  // Xét theo `members.length` chứ KHÔNG theo `selectedMember`: con cái quản lý
+  // cả nhà nên có thể chưa nhận hồ sơ nào là mình, mà vẫn phải thấy dashboard.
+  // Chỉ app Ba Mẹ mới bắt buộc phải biết "tôi là ai".
+  if (!state.members.length) {
     return (
       <div className="app-container" style={{ paddingTop: 40 }}>
         <EmptyHouseholdView onAdd={() => setAddSubject(true)} onLeave={state.leave} />
@@ -117,6 +125,11 @@ function ManagerWeb({ language, setLanguage }) {
       </div>
     );
   }
+
+  // App Con duyệt cả nhà, nên chưa chọn ai thì xem người đầu danh sách. Đây là
+  // lựa chọn HIỂN THỊ, không phải danh tính — khác hẳn app Ba Mẹ, nơi đoán sai
+  // nghĩa là ghi liều thuốc vào hồ sơ người khác.
+  const viewMember = state.selectedMember || state.members[0];
 
   return (
     <div className="app-container">
@@ -140,7 +153,10 @@ function ManagerWeb({ language, setLanguage }) {
         <GoogleConnectPanel />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
+        <button className="btn-secondary" onClick={() => setManage(true)} style={{ padding: '9px 16px', borderRadius: 12, fontSize: 13.5 }}>
+          <Users size={15} /> Quản lý nhà
+        </button>
         <button className="btn-secondary" onClick={() => setAddSubject(true)} style={{ padding: '9px 16px', borderRadius: 12, fontSize: 13.5 }}>
           <UserPlus size={15} /> Thêm người nhà
         </button>
@@ -148,7 +164,7 @@ function ManagerWeb({ language, setLanguage }) {
 
       <FamilyDashboard
         members={state.members}
-        selectedMember={state.selectedMember}
+        selectedMember={viewMember}
         onSelectMember={state.setSelectedMember}
         readings={state.readings}
         onSaveReading={state.addReading}
@@ -169,9 +185,27 @@ function ManagerWeb({ language, setLanguage }) {
       />
 
       <GoldenSetBenchmarkModal isOpen={isBenchmarkOpen} onClose={() => setBenchmark(false)} />
-      <NotificationCenterModal isOpen={isNotifsOpen} onClose={() => setNotifs(false)} selectedMember={state.selectedMember} feed={state.feed} language={language} />
+      <NotificationCenterModal isOpen={isNotifsOpen} onClose={() => setNotifs(false)} selectedMember={viewMember} feed={state.feed} language={language} />
 
-      <UserProfileModal isOpen={isProfileOpen} onClose={() => setProfile(false)} memberProfile={state.selectedMember} onUpdateProfile={state.updateProfile} language={language} />
+      <UserProfileModal
+        isOpen={isProfileOpen || !!editingSubject}
+        onClose={() => { setProfile(false); setEditingSubject(null); }}
+        memberProfile={editingSubject || viewMember}
+        onUpdateProfile={state.updateProfile}
+        language={language}
+      />
+
+      <HouseholdManageModal
+        isOpen={isManageOpen}
+        onClose={() => setManage(false)}
+        subjects={state.members}
+        accounts={state.accounts}
+        identityId={state.identity?.id || null}
+        onAddSubject={() => { setManage(false); setAddSubject(true); }}
+        onEditSubject={sub => { setManage(false); setEditingSubject(sub); }}
+        onReclaimIdentity={async () => { setManage(false); await state.claimIdentity(null); }}
+        onSignOut={state.signOutFully}
+      />
     </div>
   );
 }
@@ -196,6 +230,15 @@ function DemoEntry() {
 function ParentApp({ language }) {
   const state = useHousehold();
   const [isAddSubjectOpen, setAddSubject] = useState(false);
+  const [isManageOpen, setManage] = useState(false);
+
+  // Sau khi khai hồ sơ mới ở app Ba Mẹ thì nhận luôn hồ sơ đó là mình — người
+  // vừa tự khai chính là người đang cầm máy, không cần hỏi lại một lần nữa.
+  const addAndClaim = async subject => {
+    const res = await state.addSubject(subject);
+    if (res.ok && res.subject_id) await state.claimIdentity(res.subject_id);
+    return res;
+  };
 
   if (state.status === 'onboarding') {
     return (
@@ -227,7 +270,7 @@ function ParentApp({ language }) {
   // chỉ có ở app Con. Ngõ cụt hoàn toàn, phải xoá app cài lại mới thoát.
   //
   // App Con đã xử đúng ca này từ đầu (EmptyHouseholdView). App Ba Mẹ thì không.
-  if (!state.selectedMember) {
+  if (!state.members.length) {
     return (
       <div style={{ padding: 20, minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 460 }}>
@@ -243,7 +286,34 @@ function ParentApp({ language }) {
         <AddSubjectModal
           isOpen={isAddSubjectOpen}
           onClose={() => setAddSubject(false)}
-          onSave={state.addSubject}
+          onSave={addAndClaim}
+          existingCount={state.members.length}
+          variant="parent"
+        />
+      </div>
+    );
+  }
+
+  // Nhà đã có hồ sơ nhưng máy này chưa nhận mình là ai.
+  //
+  // ⚠️ Đây là chỗ bản trước lặng lẽ chọn `subjects[0]`: nhập mã mời xong là
+  // biến thành người đầu tiên trong nhà, không hỏi câu nào. Giờ phải hỏi.
+  if (state.needsIdentity) {
+    return (
+      <div style={{ padding: 20, minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+        <div style={{ width: '100%', maxWidth: 460 }}>
+          <IdentityPickerView
+            subjects={state.members}
+            currentId={state.identity?.id || null}
+            onPick={state.claimIdentity}
+            onCreateNew={() => setAddSubject(true)}
+            onLeave={state.leave}
+          />
+        </div>
+        <AddSubjectModal
+          isOpen={isAddSubjectOpen}
+          onClose={() => setAddSubject(false)}
+          onSave={addAndClaim}
           existingCount={state.members.length}
           variant="parent"
         />
@@ -260,6 +330,24 @@ function ParentApp({ language }) {
         demo={false}
         onConfirmDose={state.confirmDose}
         onAlert={state.alert}
+        onOpenHousehold={() => setManage(true)}
+      />
+      <HouseholdManageModal
+        isOpen={isManageOpen}
+        onClose={() => setManage(false)}
+        subjects={state.members}
+        accounts={state.accounts}
+        identityId={state.identity?.id || null}
+        onAddSubject={() => { setManage(false); setAddSubject(true); }}
+        onReclaimIdentity={async () => { setManage(false); await state.claimIdentity(null); }}
+        onSignOut={state.signOutFully}
+      />
+      <AddSubjectModal
+        isOpen={isAddSubjectOpen}
+        onClose={() => setAddSubject(false)}
+        onSave={state.addSubject}
+        existingCount={state.members.length}
+        variant="parent"
       />
       <div style={{ padding: '12px 16px 24px', maxWidth: 480, margin: '0 auto' }}>
         <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="parent" />

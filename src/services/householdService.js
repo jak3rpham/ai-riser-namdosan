@@ -118,12 +118,43 @@ export async function checkMembership(hid) {
     if (!user) return { ok: false, member: false, error_code: 'NO_SESSION' };
 
     const snap = await getDoc(doc(db, 'households', hid, 'members', user.uid));
-    return { ok: true, member: snap.exists() };
+    return {
+      ok: true,
+      member: snap.exists(),
+      // Hồ sơ mà tài khoản này đã nhận là mình. null = chưa chọn.
+      subjectId: snap.exists() ? (snap.data().subject_id || null) : null,
+      role: snap.exists() ? (snap.data().role || 'member') : null
+    };
   } catch (err) {
     // permission-denied cũng nghĩa là không phải thành viên — rules chặn đọc
-    if (err.code === 'permission-denied') return { ok: true, member: false };
-    return { ok: false, member: false, error_code: err.code, error_message: describe(err) };
+    if (err.code === 'permission-denied') return { ok: true, member: false, subjectId: null };
+    return { ok: false, member: false, subjectId: null, error_code: err.code, error_message: describe(err) };
   }
+}
+
+/**
+ * Nhận một hồ sơ là mình, hoặc bỏ nhận (truyền null) để chọn lại.
+ *
+ * Đi qua backend vì rules để `members` chỉ-đọc với client — xem ghi chú ở
+ * `server/src/routes/household.js` route `/me`.
+ */
+export async function claimIdentity(hid, subjectId) {
+  return apiPost('/household/me', { household_id: hid, subject_id: subjectId ?? null });
+}
+
+/**
+ * Danh sách TÀI KHOẢN đang ở trong nhà (máy nào đã tham gia).
+ *
+ * Khác `subscribeSubjects` — cái đó là danh sách NGƯỜI có hồ sơ sức khoẻ.
+ * Một người có thể chưa có tài khoản nào (con cái khai hộ), và một tài khoản
+ * có thể chưa nhận hồ sơ nào (vừa nhập mã mời xong).
+ */
+export function subscribeMembers(hid, cb, onError) {
+  return onSnapshot(
+    collection(db, 'households', hid, 'members'),
+    snap => cb(snap.docs.map(d => ({ uid: d.id, ...d.data() }))),
+    err => onError?.({ ok: false, error_code: err.code, error_message: describe(err) })
+  );
 }
 
 /** Thêm hoặc sửa hồ sơ một người được chăm sóc (ba, mẹ, ông, bà). */

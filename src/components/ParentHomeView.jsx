@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Mic, Heart, Pill, User, UserCheck, ShieldAlert, PhoneCall } from 'lucide-react';
+import { CheckCircle2, Mic, Heart, Pill, User, UserCheck, ShieldAlert, PhoneCall, Users } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import VoiceAssistantModal from './VoiceAssistantModal';
 import PharmacyModeModal from './PharmacyModeModal';
@@ -7,7 +7,7 @@ import { I18N_STRINGS } from '../services/mockData';
 import { askVoiceAssistant } from '../services/geminiService';
 import { speak } from '../services/honorifics';
 
-export default function ParentHomeView({ selectedMember, prescriptions = [], onConfirmDose, onAlert, language = 'vi', demo = false }) {
+export default function ParentHomeView({ selectedMember, prescriptions = [], onConfirmDose, onAlert, language = 'vi', demo = false, onOpenHousehold = null }) {
   const [activeTab, setActiveTab] = useState('today'); // 'today' | 'cabinet' | 'ask' | 'me'
   const [takenStatus, setTakenStatus] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
@@ -295,6 +295,21 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
                     {selectedMember.conditions?.length ? selectedMember.conditions.join(', ') : 'Bình thường'}
                   </div>
                 </div>
+
+                {onOpenHousehold && (
+                  <div style={{ paddingTop: 12, borderTop: '1px dashed var(--glass-border)' }}>
+                    <button
+                      className="btn-secondary"
+                      onClick={onOpenHousehold}
+                      style={{ width: '100%', padding: 13, borderRadius: 13, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                    >
+                      <Users size={17} /> Nhà mình có những ai
+                    </button>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, marginTop: 7, lineHeight: 1.5, textAlign: 'center' }}>
+                      Xem người trong nhà, sửa hồ sơ, hoặc đăng xuất khỏi máy này
+                    </div>
+                  </div>
+                )}
 
                 {/* Khối "Mã nhà (Mời con cái vào xem)" đã bỏ: nó in ra
                     `selectedMember.id` — một id nội bộ, KHÔNG phải mã mời. Từ khi

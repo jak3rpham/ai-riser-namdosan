@@ -3,12 +3,22 @@ import { X, User, Heart, Shield, Phone, Sparkles, Check, Settings, Save } from '
 import { I18N_STRINGS } from '../services/mockData';
 
 export default function UserProfileModal({ isOpen, onClose, memberProfile, onUpdateProfile, language = 'vi' }) {
+  // Modal này giờ dùng để sửa hồ sơ BẤT KỲ ai (từ "Quản lý nhà"), không chỉ
+  // người đang xem. useState chỉ đọc giá trị đầu ở lần mount đầu tiên, nên
+  // không có key này thì mở hồ sơ người thứ hai vẫn thấy dữ liệu người thứ nhất.
+  return <ProfileForm key={memberProfile?.id || 'none'} {...{ isOpen, onClose, memberProfile, onUpdateProfile, language }} />;
+}
+
+function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language = 'vi' }) {
   const [displayName, setDisplayName] = useState(memberProfile?.display_name || '');
   const [relation, setRelation] = useState(memberProfile?.relation || 'Ba');
   const [capability, setCapability] = useState(memberProfile?.capability || 'C3');
   const [allergiesText, setAllergiesText] = useState((memberProfile?.allergies || []).join(', '));
   const [conditionsText, setConditionsText] = useState((memberProfile?.conditions || []).join(', '));
-  const [phone, setPhone] = useState('0908 123 456');
+  // ⚠️ Trước đây mặc định là '0908 123 456' — một số điện thoại BỊA, hiện ra
+  // như thể đã khai. Bấm Lưu là nó ghi thẳng vào emergency_phone, và app tin
+  // rằng nhà này có số khẩn cấp. Trống thì phải trông như trống.
+  const [phone, setPhone] = useState(memberProfile?.emergency_phone || '');
   const [saved, setSaved] = useState(false);
 
   if (!isOpen) return null;
@@ -130,6 +140,7 @@ export default function UserProfileModal({ isOpen, onClose, memberProfile, onUpd
               <input
                 type="text"
                 value={phone}
+                placeholder="Chưa khai — nhập số người nhà gọi khi khẩn cấp"
                 onChange={(e) => setPhone(e.target.value)}
                 style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
               />

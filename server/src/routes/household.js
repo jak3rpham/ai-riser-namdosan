@@ -255,4 +255,56 @@ export default async function householdRoutes(app) {
     request.log.info({ household: result.household_id }, 'đã vào nhà bằng mã mời');
     return { ok: true, household_id: result.household_id };
   });
+
+  /* ── "Trong nhà này, tôi là ai?" ──
+   *
+   * ⚠️ Đây là mảnh còn thiếu của cả mô hình dữ liệu, không phải tính năng phụ.
+   *
+   * `members/{uid}` là TÀI KHOẢN được vào nhà. `subjects/{sid}` là NGƯỜI có hồ
+   * sơ sức khoẻ. Trước đây hai thứ này không nối với nhau bằng gì cả, nên app
+   * Ba Mẹ phải đoán: nó lấy `subjects[0]`.
+   *
+   * Hậu quả thật, gặp khi thử trên máy: nhà tạo trên Mac có sẵn hồ sơ "Thanh".
+   * Điện thoại nhập mã mời xong là lập tức TRỞ THÀNH Thanh — không hỏi, không
+   * chọn, không có đường khai hồ sơ riêng. Người thứ hai trong nhà không tồn
+   * tại được, và mọi liều thuốc họ bấm "đã uống" đều ghi vào hồ sơ Thanh.
+   *
+   * Ghi qua backend vì rules để `members` là chỉ-đọc với client (bản trước cho
+   * client ghi `members` chính là lỗ hổng "id nhà = mã mời"). Không nới rules.
+   */
+  app.post('/me', { preHandler: requireAuth }, async (request, reply) => {
+    const householdId = String(request.body?.household_id || '');
+    const subjectId = request.body?.subject_id === null
+      ? null
+      : String(request.body?.subject_id || '');
+    const uid = request.user.uid;
+
+    if (!householdId) {
+      return fail(reply, 400, 'MISSING_HOUSEHOLD', 'Thiếu id nhà.');
+    }
+
+    const memberRef = db.doc(`households/${householdId}/members/${uid}`);
+    const member = await memberRef.get();
+    if (!member.exists) {
+      return fail(reply, 403, 'NOT_MEMBER', 'Bạn không ở trong nhà này.');
+    }
+
+    // subject_id = null nghĩa là "bỏ chọn, để tôi chọn lại"
+    if (subjectId) {
+      // Hồ sơ phải CÓ THẬT và phải thuộc ĐÚNG nhà này. Không kiểm thì client
+      // gửi id bất kỳ, và app sẽ hiện một hồ sơ trống rỗng không ai hiểu.
+      const subject = await db.doc(`households/${householdId}/subjects/${subjectId}`).get();
+      if (!subject.exists) {
+        return fail(reply, 404, 'NO_SUBJECT', 'Hồ sơ này không còn trong nhà.');
+      }
+    }
+
+    await memberRef.set({
+      subject_id: subjectId || null,
+      subject_claimed_at: FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    request.log.info({ household: householdId, subject: subjectId }, 'đã gán hồ sơ cho tài khoản');
+    return { ok: true, subject_id: subjectId || null };
+  });
 }

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   createHousehold, joinHousehold, getSavedHouseholdId, forgetHousehold,
-  checkMembership, saveSubject,
+  checkMembership, saveSubject, claimIdentity, subscribeMembers,
   subscribeSubjects, subscribePrescriptions, subscribeFeed, subscribeAppointments,
   subscribeReadings, saveReading,
   savePrescription, saveAppointment, logDose, sendAlert
 } from '../services/householdService';
 import { createDemoHousehold } from '../services/demoSeed';
+import { signOut } from 'firebase/auth';
+import { auth } from '../config/firebaseConfig';
 
 /**
  * Trạng thái dữ liệu của một nhà.
@@ -27,6 +29,26 @@ import { createDemoHousehold } from '../services/demoSeed';
  * `onboarding` và để người dùng chọn — tạo nhà, nhập mã mời, hay xem thử nhà
  * mẫu. Dữ liệu mẫu chỉ xuất hiện khi có người chủ động bấm xin nó.
  *
+ * ─────────────────────────────────────────────────────────────────
+ * "TÔI LÀ AI" TÁCH KHỎI "ĐANG XEM AI"
+ *
+ * `members/{uid}` là TÀI KHOẢN vào được nhà. `subjects/{sid}` là NGƯỜI có hồ
+ * sơ sức khoẻ. Trước đây không có gì nối hai thứ, nên app Ba Mẹ đoán bằng
+ * `subjects[0]`:
+ *
+ *   const selectedMember = subjects.find(...) || subjects[0] || null;
+ *
+ * Nhà tạo trên máy tính có sẵn hồ sơ "Thanh" → điện thoại nhập mã mời xong là
+ * lập tức TRỞ THÀNH Thanh. Không hỏi, không chọn, không có đường khai hồ sơ
+ * riêng, và mọi liều thuốc bấm "đã uống" đều ghi vào hồ sơ Thanh.
+ *
+ * Giờ có hai khái niệm tách bạch:
+ *   `identity`       hồ sơ mà TÀI KHOẢN NÀY đã nhận là mình (members.subject_id)
+ *   `selectedMember` hồ sơ đang xem trên màn hình (app Con đổi qua lại được)
+ *
+ * Chưa nhận hồ sơ nào → `needsIdentity`, app Ba Mẹ hỏi trước khi cho vào.
+ * ─────────────────────────────────────────────────────────────────
+ *
  * Các trạng thái: connecting → onboarding | ready | error
  */
 export function useHousehold() {
@@ -36,6 +58,8 @@ export function useHousehold() {
   const [busy, setBusy] = useState(false);
 
   const [subjects, setSubjects] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [identityId, setIdentityId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [prescriptions, setPrescriptions] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -75,6 +99,7 @@ export function useHousehold() {
       }
 
       setHouseholdId(saved);
+      setIdentityId(res.subjectId || null);
       setStatus('ready');
     })();
 
@@ -89,7 +114,10 @@ export function useHousehold() {
       householdId,
       list => {
         setSubjects(list);
-        setSelectedId(cur => (cur && list.some(s => s.id === cur) ? cur : list[0]?.id || null));
+        // ⚠️ KHÔNG rơi về list[0]. Chính dòng đó làm điện thoại vừa nhập mã
+        // mời xong là biến thành người đầu tiên trong danh sách. Giữ lựa chọn
+        // hiện tại nếu còn hợp lệ, không thì để hồ sơ của chính mình quyết.
+        setSelectedId(cur => (cur && list.some(s => s.id === cur) ? cur : null));
       },
       e => { setError(e.error_message); setStatus('error'); }
     );
@@ -133,6 +161,14 @@ export function useHousehold() {
     return subscribeReadings(householdId, selectedId, setReadings, e => setError(e.error_message));
   }, [householdId, selectedId]);
 
+  /* ── Nghe danh sách tài khoản trong nhà ──
+   * Để người dùng thấy được "nhà mình có mấy máy đang dùng chung" — trước đây
+   * không có chỗ nào nhìn ra điều đó. */
+  useEffect(() => {
+    if (!householdId || status !== 'ready') return;
+    return subscribeMembers(householdId, setAccounts, () => { /* không chặn luồng chính */ });
+  }, [householdId, status]);
+
   /* ── Nghe dòng sự kiện (đã uống thuốc, cảnh báo) ── */
   useEffect(() => {
     if (!householdId || status !== 'ready') return;
@@ -153,7 +189,24 @@ export function useHousehold() {
     return res;
   }, []);
 
-  const selectedMember = subjects.find(s => s.id === selectedId) || subjects[0] || null;
+  /** Hồ sơ tài khoản này đã nhận là mình. null = chưa chọn. */
+  const identity = subjects.find(s => s.id === identityId) || null;
+
+  /**
+   * Hồ sơ đang xem.
+   *
+   * KHÔNG còn rơi về `subjects[0]`. Ưu tiên: hồ sơ đang chọn tay → hồ sơ của
+   * chính mình. Không có cả hai thì null, và tầng trên phải hỏi, không được
+   * đoán bừa.
+   */
+  const selectedMember = subjects.find(s => s.id === selectedId) || identity || null;
+
+  /**
+   * Đã vào nhà nhưng chưa nhận hồ sơ nào là mình.
+   * App Ba Mẹ phải hỏi trước khi cho vào; app Con thì không bắt buộc vì con
+   * cái quản lý cả nhà, bản thân họ có thể không có hồ sơ sức khoẻ nào.
+   */
+  const needsIdentity = status === 'ready' && !identityId;
 
   return {
     householdId,
@@ -162,6 +215,9 @@ export function useHousehold() {
     busy,
 
     members: subjects,
+    accounts,
+    identity,
+    needsIdentity,
     selectedMember,
     setSelectedMember: m => setSelectedId(m?.id || m),
     prescriptions,
@@ -178,16 +234,45 @@ export function useHousehold() {
 
     tryDemo: () => enter(() => createDemoHousehold()),
 
+    /** Nhận một hồ sơ là mình, hoặc truyền null để chọn lại từ đầu. */
+    claimIdentity: async subjectId => {
+      if (!householdId) return { ok: false, error_message: 'Chưa kết nối được nhà.' };
+      const res = await claimIdentity(householdId, subjectId);
+      if (res.ok) {
+        setIdentityId(res.subject_id || null);
+        setSelectedId(res.subject_id || null);
+      }
+      return res;
+    },
+
     /** Rời nhà trên máy này. Dữ liệu trên máy chủ giữ nguyên. */
     leave: () => {
       forgetHousehold();
       setHouseholdId(null);
       setSubjects([]);
+      setAccounts([]);
+      setIdentityId(null);
+      setSelectedId(null);
       setPrescriptions([]);
       setAppointments([]);
       setFeed([]);
       setError(null);
       setStatus('onboarding');
+    },
+
+    /**
+     * Đăng xuất hẳn: rời nhà VÀ bỏ luôn phiên đăng nhập.
+     *
+     * Khác `leave` ở chỗ nó đổi cả uid. Cần vì `leave` giữ nguyên tài khoản ẩn
+     * danh, nên nhập lại mã mời là vào lại đúng chỗ cũ với đúng hồ sơ cũ —
+     * không thử lại được luồng người mới. Trước khi có nút này, cách duy nhất
+     * để thử lại là xoá app khỏi màn hình chính rồi cài lại.
+     */
+    signOutFully: async () => {
+      forgetHousehold();
+      try { await signOut(auth); } catch { /* chưa đăng nhập thì thôi */ }
+      // Nạp lại để mọi listener Firestore và phiên ẩn danh dựng lại từ đầu.
+      window.location.replace('/');
     },
 
     /* ── Ghi dữ liệu ── */

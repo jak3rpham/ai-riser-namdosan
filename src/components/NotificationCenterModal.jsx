@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Bell, AlertTriangle, Send, CheckCircle2, ShieldAlert, Clock } from 'lucide-react';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 
 export default function NotificationCenterModal({ isOpen, onClose, selectedMember, feed = [], language = 'vi' }) {
   const [localNotifs, setLocalNotifs] = useState([]);

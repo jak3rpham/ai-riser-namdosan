@@ -1,10 +1,10 @@
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
-import { createHousehold, savePrescription, saveAppointment, saveReading, logDose } from './householdService';
+import { savePrescription, saveAppointment, saveReading, logDose } from './householdService';
 import {
   INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS,
   DEMO_PRESCRIPTION_MOM, DEMO_READINGS
-} from './mockData';
+} from './demoFixtures';
 
 /**
  * "Xem thử với nhà mẫu" — dựng một nhà RIÊNG cho người đang bấm, có sẵn hai
@@ -33,18 +33,6 @@ import {
 
 /** Nhãn gắn vào nhà mẫu, để sau này lọc/dọn và để UI nói rõ với người dùng. */
 export const DEMO_HOUSEHOLD_FLAG = 'is_demo';
-
-export async function createDemoHousehold() {
-  const res = await createHousehold({
-    name: 'Nhà mẫu',
-    subjects: INITIAL_FAMILY_MEMBERS.map(m => ({ ...m }))
-  });
-
-  if (!res.ok) return res;
-
-  await seedDemoData(res.household_id);
-  return { ok: true, household_id: res.household_id };
-}
 
 /**
  * Nạp dữ liệu hư cấu vào một nhà ĐÃ tồn tại.

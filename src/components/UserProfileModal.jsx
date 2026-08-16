@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, User, Heart, Shield, Phone, Sparkles, Check, Settings, Save } from 'lucide-react';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 
 export default function UserProfileModal({ isOpen, onClose, memberProfile, onUpdateProfile, language = 'vi' }) {
   // Modal này giờ dùng để sửa hồ sơ BẤT KỲ ai (từ "Quản lý nhà"), không chỉ

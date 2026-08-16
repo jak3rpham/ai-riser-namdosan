@@ -4,7 +4,7 @@ import confetti from 'canvas-confetti';
 import VoiceAssistantModal from './VoiceAssistantModal';
 import VoiceCaptureView from './VoiceCaptureView';
 import PharmacyModeModal from './PharmacyModeModal';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 import { askVoiceAssistant } from '../services/geminiService';
 import { speak } from '../services/honorifics';
 

@@ -6,7 +6,6 @@ import {
   subscribeReadings, saveReading,
   savePrescription, saveAppointment, logDose, sendAlert
 } from '../services/householdService';
-import { createDemoHousehold } from '../services/demoSeed';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 
@@ -26,8 +25,13 @@ import { auth } from '../config/firebaseConfig';
  *      đỏ, không có lối ra.
  *
  * Giờ: kiểm tra tư cách thành viên trước. Không thuộc nhà nào thì vào
- * `onboarding` và để người dùng chọn — tạo nhà, nhập mã mời, hay xem thử nhà
- * mẫu. Dữ liệu mẫu chỉ xuất hiện khi có người chủ động bấm xin nó.
+ * `onboarding` và để người dùng chọn — tạo nhà hoặc nhập mã mời.
+ *
+ * Lối thứ ba "xem thử nhà mẫu" đã BỎ HẲN ngày 16/08 cùng file `demoSeed.js`.
+ * Không màn hình nào gọi tới nó, nên nó là code chết — mà là code chết ghi hồ
+ * sơ y tế hư cấu ("Ba Mười", "Mẹ Lan", bác sĩ "TS.BS Nguyễn Văn An") vào
+ * Firestore production. Dữ liệu hư cấu giờ chỉ còn ở `demoFixtures.js`, nằm
+ * trong bộ nhớ, chỉ cho `/?demo=1`, không chạm tới máy chủ.
  *
  * ─────────────────────────────────────────────────────────────────
  * "TÔI LÀ AI" TÁCH KHỎI "ĐANG XEM AI"
@@ -180,7 +184,7 @@ export function useHousehold() {
     return subscribeFeed(householdId, setFeed, e => setError(e.error_message));
   }, [householdId, status]);
 
-  /** Dùng chung cho ba lối vào: tạo nhà, nhập mã, xem thử nhà mẫu */
+  /** Dùng chung cho hai lối vào ở màn onboarding: tạo nhà và nhập mã mời */
   const enter = useCallback(async run => {
     setBusy(true);
     setError(null);
@@ -259,14 +263,12 @@ export function useHousehold() {
     feed,
     readings,
 
-    /* ── Ba lối vào ở màn onboarding ── */
+    /* ── Hai lối vào ở màn onboarding ── */
 
     createOwn: ({ name, displayName } = {}) =>
       enter(() => createHousehold({ name, displayName })),
 
     join: code => enter(() => joinHousehold(code)),
-
-    tryDemo: () => enter(() => createDemoHousehold()),
 
     /** Nhận một hồ sơ là mình, hoặc truyền null để chọn lại từ đầu. */
     claimIdentity: async subjectId => {

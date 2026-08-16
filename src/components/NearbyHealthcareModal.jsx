@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, MapPin, Navigation, Clock, Phone, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { apiPost } from '../services/apiClient';
 import { getCurrentPosition } from '../services/googleMaps';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 
 export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi' }) {
   const [filterType, setFilterType] = useState('ALL'); // ALL | PHARMACY | HOSPITAL

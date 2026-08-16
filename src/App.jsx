@@ -18,7 +18,8 @@ import DemoLoginView from './components/DemoLoginView';
 import ManagerSidebar from './components/ManagerSidebar';
 import { runAllSafetyChecks } from './services/safetyChecks';
 import { useHousehold } from './hooks/useHousehold';
-import { INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS, I18N_STRINGS } from './services/mockData';
+import { INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS } from './services/demoFixtures';
+import { I18N_STRINGS } from './services/i18n';
 import { LayoutGrid, Smartphone, Eye, UserPlus, Users } from 'lucide-react';
 
 /**

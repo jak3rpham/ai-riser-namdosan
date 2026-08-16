@@ -1,6 +1,6 @@
 import React from 'react';
 import { Package, Clock, AlertCircle, Calendar, CheckCircle2 } from 'lucide-react';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 
 export default function MedicineCabinet({ medications = [], language = 'vi' }) {
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;

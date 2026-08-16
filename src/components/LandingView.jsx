@@ -1,6 +1,7 @@
 import React from 'react';
 import { Heart, LayoutGrid, Smartphone, ArrowRight } from 'lucide-react';
 import MedicalDisclaimer from './MedicalDisclaimer';
+import { showDevTools } from '../services/featureFlags';
 
 /**
  * Trang chào — chọn vai.
@@ -105,12 +106,20 @@ export default function LandingView({ onChoose }) {
         <MedicalDisclaimer variant="bar" />
       </div>
 
-      <a
-        href="/?demo=1"
-        style={{ marginTop: 18, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}
-      >
-        Chế độ xem 2 màn hình →
-      </a>
+      {/* Lối vào chế độ trình diễn — chỉ hiện khi bật công cụ dev.
+          Trước đây nó nằm công khai trên trang chào cho mọi người dùng, mà nó
+          dẫn thẳng tới hai giao diện cạnh nhau đầy hồ sơ hư cấu. Bác 70 tuổi
+          bấm vào là lạc vào một cái nhà không phải nhà mình.
+          Địa chỉ `/?demo=1` vẫn dùng được để quay video — chỉ là không quảng
+          cáo nó trên trang đầu nữa. */}
+      {showDevTools && (
+        <a
+          href="/?demo=1"
+          style={{ marginTop: 18, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}
+        >
+          Chế độ xem 2 màn hình →
+        </a>
+      )}
     </div>
   );
 }

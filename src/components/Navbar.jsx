@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Heart, Sparkles, Shield, RefreshCw, Globe, Award, Bell, Settings, Home, Smartphone, LogOut, X } from 'lucide-react';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 import SyncStatusBadge from './SyncStatusBadge';
 import { showDevTools } from '../services/featureFlags';
 

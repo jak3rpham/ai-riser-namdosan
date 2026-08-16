@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, ShieldAlert, HeartPulse, Pill, CheckCircle, AlertTriangle, UserCheck } from 'lucide-react';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 
 export default function PharmacyModeModal({ isOpen, onClose, memberProfile, prescriptions = [], language = 'vi' }) {
   if (!isOpen) return null;

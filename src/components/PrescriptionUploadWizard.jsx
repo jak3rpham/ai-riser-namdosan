@@ -3,7 +3,7 @@ import { Camera, CheckCircle2, AlertTriangle, Sparkles, Loader2, Pencil, Plus, T
 import { extractPrescriptionFromImage, generatePlainExplanation } from '../services/geminiService';
 import { runAllSafetyChecks } from '../services/safetyChecks';
 import { syncPrescriptionToWorkspace, describeSyncResult } from '../services/workspaceService';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 import SignatureAlertCard from './SignatureAlertCard';
 import MedicalDisclaimer from './MedicalDisclaimer';
 

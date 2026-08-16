@@ -13,7 +13,7 @@ import { resolveGenerics, GENERIC_PLAIN_NAMES } from '../services/medicalKnowled
 import MedicalDisclaimer from './MedicalDisclaimer';
 import FamilyFeedCard from './FamilyFeedCard';
 import { MANAGER_SECTIONS } from './ManagerSidebar';
-import { I18N_STRINGS } from '../services/mockData';
+import { I18N_STRINGS } from '../services/i18n';
 
 /**
  * Bảng điều khiển của app Con.

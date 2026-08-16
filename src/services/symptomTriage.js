@@ -205,6 +205,10 @@ export const BODY_REGIONS = [
 ];
 
 export const ACCOMPANYING_SYMPTOMS = [
+  // "Không có gì" để ĐẦU, không để cuối. Đây là câu trả lời hay gặp nhất, mà
+  // trước đây nó nằm dưới 13 lựa chọn khác — người 70 tuổi phải đọc hết danh
+  // sách triệu chứng đáng sợ rồi mới tới ô "tôi không sao".
+  { id: 'none', label: 'Không có gì kèm theo' },
   { id: 'sweating', label: 'Vã mồ hôi lạnh' },
   { id: 'dyspnea', label: 'Khó thở, hụt hơi' },
   { id: 'radiating', label: 'Đau lan ra tay, hàm, hoặc sau lưng' },
@@ -217,8 +221,7 @@ export const ACCOMPANYING_SYMPTOMS = [
   { id: 'speech', label: 'Nói khó, méo miệng' },
   { id: 'dark_urine', label: 'Nước tiểu sẫm màu như nước trà' },
   { id: 'swelling', label: 'Sưng, đỏ, nóng chỗ đau' },
-  { id: 'rash', label: 'Nổi mẩn, phát ban, ngứa' },
-  { id: 'none', label: 'Không có gì kèm theo' }
+  { id: 'rash', label: 'Nổi mẩn, phát ban, ngứa' }
 ];
 
 export const ONSET_OPTIONS = [

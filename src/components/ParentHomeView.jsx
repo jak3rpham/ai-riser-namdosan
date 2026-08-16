@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { CheckCircle2, Mic, Heart, Pill, User, UserCheck, ShieldAlert, PhoneCall, Users } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import VoiceAssistantModal from './VoiceAssistantModal';
+import VoiceCaptureView from './VoiceCaptureView';
 import PharmacyModeModal from './PharmacyModeModal';
 import { I18N_STRINGS } from '../services/mockData';
 import { askVoiceAssistant } from '../services/geminiService';
@@ -20,6 +21,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
   const [askLoading, setAskLoading] = useState(false);
   const [askResponse, setAskResponse] = useState(null);
   const [voiceSeed, setVoiceSeed] = useState(null);
+  const [isCaptureOpen, setCaptureOpen] = useState(false);
 
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
   // Xưng hô theo người đang dùng máy — xem src/services/honorifics.js
@@ -255,10 +257,24 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
                 )}
               </div>
 
+              <button
+                onClick={() => setCaptureOpen(true)}
+                style={{
+                  width: '100%', padding: '18px 20px', marginBottom: 10, borderRadius: 18,
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  background: 'linear-gradient(135deg, #38BDF8 0%, #0284C7 100%)', color: '#FFF',
+                  fontSize: 18, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  boxShadow: '0 10px 26px rgba(2,132,199,0.32)'
+                }}
+              >
+                <Mic size={24} /> {say('Bấm vào đây rồi nói')}
+              </button>
+
               <div style={{ display: 'flex', gap: 8 }}>
                 <input
                   type="text"
-                  placeholder="Hỏi Cháu Bi..."
+                  placeholder="Hoặc gõ chữ ở đây..."
                   value={askQuery}
                   onChange={e => setAskQuery(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleTabAsk(askQuery)}
@@ -362,6 +378,13 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
         </div>
       </div>
 
+      <VoiceCaptureView
+        isOpen={isCaptureOpen}
+        memberProfile={selectedMember}
+        onClose={() => setCaptureOpen(false)}
+        onTypeInstead={() => setCaptureOpen(false)}
+        onResult={text => { setCaptureOpen(false); handleTabAsk(text); }}
+      />
       <VoiceAssistantModal isOpen={isVoiceOpen} onClose={closeVoice} memberProfile={selectedMember} prescriptions={prescriptions} onAlert={onAlert} initialQuestion={voiceSeed} />
       <PharmacyModeModal isOpen={isPharmacyOpen} onClose={() => setIsPharmacyOpen(false)} memberProfile={selectedMember} prescriptions={prescriptions} language={language} />
     </div>

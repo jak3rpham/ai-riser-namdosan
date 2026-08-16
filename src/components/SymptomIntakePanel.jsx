@@ -26,13 +26,46 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
    * trên một câu trả lời KHÔNG AI XÁC NHẬN. Bấm một nút to là rẻ; kết luận sai
    * mức độ đau thì không.
    */
-  const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState({
+  const initialAnswers = {
     accompanying: prefill?.accompanying?.length ? prefill.accompanying : [],
     ...(prefill?.region ? { region: prefill.region } : {}),
     ...(prefill?.onset ? { onset: prefill.onset } : {}),
     ...(prefill?.severity ? { severity: prefill.severity } : {})
-  });
+  };
+
+  /**
+   * Chỉ hỏi những gì CHƯA biết.
+   *
+   * ⚠️ Bộ hỏi này giữ nguyên vai trò: bảng luật tĩnh vẫn quyết định 115 hay
+   * khám 24h, và người dùng vẫn phải tự chọn chứ AI không chọn hộ. Cái bỏ đi
+   * chỉ là những màn hình hỏi lại điều bác VỪA NÓI RA MIỆNG.
+   *
+   * Ca thật: bác nói "bác mệt" → app hỏi tiếp bốn màn, mỗi màn tới 14 lựa
+   * chọn. Với người 70 tuổi, đọc bằng mắt kém, đó không phải bộ hỏi — đó là
+   * bài kiểm tra. Gemini đã rút được vùng/thời điểm từ câu nói thì đừng bắt
+   * bác chọn lại lần nữa.
+   *
+   * Cái KHÔNG bao giờ bỏ qua: bước "kèm theo". Đó là bước chứa gần hết red
+   * flag (yếu nửa người, nôn ra máu, vã mồ hôi...). Gemini không nhắc tới
+   * không có nghĩa là không có — bác chỉ chưa được hỏi.
+   */
+  const NEVER_SKIP = ['accompanying'];
+  const firstUnanswered = INTAKE_STEPS.findIndex(
+    st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null
+  );
+
+  const [stepIndex, setStepIndex] = useState(firstUnanswered < 0 ? 0 : firstUnanswered);
+  const [answers, setAnswers] = useState(initialAnswers);
+  const [showAuto, setShowAuto] = useState(false);
+
+  /** Những gì đã điền sẵn, để bác xem lại và sửa nếu con hiểu sai */
+  const autoFilled = INTAKE_STEPS
+    .filter(st => !NEVER_SKIP.includes(st.key) && initialAnswers[st.key] != null)
+    .map(st => ({
+      key: st.key,
+      label: st.options.find(o => o.id === initialAnswers[st.key])?.label
+    }))
+    .filter(x => x.label);
   const [decision, setDecision] = useState(null);
   const [mildText, setMildText] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -66,7 +99,13 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
   const pickSingle = (optionId) => {
     const next = { ...answers, [step.key]: optionId };
     setAnswers(next);
-    if (stepIndex < INTAKE_STEPS.length - 1) setStepIndex(stepIndex + 1);
+
+    // Nhảy tới bước CHƯA có câu trả lời, không đi tuần tự — nếu không thì
+    // việc điền sẵn chẳng tiết kiệm được màn hình nào.
+    const nextIdx = INTAKE_STEPS.findIndex(
+      (st, i) => i > stepIndex && (NEVER_SKIP.includes(st.key) || next[st.key] == null)
+    );
+    if (nextIdx >= 0) setStepIndex(nextIdx);
     else finish(next);
   };
 
@@ -182,7 +221,7 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
     <div style={{ padding: 18, borderRadius: 20, background: 'rgba(241,245,249,0.7)', border: '1px solid var(--glass-border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
         <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-          Câu {stepIndex + 1} / {INTAKE_STEPS.length}
+          Câu {INTAKE_STEPS.slice(0, stepIndex + 1).filter(st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null || showAuto).length} / {INTAKE_STEPS.filter(st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null || showAuto).length}
         </span>
         <button onClick={onCancel} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
           Thôi để lúc khác
@@ -192,6 +231,20 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
       <h4 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 12, lineHeight: 1.4 }}>
         {speak(step.question, memberProfile)}
       </h4>
+
+      {autoFilled.length > 0 && !showAuto && (
+        <button
+          onClick={() => { setShowAuto(true); setStepIndex(0); }}
+          style={{ width: '100%', textAlign: 'left', marginBottom: 10, padding: '10px 12px', borderRadius: 11, background: 'rgba(255,255,255,0.75)', border: '1px dashed var(--glass-border)', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          <span style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 700 }}>
+            Con hiểu từ lời {speak('{{you}}', memberProfile)} vừa nói: {autoFilled.map(a => a.label).join(' · ')}
+          </span>
+          <span style={{ display: 'block', fontSize: 12, color: 'var(--coral-main)', fontWeight: 800, marginTop: 3 }}>
+            Con hiểu sai thì bấm vào đây để sửa
+          </span>
+        </button>
+      )}
 
       {selected != null && (Array.isArray(selected) ? selected.length > 0 : true) && (
         <div style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 8 }}>

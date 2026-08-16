@@ -19,7 +19,11 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Outfit đã bị bỏ: font đó KHÔNG có subset vietnamese (thiếu hẳn dải
+         U+1EA0–U+1EF1: ạ ả ấ ầ ậ ắ ặ ẹ ẽ ế ề ệ ị ọ ỏ ố ồ ộ ớ ờ ợ ụ ủ ứ ừ ự).
+         Mọi tiêu đề dùng nó rớt sang font hệ thống GIỮA CHỪNG MỘT TỪ.
+         Be Vietnam Pro được thiết kế cho tiếng Việt, dấu rõ và cân ở cỡ lớn. -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="root"></div>

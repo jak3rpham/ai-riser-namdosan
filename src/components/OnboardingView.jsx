@@ -43,7 +43,7 @@ export default function OnboardingView({ onCreate, onJoin, busy, error }) {
       <div style={{ width: '100%', maxWidth: 480 }}>
 
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
+          <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 28, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
             {mode ? 'Sắp xong rồi' : 'Bắt đầu với Nhà Mình'}
           </h1>
           <p style={{ fontSize: 15.5, color: 'var(--text-sub)', lineHeight: 1.5 }}>

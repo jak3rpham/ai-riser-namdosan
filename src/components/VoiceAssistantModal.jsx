@@ -4,6 +4,7 @@ import { askVoiceAssistant } from '../services/geminiService';
 import { speakOut, stopSpeaking } from '../services/speechService';
 import { speak } from '../services/honorifics';
 import SymptomIntakePanel from './SymptomIntakePanel';
+import VoiceCaptureView from './VoiceCaptureView';
 import MedicalDisclaimer from './MedicalDisclaimer';
 
 /**
@@ -27,7 +28,7 @@ import MedicalDisclaimer from './MedicalDisclaimer';
 export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, prescriptions = [], onAlert, initialQuestion = null }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   const [emergency, setEmergency] = useState(null);
   const [intakeOpen, setIntakeOpen] = useState(false);
   // Khung Gemini đã điền sẵn từ câu bác vừa nói — bộ hỏi dùng để bỏ bớt câu
@@ -46,26 +47,9 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
   // có lưới đỡ: src/services/speechService.js
   const speakText = (text) => { speakOut(text, memberProfile); };
 
-  const startVoiceInput = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      // Safari trên iOS thường rơi vào nhánh này — xem doc 34 mục 4
-      alert(speak('Trình duyệt này chưa hỗ trợ nhận diện giọng nói. {{You}} nhập chữ giúp {{me}} {{nha}}.', memberProfile));
-      return;
-    }
-    const rec = new SR();
-    rec.lang = 'vi-VN';
-    rec.interimResults = false;
-    rec.onstart = () => setIsListening(true);
-    rec.onend = () => setIsListening(false);
-    rec.onerror = () => setIsListening(false);
-    rec.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      setQuery(transcript);
-      handleSend(transcript);
-    };
-    rec.start();
-  };
+  // Nói giờ có màn hình riêng che kín (VoiceCaptureView). Nút micro nhỏ cạnh ô
+  // nhập với cái viền đổi màu là không đủ thấy — xem ghi chú trong file đó.
+  const startVoiceInput = () => setVoiceOpen(true);
 
   // Câu chuyển từ ô hỏi nhanh sang — chạy đúng một lần cho mỗi câu.
   const sentSeed = useRef(null);
@@ -132,7 +116,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: '50%', background: isListening ? 'linear-gradient(135deg, #FF6B4B 0%, #EF4444 100%)' : 'linear-gradient(135deg, #38BDF8 0%, #0284C7 100%)', display: 'grid', placeItems: 'center', color: '#FFF', animation: isListening ? 'pulse-glow 1s infinite' : 'none' }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg, #38BDF8 0%, #0284C7 100%)', display: 'grid', placeItems: 'center', color: '#FFF' }}>
               <Mic size={24} />
             </div>
             <div>
@@ -253,12 +237,12 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={startVoiceInput} className="btn-secondary" style={{ padding: '0 16px', borderRadius: 16, background: isListening ? '#FEF2F2' : 'rgba(255,255,255,0.8)', border: isListening ? '1.5px solid #EF4444' : '1px solid var(--glass-border)', color: isListening ? '#DC2626' : 'var(--coral-main)' }} title="Nói với Cháu Bi">
+              <button onClick={startVoiceInput} className="btn-secondary" style={{ padding: '0 16px', borderRadius: 16, background: 'rgba(255,255,255,0.8)', border: '1px solid var(--glass-border)', color: 'var(--coral-main)' }} title="Nói với Cháu Bi">
                 <Mic size={20} />
               </button>
               <input
                 type="text"
-                placeholder={isListening ? 'Đang lắng nghe bác nói...' : 'Hỏi Cháu Bi...'}
+                placeholder="Hỏi Cháu Bi..." 
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
@@ -273,6 +257,14 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
 
         <MedicalDisclaimer variant="inline" />
       </div>
+
+      <VoiceCaptureView
+        isOpen={voiceOpen}
+        memberProfile={memberProfile}
+        onClose={() => setVoiceOpen(false)}
+        onTypeInstead={() => setVoiceOpen(false)}
+        onResult={text => { setVoiceOpen(false); handleSend(text); }}
+      />
     </div>
   );
 }

@@ -209,7 +209,10 @@ export default async function aiRoutes(fastify) {
       prompt: `${classifySymptomPrompt(parsed.data.register)}\n\nCâu người dùng vừa nói: "${parsed.data.text}"`,
       jsonMode: true,
       temperature: 0,   // phân loại phải ổn định: cùng câu, cùng nhãn
-      maxTokens: 500,
+      // JSON trả về chỉ vài chục token. Để 500 không tốn thêm tiền nhưng cho
+      // model chỗ để lan man, mà route này nằm chắn trước MỌI câu trả lời nên
+      // mỗi trăm mili giây đều thấy được.
+      maxTokens: 200,
       log: request.log
     });
 

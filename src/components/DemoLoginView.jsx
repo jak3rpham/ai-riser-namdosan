@@ -45,7 +45,7 @@ export default function DemoLoginView({ onSuccess, onBack }) {
       <div style={{ width: '100%', maxWidth: 440 }}>
 
         <div style={{ textAlign: 'center', marginBottom: 26 }}>
-          <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 26, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
+          <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 26, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
             Tài khoản dùng thử
           </h1>
           <p style={{ fontSize: 15, color: 'var(--text-sub)', lineHeight: 1.55 }}>

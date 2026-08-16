@@ -42,7 +42,7 @@ export default function IdentityPickerView({
         <div style={{ width: 60, height: 60, borderRadius: 19, background: 'var(--coral-grad)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
           <Users size={28} color="#FFF" />
         </div>
-        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 23, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
+        <h2 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 23, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
           Trong nhà mình, bác là ai ạ?
         </h2>
         <p style={{ fontSize: 15, color: 'var(--text-sub)', lineHeight: 1.6 }}>

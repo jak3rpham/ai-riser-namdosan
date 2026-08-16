@@ -52,7 +52,7 @@ export default function LandingView({ onChoose }) {
         <div style={{ width: 60, height: 60, borderRadius: 20, background: 'var(--coral-grad)', display: 'grid', placeItems: 'center', color: '#FFF', margin: '0 auto 14px', boxShadow: '0 10px 26px var(--coral-glow)' }}>
           <Heart size={30} fill="#FFF" />
         </div>
-        <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 30, fontWeight: 800, letterSpacing: '-0.6px', color: 'var(--text-dark)' }}>
+        <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 30, fontWeight: 800, letterSpacing: '-0.6px', color: 'var(--text-dark)' }}>
           Nhà Mình
         </h1>
         <p style={{ fontSize: 15.5, color: 'var(--text-sub)', marginTop: 6, maxWidth: 460, lineHeight: 1.6 }}>

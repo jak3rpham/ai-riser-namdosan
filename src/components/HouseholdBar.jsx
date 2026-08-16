@@ -108,7 +108,7 @@ export default function HouseholdBar({ householdId, status, error, onJoin, varia
         <div style={{ width: '100%', padding: '12px 14px', borderRadius: 12, background: 'var(--coral-soft)', border: '1px solid var(--coral-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div>
             {/* Chữ to, giãn ký tự: bác cầm điện thoại đọc cho con qua điện thoại */}
-            <code style={{ fontSize: 26, fontWeight: 800, letterSpacing: 3, color: 'var(--coral-main)', fontFamily: 'Outfit, monospace' }}>
+            <code style={{ fontSize: 26, fontWeight: 800, letterSpacing: 3, color: 'var(--coral-main)', fontFamily: 'Be Vietnam Pro, monospace' }}>
               {invite.code}
             </code>
             <div style={{ fontSize: 12, color: 'var(--text-sub)', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>

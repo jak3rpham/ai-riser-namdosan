@@ -56,6 +56,27 @@ export async function apiGet(path) {
   }
 }
 
+/**
+ * Chặn trên thời gian chờ, tính bằng mili giây.
+ *
+ * Vì sao cần: mọi lời gọi ở đây nằm GIỮA bác và câu trả lời. Không có hạn thì
+ * mạng 3G chập chờn làm màn hình đứng im vô thời hạn ở "Cháu Bi đang suy
+ * nghĩ..." — bác không biết máy hỏng hay mình phải chờ, nên bấm lại, nên hỏng
+ * thật. Thà trả lời bằng lớp dự phòng còn hơn treo.
+ *
+ * `/ai/speak` để ngắn nhất: nó chỉ là giọng đọc, và có sẵn giọng trình duyệt
+ * thay thế ngay lập tức. Chờ nó 20 giây là im lặng 20 giây.
+ */
+const TIMEOUTS = {
+  '/ai/speak': 3500,
+  '/ai/classify-symptom': 4000,
+  default: 25000
+};
+
+function timeoutFor(path) {
+  return TIMEOUTS[path] ?? TIMEOUTS.default;
+}
+
 export async function apiPost(path, body) {
   const user = await ensureUser();
 
@@ -86,13 +107,17 @@ export async function apiPost(path, body) {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(timeoutFor(path))
     });
-  } catch {
+  } catch (err) {
+    const timedOut = err?.name === 'TimeoutError' || err?.name === 'AbortError';
     return {
       ok: false,
-      error_code: 'NETWORK_ERROR',
-      error_message: 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại nhé.'
+      error_code: timedOut ? 'TIMEOUT' : 'NETWORK_ERROR',
+      error_message: timedOut
+        ? 'Máy chủ trả lời chậm quá. Bạn thử lại nhé.'
+        : 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại nhé.'
     };
   }
 

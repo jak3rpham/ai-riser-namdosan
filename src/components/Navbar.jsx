@@ -18,7 +18,7 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--text-dark)', whiteSpace: 'nowrap' }}>
+              <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--text-dark)', whiteSpace: 'nowrap' }}>
                 {t.app_title}
               </h1>
               <SyncStatusBadge />

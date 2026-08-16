@@ -35,7 +35,7 @@ export default function EmptyHouseholdView({ onAdd, onLeave, variant = 'manager'
         <Heart size={30} color="#FFF" fill="#FFF" />
       </div>
 
-      <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 24, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 10 }}>
+      <h2 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 24, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 10 }}>
         {copy.title}
       </h2>
       <p style={{ fontSize: 15.5, color: 'var(--text-sub)', lineHeight: 1.6, marginBottom: 24 }}>

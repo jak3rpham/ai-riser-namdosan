@@ -127,7 +127,7 @@ function ManagerWeb({ language, setLanguage }) {
   if (state.status !== 'ready' || !state.membersLoaded) {
     return (
       <div className="app-container" style={{ paddingTop: 40 }}>
-        <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} />
+        <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} onReset={state.leave} />
       </div>
     );
   }
@@ -208,7 +208,7 @@ function ManagerWeb({ language, setLanguage }) {
                   <div className="manager-section-sub">Người nhà, mã mời, và kết nối Google</div>
                 </div>
               </div>
-              <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="manager" />
+              <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="manager" />
               <GoogleConnectPanel />
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button className="btn-secondary" onClick={() => setManage(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 14 }}>
@@ -320,7 +320,7 @@ function ParentApp({ language }) {
     return (
       <div style={{ padding: 20, minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 460 }}>
-          <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} variant="parent" />
+          <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" />
         </div>
       </div>
     );
@@ -344,7 +344,7 @@ function ParentApp({ language }) {
             onLeave={state.leave}
           />
           <div style={{ marginTop: 18 }}>
-            <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="parent" />
+            <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" />
           </div>
         </div>
         <AddSubjectModal
@@ -415,7 +415,7 @@ function ParentApp({ language }) {
         variant="parent"
       />
       <div style={{ padding: '12px 16px 24px', maxWidth: 480, margin: '0 auto' }}>
-        <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="parent" />
+        <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" />
       </div>
     </>
   );

@@ -20,7 +20,10 @@
  * backend giữ refresh token. Xem doc 36 mục 7.
  */
 
-import { GoogleAuthProvider, signInWithPopup, signInAnonymously, signOut, onAuthStateChanged } from 'firebase/auth';
+import {
+  GoogleAuthProvider, signInWithPopup, signInWithCredential, linkWithPopup,
+  signInAnonymously, signOut, onAuthStateChanged
+} from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebaseConfig';
 
 /** Quyền xin từ tài khoản Google của người dùng. Xin đúng thứ cần, không hơn. */
@@ -107,7 +110,50 @@ export async function connectGoogle({ scopes = [GOOGLE_SCOPES.calendar, GOOGLE_S
     // thì lịch uống thuốc chui vào sai nơi.
     provider.setCustomParameters({ prompt: 'consent select_account' });
 
-    const result = await signInWithPopup(auth, provider);
+    /**
+     * ⚠️ LIÊN KẾT vào tài khoản đang có, KHÔNG đăng nhập đè lên nó.
+     *
+     * `signInWithPopup` thay thế người dùng hiện tại: uid ẩn danh biến mất,
+     * uid Google thế chỗ. Mà tư cách thành viên của nhà nằm ở
+     * `households/{hid}/members/{uid}` — gắn theo ĐÚNG uid đó.
+     *
+     * Hậu quả gặp thật ngày 16/08: chủ nhà tạo nhà bằng phiên ẩn danh, khai hồ
+     * sơ, rồi bấm "Kết nối Google" và duyệt quyền xong thì màn hình đỏ
+     * "Không có quyền truy cập dữ liệu nhà này". Nhà vẫn còn nguyên trên máy
+     * chủ — chỉ là người vừa duyệt quyền không còn là thành viên của nó nữa.
+     * Đây là cách chắc chắn nhất để làm người dùng mất sạch dữ liệu vừa nhập.
+     *
+     * `linkWithPopup` nâng cấp chính tài khoản ẩn danh đó thành tài khoản
+     * Google và GIỮ NGUYÊN uid, nên mọi thứ đã ghi vẫn thuộc về họ.
+     */
+    const current = auth.currentUser;
+    let result;
+
+    if (current && current.isAnonymous) {
+      try {
+        result = await linkWithPopup(current, provider);
+      } catch (err) {
+        // Tài khoản Google này đã gắn với một người dùng Firebase khác — nghĩa
+        // là họ từng nối trên máy này hoặc máy khác. Không liên kết được nữa,
+        // đành đăng nhập thẳng vào tài khoản cũ đó. Dữ liệu của phiên ẩn danh
+        // hiện tại sẽ không đi theo, nên phải nói thẳng chứ không im lặng.
+        if (err?.code === 'auth/credential-already-in-use') {
+          const cred = GoogleAuthProvider.credentialFromError(err);
+          if (cred) {
+            result = await signInWithCredential(auth, cred);
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
+    } else {
+      // Đã là tài khoản Google rồi (nối lại để lấy token mới, hoặc đổi tài
+      // khoản). Ở đây đăng nhập đè là đúng.
+      result = await signInWithPopup(auth, provider);
+    }
+
     const credential = GoogleAuthProvider.credentialFromResult(result);
 
     if (!credential?.accessToken) {

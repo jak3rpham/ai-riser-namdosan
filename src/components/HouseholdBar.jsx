@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Copy, Check, LogIn, Loader2, AlertTriangle, Cloud, KeyRound, Clock } from 'lucide-react';
+import { Users, Copy, Check, LogIn, Loader2, AlertTriangle, Cloud, KeyRound, Clock, RotateCcw } from 'lucide-react';
 import { createInvite } from '../services/householdService';
 
 /**
@@ -13,7 +13,7 @@ import { createInvite } from '../services/householdService';
  * video demo là đủ để mất. Giờ mã chỉ sinh ra KHI người dùng bấm nút, hết hạn
  * sau 7 ngày, và giới hạn số lượt. Không hiện gì cho tới lúc thực sự cần mời.
  */
-export default function HouseholdBar({ householdId, status, error, onJoin, variant = 'manager' }) {
+export default function HouseholdBar({ householdId, status, error, onJoin, onReset, variant = 'manager' }) {
   const [copied, setCopied] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const [code, setCode] = useState('');
@@ -61,14 +61,66 @@ export default function HouseholdBar({ householdId, status, error, onJoin, varia
     );
   }
 
+  /**
+   * ⚠️ Trạng thái lỗi PHẢI có lối ra.
+   *
+   * Bản trước chỉ in một khối đỏ rồi hết. Gặp thật ngày 16/08: chủ nhà nối
+   * Google xong bị mất quyền vào nhà (uid đổi), và màn hình đỏ này là tất cả
+   * những gì còn lại — không nút, không đường lùi, tải lại trang vẫn y nguyên
+   * vì id nhà vẫn nằm trong máy. Ngõ cụt hoàn toàn, phải tự xoá dữ liệu trang
+   * mới thoát được.
+   *
+   * Id nhà hiện ngay đây, có chủ ý: mất quyền không có nghĩa là mất dữ liệu,
+   * và người dùng cần con số đó để nhờ khôi phục.
+   */
   if (status === 'error') {
     return (
-      <div style={{ padding: '12px 16px', borderRadius: 16, background: '#FEF2F2', border: '1px solid #FCA5A5', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-        <AlertTriangle size={16} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
-        <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#991B1B' }}>Chưa kết nối được dữ liệu</div>
-          <div style={{ fontSize: 13, color: '#B91C1C', fontWeight: 600, marginTop: 2 }}>{error}</div>
+      <div style={{ padding: '14px 16px', borderRadius: 16, background: '#FEF2F2', border: '1px solid #FCA5A5' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <AlertTriangle size={16} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#991B1B' }}>Chưa kết nối được dữ liệu</div>
+            <div style={{ fontSize: 13, color: '#B91C1C', fontWeight: 600, marginTop: 2 }}>{error}</div>
+            {householdId && (
+              <div style={{ fontSize: 12, color: '#B91C1C', fontWeight: 600, marginTop: 6 }}>
+                Dữ liệu của nhà vẫn còn trên máy chủ, không mất đi đâu.
+                Mã nhà: <code style={{ fontWeight: 800 }}>{householdId}</code>
+              </div>
+            )}
+          </div>
         </div>
+
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+          <button onClick={() => setShowJoin(v => !v)} className="btn-secondary" style={{ padding: '9px 14px', borderRadius: 12, fontSize: 13 }}>
+            <LogIn size={14} /> Nhập mã mời
+          </button>
+          {onReset && (
+            <button onClick={onReset} className="btn-secondary" style={{ padding: '9px 14px', borderRadius: 12, fontSize: 13 }}>
+              <RotateCcw size={14} /> Bắt đầu lại
+            </button>
+          )}
+        </div>
+
+        {showJoin && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginTop: 10 }}>
+            <input
+              value={code}
+              onChange={e => setCode(e.target.value.toUpperCase())}
+              placeholder="Nhập mã mời"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              maxLength={12}
+              style={{ flex: 1, minWidth: 180, padding: '11px 14px', borderRadius: 12, border: '1px solid var(--glass-border)', fontSize: 16, fontWeight: 700, letterSpacing: 2, fontFamily: 'inherit', outline: 'none' }}
+            />
+            <button className="btn-primary" onClick={submitJoin} disabled={joining} style={{ padding: '11px 18px', borderRadius: 12 }}>
+              {joining ? <Loader2 className="animate-spin" size={16} /> : <Users size={16} />} Vào nhà
+            </button>
+          </div>
+        )}
+        {joinError && (
+          <div style={{ fontSize: 13, color: '#B91C1C', fontWeight: 700, marginTop: 8 }}>{joinError}</div>
+        )}
       </div>
     );
   }

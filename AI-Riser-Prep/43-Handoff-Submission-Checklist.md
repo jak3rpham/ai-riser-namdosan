@@ -1,3 +1,16 @@
+> ⚠️ **TÀI LIỆU LỖI THỜI — 16/08/2026. Dùng [47-Handoff.md](47-Handoff.md) thay thế.**
+>
+> Doc này có nhiều tuyên bố sai so với thực tế code:
+> - Nói app "hoàn thành 100% code" — thực tế còn 4 lỗi bịa số liệu y tế và 1 lỗi
+>   xử lý té ngã, đã sửa ngày 15–16/08.
+> - Nói tìm nhà thuốc có "fallback GPS Haversine / OpenStreetMap tự động" — lúc đó
+>   grep toàn repo không có dòng nào về OpenStreetMap. Fallback thật mới viết 15/08.
+> - Hướng dẫn tạo AI Studio link bằng Chat Prompt — sai. BTC yêu cầu link **App**
+>   để giám khảo đọc code. Xem [44](44-AI-Studio-Instructions.md).
+> - Tên app trong doc là "An Nhà" — đã chốt lại là **"Nhà Mình"** ngày 15/08.
+
+---
+
 # 43 — Handoff Submission & Outstandings Checklist (Dành cho Claude / User)
 
 > **Tài liệu bàn giao công việc & 5 hạng mục còn lại cần xử lý trước 30/08/2026**

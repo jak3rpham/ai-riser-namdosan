@@ -8,9 +8,42 @@ import { I18N_STRINGS } from '../services/mockData';
 import { askVoiceAssistant } from '../services/geminiService';
 import { speak } from '../services/honorifics';
 
-export default function ParentHomeView({ selectedMember, prescriptions = [], onConfirmDose, onAlert, language = 'vi', demo = false, onOpenHousehold = null }) {
+/** Bốn cữ trong ngày, kèm giờ bắt đầu — dùng để biết bây giờ đang ở cữ nào. */
+const SLOTS = [
+  { id: 'Sáng', key: 'morning', from: 4 },
+  { id: 'Trưa', key: 'noon', from: 10 },
+  { id: 'Chiều', key: 'afternoon', from: 14 },
+  { id: 'Tối', key: 'evening', from: 18 }
+];
+
+/** Cữ ứng với thời điểm hiện tại. Trước 4h sáng thì vẫn tính là cữ Tối. */
+function currentSlotId(now = new Date()) {
+  const h = now.getHours();
+  if (h < SLOTS[0].from) return 'Tối';
+  return [...SLOTS].reverse().find(s => h >= s.from).id;
+}
+
+function isToday(ts) {
+  if (!ts) return true;   // vừa ghi, máy chủ chưa đóng dấu giờ → coi là hôm nay
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear()
+    && d.getMonth() === now.getMonth()
+    && d.getDate() === now.getDate();
+}
+
+/** Cữ của một loại thuốc: "Sáng (sau ăn)" → "Sáng" */
+function slotOf(med) {
+  const raw = String(med?.time_slot || med?.timing || '');
+  return SLOTS.find(s => raw.includes(s.id))?.id || null;
+}
+
+export default function ParentHomeView({ selectedMember, prescriptions = [], feed = [], onConfirmDose, onAlert, language = 'vi', demo = false, onOpenHousehold = null }) {
   const [activeTab, setActiveTab] = useState('today'); // 'today' | 'cabinet' | 'ask' | 'me'
-  const [takenStatus, setTakenStatus] = useState(false);
+  // Cữ vừa bấm xong nhưng Firestore chưa vọng về. Phải là MẢNG chứ không phải
+  // một giá trị: bấm cữ thứ hai mà ghi đè cữ thứ nhất thì cữ thứ nhất hiện lại
+  // như chưa uống, và bác uống lần nữa. Trạng thái THẬT vẫn lấy từ `feed`.
+  const [justTook, setJustTook] = useState([]);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [isPharmacyOpen, setIsPharmacyOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
@@ -31,11 +64,51 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
     .filter(p => !selectedMember?.id || p.member_id === selectedMember.id)
     .flatMap(p => p.medications || []);
 
-  const currentMed = activeMeds[0] || null;
+  /**
+   * Hôm nay đã uống những gì — đọc từ dòng sự kiện THẬT.
+   *
+   * ⚠️ Bản trước không đọc gì cả. Bốn chấm cữ trong ngày là màu viết cứng
+   * trong JSX: cữ Sáng luôn xanh (= đã uống), cữ Trưa luôn cam (= đang tới),
+   * Chiều và Tối luôn xám. Bác mở app lúc 8 giờ tối, chưa uống viên nào, vẫn
+   * thấy app khẳng định buổi sáng đã uống rồi. Đó là bịa dữ liệu tuân thủ điều
+   * trị ngay trên màn hình chính — và bịa theo hướng nguy hiểm hơn, vì nó làm
+   * bác tin là mình đã uống.
+   *
+   * Cùng lý do đó, "đã uống" không còn là một cờ trong useState: tải lại trang
+   * là cờ đó về false và bác bấm lần nữa, ghi hai liều vào hồ sơ.
+   */
+  const takenSlotsToday = new Set(
+    feed
+      .filter(f => f.type === 'DOSE_TAKEN'
+        && (!selectedMember?.id || f.subject_id === selectedMember.id)
+        && isToday(f.at))
+      .map(f => SLOTS.find(s => String(f.time_slot || '').includes(s.id))?.id)
+      .filter(Boolean)
+  );
+  justTook.forEach(s => takenSlotsToday.add(s));
+
+  const nowSlot = currentSlotId();
+
+  /**
+   * Thuốc cần uống bây giờ: ưu tiên thuốc đúng cữ hiện tại mà chưa uống, rồi
+   * tới thuốc bất kỳ chưa uống. Bản trước luôn lấy `activeMeds[0]` — bấm "đã
+   * uống rồi" xong là màn hình đứng nguyên ở đó cả ngày, thuốc cữ sau không
+   * bao giờ được nhắc.
+   */
+  const notTakenYet = activeMeds.filter(m => {
+    const s = slotOf(m);
+    return !s || !takenSlotsToday.has(s);
+  });
+  const currentMed = notTakenYet.find(m => slotOf(m) === nowSlot) || notTakenYet[0] || null;
+  const currentSlot = slotOf(currentMed);
+  const takenStatus = activeMeds.length > 0 && !currentMed;
 
   const handleTakePill = async () => {
     setSaveError(null);
-    if (!onConfirmDose) { setTakenStatus(true); return; }
+    const slot = currentSlot || nowSlot;
+    const remember = () => setJustTook(prev => (prev.includes(slot) ? prev : [...prev, slot]));
+
+    if (!onConfirmDose) { remember(); return; }
 
     const res = await onConfirmDose(currentMed, selectedMember.display_name);
     if (res && res.ok === false) {
@@ -43,7 +116,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
       return;
     }
 
-    setTakenStatus(true);
+    remember();
     confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
   };
 
@@ -133,33 +206,52 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
           {/* TAB 1: HÔM NAY */}
           {activeTab === 'today' && (
             <>
-              {/* 4 Progress Dots */}
+              {/* 4 chấm cữ trong ngày — trạng thái lấy từ dòng sự kiện thật */}
               <div style={{ display: 'flex', justifyContent: 'space-between', margin: '4px 18px 12px', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.7)', border: '1px solid var(--glass-border)', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', margin: '0 auto 4px', background: 'var(--emerald-ok)', borderColor: 'var(--emerald-ok)', boxShadow: '0 0 10px rgba(5, 150, 105, 0.3)' }}></div>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--emerald-ok)' }}>{t.morning}</span>
-                </div>
+                {SLOTS.map(slot => {
+                  const done = takenSlotsToday.has(slot.id);
+                  const isNow = !done && slot.id === nowSlot;
+                  const hasMed = activeMeds.some(m => slotOf(m) === slot.id);
 
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', margin: '0 auto 4px', background: takenStatus ? 'var(--emerald-ok)' : 'var(--coral-main)', boxShadow: '0 0 12px var(--coral-glow)' }}></div>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--coral-main)' }}>{t.noon}</span>
-                </div>
+                  // Cữ không có thuốc nào thì để xám nhạt — không hứa hẹn gì cả
+                  const color = done ? 'var(--emerald-ok)'
+                    : isNow && hasMed ? 'var(--coral-main)'
+                    : 'var(--text-muted)';
 
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', margin: '0 auto 4px', background: '#E2E8F0', border: '2px solid #CBD5E1' }}></div>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)' }}>{t.afternoon}</span>
-                </div>
-
-                <div style={{ textAlign: 'center', flex: 1 }}>
-                  <div style={{ width: 14, height: 14, borderRadius: '50%', margin: '0 auto 4px', background: '#E2E8F0', border: '2px solid #CBD5E1' }}></div>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: 'var(--text-muted)' }}>{t.evening}</span>
-                </div>
+                  return (
+                    <div key={slot.id} style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{
+                        width: 14, height: 14, borderRadius: '50%', margin: '0 auto 4px',
+                        background: done ? 'var(--emerald-ok)' : isNow && hasMed ? 'var(--coral-main)' : '#E2E8F0',
+                        border: done || (isNow && hasMed) ? 'none' : '2px solid #CBD5E1',
+                        boxShadow: done ? '0 0 10px rgba(5, 150, 105, 0.3)'
+                          : isNow && hasMed ? '0 0 12px var(--coral-glow)' : 'none'
+                      }}></div>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color }}>{t[slot.key]}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Action Card */}
               <div style={{ flex: 1, margin: '0 18px 12px', background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(20px)', border: '1.5px solid rgba(255, 107, 75, 0.3)', borderRadius: 18, padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', boxShadow: '0 12px 30px rgba(31, 38, 135, 0.08)' }}>
 
-                {!currentMed ? (
+                {/* Uống hết rồi KHÁC hẳn chưa có thuốc nào. Bản trước gộp làm
+                    một, nên bấm xong hết là app quay ra nói "chưa có thuốc nào
+                    trong hồ sơ" — nghe như đơn thuốc vừa bị mất. */}
+                {takenStatus ? (
+                  <div style={{ margin: 'auto', textAlign: 'center', padding: '0 8px' }}>
+                    <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--emerald-soft)', color: 'var(--emerald-ok)', display: 'grid', placeItems: 'center', margin: '0 auto 12px' }}>
+                      <CheckCircle2 size={42} />
+                    </div>
+                    <h3 style={{ fontSize: 18.5, fontWeight: 800, color: 'var(--emerald-ok)', lineHeight: 1.35 }}>
+                      {say('Hôm nay {{you}} uống đủ thuốc rồi{{a}}')}
+                    </h3>
+                    <p style={{ fontSize: 13.5, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
+                      {say('{{Me}} đã báo cho người nhà biết. Tới cữ sau {{me}} nhắc tiếp {{nha}}.')}
+                    </p>
+                  </div>
+                ) : !currentMed ? (
                   <div style={{ margin: 'auto', textAlign: 'center', padding: '0 8px' }}>
                     <div style={{ fontSize: 40, marginBottom: 10 }}>💊</div>
                     <h3 style={{ fontSize: 17.5, fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.35 }}>
@@ -189,15 +281,11 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
                   </div>
                 )}
 
-                {takenStatus ? (
-                  <div style={{ width: '100%', padding: 14, marginTop: 'auto', borderRadius: 18, background: 'var(--emerald-soft)', color: 'var(--emerald-ok)', fontWeight: 800, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <CheckCircle2 size={22} /> {t.taken_done}
-                  </div>
-                ) : (
-                  <button onClick={handleTakePill} className="btn-parent-action" style={{ padding: 15, fontSize: 16.5, marginTop: 'auto' }}>
-                    {t.taken_btn}
-                  </button>
-                )}
+                {/* Nhánh này chỉ chạy khi CÒN thuốc chưa uống — trạng thái "đã
+                    uống xong" đã xử ở khối trên, theo dữ liệu thật. */}
+                <button onClick={handleTakePill} className="btn-parent-action" style={{ padding: 15, fontSize: 16.5, marginTop: 'auto' }}>
+                  {t.taken_btn}
+                </button>
                 </>
                 )}
               </div>

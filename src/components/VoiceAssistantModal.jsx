@@ -25,6 +25,13 @@ import MedicalDisclaimer from './MedicalDisclaimer';
  * in chữ, không có nút 115 / báo người nhà / bộ hỏi, nên khi câu chạm tới sức
  * khỏe thì tab mở modal này kèm nguyên câu để xử lại cho đủ.
  */
+/** Lời chào mở đầu — có tên người dùng nên phải dựng lại khi đổi hồ sơ */
+const greeting = (profile) => speak(
+  `{{Da}} {{me}} chào ${profile?.display_name || ''}! {{Me}} là "Cháu Bi" đây{{a}}. `
+  + '{{You}} muốn hỏi gì về thuốc hay giờ uống thuốc hôm nay không{{a}}?',
+  profile
+);
+
 export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, prescriptions = [], onAlert, initialQuestion = null }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,11 +43,8 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
   const [intakePrefill, setIntakePrefill] = useState(null);
   const [quickReplies, setQuickReplies] = useState(null);
   const [familyNotified, setFamilyNotified] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      sender: 'assistant',
-      text: speak(`{{Da}} {{me}} chào ${memberProfile.display_name}! {{Me}} là "Cháu Bi" đây{{a}}. {{You}} muốn hỏi gì về thuốc hay giờ uống thuốc hôm nay không{{a}}?`, memberProfile)
-    }
+  const [messages, setMessages] = useState(() => [
+    { sender: 'assistant', text: greeting(memberProfile) }
   ]);
 
   // Giọng Gemini trước, giọng trình duyệt làm lưới đỡ. Chi tiết vì sao phải
@@ -50,6 +54,30 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
   // Nói giờ có màn hình riêng che kín (VoiceCaptureView). Nút micro nhỏ cạnh ô
   // nhập với cái viền đổi màu là không đủ thấy — xem ghi chú trong file đó.
   const startVoiceInput = () => setVoiceOpen(true);
+
+  /**
+   * Đóng modal là dọn sạch.
+   *
+   * ⚠️ Component này KHÔNG bị gỡ khỏi cây khi đóng — nó luôn được render với
+   * `isOpen={false}`. Nên trước đây mọi state sống qua hết các lần đóng mở:
+   * mở lại là thấy nguyên khối cảnh báo đỏ "gọi 115 ngay" của lần hỏi trước,
+   * kèm nút "Báo cho người nhà" đã bấm rồi, cho một câu hỏi chưa ai hỏi. Người
+   * đang không sao nhìn thấy màn hình cấp cứu của lần trước.
+   *
+   * Lời chào cũng dựng lại ở đây, vì nó có tên người dùng trong câu — đổi hồ sơ
+   * mà không dựng lại thì Cháu Bi vẫn chào tên người cũ.
+   */
+  useEffect(() => {
+    if (isOpen) return;
+    setEmergency(null);
+    setIntakeOpen(false);
+    setIntakePrefill(null);
+    setQuickReplies(null);
+    setFamilyNotified(false);
+    setQuery('');
+    setLoading(false);
+    setMessages([{ sender: 'assistant', text: greeting(memberProfile) }]);
+  }, [isOpen, memberProfile?.id]);
 
   // Câu chuyển từ ô hỏi nhanh sang — chạy đúng một lần cho mỗi câu.
   const sentSeed = useRef(null);

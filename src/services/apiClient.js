@@ -77,6 +77,27 @@ function timeoutFor(path) {
   return TIMEOUTS[path] ?? TIMEOUTS.default;
 }
 
+/**
+ * Tín hiệu huỷ theo thời gian.
+ *
+ * ⚠️ Không dùng thẳng `AbortSignal.timeout` được. Safari trên iOS chỉ có nó từ
+ * bản 16; máy cũ hơn thì `AbortSignal.timeout` là undefined, gọi vào là ném
+ * TypeError NGAY TRONG khối try bọc fetch — và khối đó quy mọi lỗi về
+ * "Không kết nối được máy chủ". Nghĩa là trên iPhone đời cũ, mọi lời gọi
+ * backend đều báo mất mạng dù mạng vẫn tốt, và không có gì trên màn hình chỉ ra
+ * nguyên nhân thật. Đây đúng nhóm máy mà ba mẹ hay dùng (máy con cái để lại).
+ *
+ * `clear` phải được gọi sau khi fetch xong, không thì bộ đếm còn treo.
+ */
+function abortAfter(ms) {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return { signal: AbortSignal.timeout(ms), clear: () => {} };
+  }
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(new DOMException('TimeoutError', 'TimeoutError')), ms);
+  return { signal: controller.signal, clear: () => clearTimeout(id) };
+}
+
 export async function apiPost(path, body) {
   const user = await ensureUser();
 
@@ -99,6 +120,8 @@ export async function apiPost(path, body) {
     };
   }
 
+  const limit = abortAfter(timeoutFor(path));
+
   let res;
   try {
     res = await fetch(`${API_BASE}${path}`, {
@@ -108,7 +131,7 @@ export async function apiPost(path, body) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(timeoutFor(path))
+      signal: limit.signal
     });
   } catch (err) {
     const timedOut = err?.name === 'TimeoutError' || err?.name === 'AbortError';
@@ -119,6 +142,8 @@ export async function apiPost(path, body) {
         ? 'Máy chủ trả lời chậm quá. Bạn thử lại nhé.'
         : 'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại nhé.'
     };
+  } finally {
+    limit.clear();
   }
 
   let data;

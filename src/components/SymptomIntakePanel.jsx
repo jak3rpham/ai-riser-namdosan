@@ -76,11 +76,35 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
     const result = evaluateSymptomAnswers(finalAnswers, memberProfile, prescriptions);
     setDecision(result);
 
-    // Nhánh nặng: báo người nhà NGAY, không chờ người dùng bấm gì thêm
-    if (onAlert && result.outcome !== OUTCOME.LOG_AND_NOTIFY) {
+    /**
+     * Báo người nhà cho CẢ BA nhánh, không riêng hai nhánh nặng.
+     *
+     * ⚠️ Bản trước bỏ qua nhánh nhẹ. Nhưng câu trả lời ở nhánh nhẹ — cả câu dự
+     * phòng tại máy lẫn prompt `narrateSymptomPrompt` ở server (câu 1: "Ghi nhận
+     * đã lưu lại và đã báo cho người nhà") — đều nói thẳng với bác rằng người
+     * nhà đã được báo. Không có dòng nào ghi vào Firestore, nên con cái không
+     * thấy gì hết.
+     *
+     * Đó lại đúng lỗi C2 của doc 33: bác yên tâm vì tưởng có người biết, trong
+     * khi không ai biết. Nhánh nhẹ không phải nhánh "không có gì" — nó là nhánh
+     * "chưa khớp dấu hiệu nguy hiểm nào trong bảng hiện tại", mà bảng thì chưa
+     * được bác sĩ rà. Con cái càng nên thấy.
+     *
+     * Ghi bằng loại riêng `SYMPTOM_LOG` để không lẫn với báo động đỏ — nhánh
+     * nhẹ mà tô đỏ thì vài lần là người nhà tắt thông báo, và lần thật sự cần
+     * thì không ai nhìn.
+     */
+    if (onAlert) {
+      const byOutcome = {
+        [OUTCOME.EMERGENCY_115]: { type: 'EMERGENCY', title: 'Dấu hiệu cần cấp cứu' },
+        [OUTCOME.SEE_DOCTOR_24H]: { type: 'SAFETY_CRITICAL', title: 'Nên đi khám trong hôm nay' },
+        [OUTCOME.LOG_AND_NOTIFY]: { type: 'SYMPTOM_LOG', title: 'Có kể một triệu chứng' }
+      };
+      const meta = byOutcome[result.outcome] || byOutcome[OUTCOME.LOG_AND_NOTIFY];
+
       onAlert({
-        type: result.outcome === OUTCOME.EMERGENCY_115 ? 'EMERGENCY' : 'SAFETY_CRITICAL',
-        title: result.outcome === OUTCOME.EMERGENCY_115 ? 'Dấu hiệu cần cấp cứu' : 'Nên đi khám trong hôm nay',
+        type: meta.type,
+        title: meta.title,
         detail: `${describeAnswers(finalAnswers)} — ${result.reason}`,
         ruleId: result.rule_id
       });
@@ -102,8 +126,14 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
 
     // Nhảy tới bước CHƯA có câu trả lời, không đi tuần tự — nếu không thì
     // việc điền sẵn chẳng tiết kiệm được màn hình nào.
+    //
+    // ⚠️ Trừ khi bác đã bấm "con hiểu sai thì bấm vào đây để sửa". Lúc đó phải
+    // đi HẾT các bước. Bản trước vẫn nhảy cóc kể cả sau khi bấm sửa, nên bác
+    // chỉ sửa được đúng bước đầu rồi bị đẩy thẳng tới "kèm theo" — hai bước
+    // Gemini điền sai ở giữa thì không có đường nào chạm tới. Nút đó hứa một
+    // việc mà màn hình không cho làm.
     const nextIdx = INTAKE_STEPS.findIndex(
-      (st, i) => i > stepIndex && (NEVER_SKIP.includes(st.key) || next[st.key] == null)
+      (st, i) => i > stepIndex && (showAuto || NEVER_SKIP.includes(st.key) || next[st.key] == null)
     );
     if (nextIdx >= 0) setStepIndex(nextIdx);
     else finish(next);

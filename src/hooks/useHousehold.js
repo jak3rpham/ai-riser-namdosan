@@ -58,6 +58,9 @@ export function useHousehold() {
   const [busy, setBusy] = useState(false);
 
   const [subjects, setSubjects] = useState([]);
+  // Đã nhận được lần đầu chưa. Khác `subjects.length === 0` ở chỗ: nhà rỗng
+  // thật cũng cho mảng rỗng, mà lúc CHƯA tải xong thì chưa được kết luận gì.
+  const [subjectsLoaded, setSubjectsLoaded] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [identityId, setIdentityId] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
@@ -110,10 +113,12 @@ export function useHousehold() {
   useEffect(() => {
     if (!householdId || status !== 'ready') return;
 
+    setSubjectsLoaded(false);
     return subscribeSubjects(
       householdId,
       list => {
         setSubjects(list);
+        setSubjectsLoaded(true);
         // ⚠️ KHÔNG rơi về list[0]. Chính dòng đó làm điện thoại vừa nhập mã
         // mời xong là biến thành người đầu tiên trong danh sách. Giữ lựa chọn
         // hiện tại nếu còn hợp lệ, không thì để hồ sơ của chính mình quyết.
@@ -183,13 +188,30 @@ export function useHousehold() {
     setBusy(false);
 
     if (res.ok) {
+      // ⚠️ Phải dọn sạch dữ liệu nhà CŨ trước khi treo biển nhà mới.
+      //
+      // Nút "Nhập mã mời" có mặt cả khi đang ở trong một nhà rồi. Không dọn thì
+      // `identityId` của nhà cũ còn nguyên, mà id đó không có trong danh sách hồ
+      // sơ của nhà mới → `identity` ra null trong khi `identityId` vẫn có giá
+      // trị → app Ba Mẹ tưởng đã biết "tôi là ai" nên không hỏi, rồi render một
+      // `selectedMember` bằng null và văng ngay ở dòng `selectedMember.display_name`.
+      setSubjects([]);
+      setSubjectsLoaded(false);
+      setAccounts([]);
+      setIdentityId(null);
+      setSelectedId(null);
+      setPrescriptions([]);
+      setAppointments([]);
+      setFeed([]);
+      setReadings([]);
+
       setHouseholdId(res.household_id);
       setStatus('ready');
     }
     return res;
   }, []);
 
-  /** Hồ sơ tài khoản này đã nhận là mình. null = chưa chọn. */
+  /** Hồ sơ tài khoản này đã nhận là mình. null = chưa chọn, hoặc hồ sơ đã bị xoá. */
   const identity = subjects.find(s => s.id === identityId) || null;
 
   /**
@@ -205,8 +227,16 @@ export function useHousehold() {
    * Đã vào nhà nhưng chưa nhận hồ sơ nào là mình.
    * App Ba Mẹ phải hỏi trước khi cho vào; app Con thì không bắt buộc vì con
    * cái quản lý cả nhà, bản thân họ có thể không có hồ sơ sức khoẻ nào.
+   *
+   * ⚠️ Xét theo `identity` (hồ sơ đã tra ra được), KHÔNG theo `identityId` thô.
+   * Hai thứ đó lệch nhau ở một ca có thật: hồ sơ được nhận là mình bị xoá từ
+   * máy khác. Lúc đó `identityId` vẫn còn, `identity` thành null, và nếu tin
+   * `identityId` thì app đi thẳng vào màn hình chính với `selectedMember` bằng
+   * null rồi văng. Hỏi lại "bác là ai" là cách xử đúng.
+   *
+   * Chỉ kết luận sau khi danh sách hồ sơ đã về — trước đó chưa biết gì để tra.
    */
-  const needsIdentity = status === 'ready' && !identityId;
+  const needsIdentity = status === 'ready' && subjectsLoaded && !identity;
 
   return {
     householdId,
@@ -215,6 +245,10 @@ export function useHousehold() {
     busy,
 
     members: subjects,
+    // Danh sách hồ sơ đã về chưa. Tầng trên cần biết để khỏi kết luận "nhà này
+    // chưa có ai" trong lúc còn đang tải — câu đó dẫn thẳng tới màn hình mời
+    // khai hồ sơ mới, cho một nhà đã có đủ người.
+    membersLoaded: subjectsLoaded,
     accounts,
     identity,
     needsIdentity,
@@ -250,12 +284,14 @@ export function useHousehold() {
       forgetHousehold();
       setHouseholdId(null);
       setSubjects([]);
+      setSubjectsLoaded(false);
       setAccounts([]);
       setIdentityId(null);
       setSelectedId(null);
       setPrescriptions([]);
       setAppointments([]);
       setFeed([]);
+      setReadings([]);
       setError(null);
       setStatus('onboarding');
     },

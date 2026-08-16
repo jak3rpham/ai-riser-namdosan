@@ -87,6 +87,25 @@ function ManagerWeb({ language, setLanguage }) {
   const [isManageOpen, setManage] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
 
+  /**
+   * Chốt luôn người đang xem, thay vì chỉ mượn `members[0]` lúc render.
+   *
+   * ⚠️ Đây là lỗi im lặng chứ không phải dọn dẹp. Hook nghe số đo và ghi số đo
+   * đều bám vào hồ sơ ĐANG CHỌN. Chưa bấm chọn ai thì id đó là null, trong khi
+   * màn hình vẫn hiện đầy đủ người đầu danh sách. Hậu quả: mở app Con lên là
+   * thấy "Chưa có số đo nào" cho một người đã đo cả tuần, và bấm Lưu một chỉ số
+   * mới thì ra lỗi "Chưa chọn được người để ghi số đo" — trong khi tên người đó
+   * đang nằm ngay trên đầu thẻ.
+   *
+   * Chỉ làm ở app Con. App Ba Mẹ vẫn phải hỏi "bác là ai", vì ở đó đoán sai
+   * nghĩa là ghi liều thuốc vào hồ sơ người khác.
+   */
+  useEffect(() => {
+    if (state.status !== 'ready') return;
+    if (state.selectedMember || !state.members.length) return;
+    state.setSelectedMember(state.members[0]);
+  }, [state.status, state.selectedMember, state.members]);
+
   // Chưa thuộc nhà nào → hỏi muốn làm gì, thay vì tự dựng nhà rồi nhồi hồ sơ mẫu
   if (state.status === 'onboarding') {
     return (
@@ -99,10 +118,12 @@ function ManagerWeb({ language, setLanguage }) {
     );
   }
 
-  if (state.status !== 'ready') {
+  // Chưa xong kết nối, hoặc danh sách hồ sơ chưa về. Chưa về mà kết luận "nhà
+  // này chưa có ai" là mời người dùng khai lại hồ sơ đã có sẵn.
+  if (state.status !== 'ready' || !state.membersLoaded) {
     return (
       <div className="app-container" style={{ paddingTop: 40 }}>
-        <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} />
+        <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} />
       </div>
     );
   }
@@ -126,9 +147,6 @@ function ManagerWeb({ language, setLanguage }) {
     );
   }
 
-  // App Con duyệt cả nhà, nên chưa chọn ai thì xem người đầu danh sách. Đây là
-  // lựa chọn HIỂN THỊ, không phải danh tính — khác hẳn app Ba Mẹ, nơi đoán sai
-  // nghĩa là ghi liều thuốc vào hồ sơ người khác.
   const viewMember = state.selectedMember || state.members[0];
 
   return (
@@ -251,12 +269,12 @@ function ParentApp({ language }) {
     );
   }
 
-  // Đang kết nối / lỗi kết nối — chưa biết trong nhà có ai
-  if (state.status !== 'ready') {
+  // Đang kết nối / lỗi kết nối / danh sách hồ sơ chưa về — chưa biết trong nhà có ai
+  if (state.status !== 'ready' || !state.membersLoaded) {
     return (
       <div style={{ padding: 20, minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 460 }}>
-          <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="parent" />
+          <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} variant="parent" />
         </div>
       </div>
     );
@@ -326,6 +344,7 @@ function ParentApp({ language }) {
       <ParentHomeView
         selectedMember={state.selectedMember}
         prescriptions={state.prescriptions}
+        feed={state.feed}
         language={language}
         demo={false}
         onConfirmDose={state.confirmDose}
@@ -441,20 +460,36 @@ function Shell() {
   );
 }
 
+/**
+ * Vai đã chọn lần trước → vào thẳng, không hỏi lại.
+ *
+ * ⚠️ Phải chạy TRƯỚC khi BrowserRouter đọc địa chỉ, nên nó là hàm thường chứ
+ * không phải useEffect. Bản trước gọi `history.replaceState` trong useEffect:
+ * effect chạy SAU khi router đã mount và đã render trang chào, mà
+ * `replaceState` không bắn sự kiện `popstate` nên router không hề biết địa chỉ
+ * vừa đổi. Kết quả là thanh địa chỉ ghi `/app` còn màn hình vẫn là trang chào
+ * — và bấm nút quay lại của trình duyệt thì lạc hẳn.
+ */
+function restoredPath() {
+  if (window.location.pathname !== '/') return null;
+  if (new URLSearchParams(window.location.search).get('demo') === '1') return null;
+  try {
+    const role = localStorage.getItem(ROLE_KEY);
+    if (role === 'manager') return '/app';
+    if (role === 'parent') return '/parent';
+  } catch { /* chế độ riêng tư */ }
+  return null;
+}
+
 export default function App() {
-  // Người đã chọn vai lần trước thì vào thẳng, không hỏi lại
-  useEffect(() => {
-    if (window.location.pathname !== '/') return;
-    if (new URLSearchParams(window.location.search).get('demo') === '1') return;
-    try {
-      const role = localStorage.getItem(ROLE_KEY);
-      if (role === 'manager') window.history.replaceState({}, '', '/app');
-      else if (role === 'parent') window.history.replaceState({}, '', '/parent');
-    } catch { /* bỏ qua */ }
-  }, []);
+  // Dùng đúng MỘT lần, ở lần tải trang đầu. Không dọn đi thì mỗi lần người dùng
+  // bấm "Về trang chính" là bị đá ngược lại, không bao giờ ra được trang chào.
+  const [pending, setPending] = useState(restoredPath);
+  useEffect(() => { if (pending) setPending(null); }, [pending]);
 
   return (
     <BrowserRouter>
+      {pending && <Navigate to={pending} replace />}
       <Shell />
     </BrowserRouter>
   );

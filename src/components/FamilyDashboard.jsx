@@ -47,11 +47,36 @@ export default function FamilyDashboard({
     ? Math.min(100, Math.round((dosesTakenCount / expectedDoses) * 100))
     : null;
 
-  // Tính số ngày hết thuốc nhỏ nhất từ danh sách thuốc
-  const minDaysRemaining = activeMeds.reduce((min, med) => {
-    const days = parseInt(med.duration_days || med.est_remaining || 7, 10);
-    return (Number.isFinite(days) && days > 0) ? Math.min(min, days) : min;
+  /**
+   * Còn mấy ngày nữa hết thuốc.
+   *
+   * ⚠️ Bản trước lấy thẳng `duration_days` — SỐ NGÀY BÁC SĨ KÊ, không phải số
+   * ngày còn lại. Đơn kê 30 ngày quét vào từ tháng trước vẫn hiện "Hết sau 30
+   * ngày" kèm dấu ✓ "Lượng thuốc còn đầy đủ", đúng lúc trong nhà đã hết thuốc.
+   * Con cái nhìn con số đó để quyết định có đi mua thuốc hay không.
+   *
+   * Và `|| 7` ở cuối là một con số từ trên trời rơi xuống cho thuốc không ghi
+   * số ngày. Giờ thuốc nào không biết thì không tính, thay vì đoán.
+   */
+  // `created_at` về từ hai nguồn: chuỗi "2026-08-16" do màn quét đơn ghi, và
+  // Timestamp của Firestore do nhà mẫu ghi bằng serverTimestamp().
+  const daysSince = value => {
+    const ms = value?.toDate ? value.toDate().getTime() : Date.parse(value);
+    if (!Number.isFinite(ms)) return 0;
+    return Math.max(0, Math.floor((Date.now() - ms) / 86400000));
+  };
+
+  const minDaysRemaining = memberPrescriptions.reduce((min, p) => {
+    const elapsed = daysSince(p.created_at);
+    return (p.medications || []).reduce((acc, med) => {
+      const total = parseInt(med.duration_days ?? med.est_remaining, 10);
+      if (!Number.isFinite(total)) return acc;
+      return Math.min(acc, Math.max(0, total - elapsed));
+    }, min);
   }, Infinity);
+
+  // Không thuốc nào ghi đủ để tính → nói là chưa tính được, không bịa một con số
+  const hasRemainingEstimate = Number.isFinite(minDaysRemaining);
 
   // Kiểm tra an toàn: dị ứng + trùng hoạt chất + tương tác thuốc–thuốc + kiêng ăn.
   const safety = runAllSafetyChecks({
@@ -140,14 +165,30 @@ export default function FamilyDashboard({
 
         <div className="liquid-card" style={{ padding: 22 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>{t.medicine_cabinet}</span>
-          <div style={{ fontSize: 28, fontWeight: 800, color: activeMeds.length === 0 ? 'var(--text-muted)' : (minDaysRemaining <= 5 ? 'var(--amber-warm)' : 'var(--emerald-ok)'), margin: '6px 0 2px' }}>
-            {activeMeds.length === 0 ? 'Chưa có thuốc' : `Hết sau ${minDaysRemaining} ngày`}
-          </div>
-          <span style={{ fontSize: 13.5, color: activeMeds.length === 0 ? 'var(--text-sub)' : (minDaysRemaining <= 5 ? 'var(--amber-warm)' : 'var(--emerald-ok)'), fontWeight: 700 }}>
-            {activeMeds.length === 0
-              ? 'Thêm đơn thuốc để app tính giúp ngày hết'
-              : (minDaysRemaining <= 5 ? '⚠️ Tự tạo Task nhắc mua thêm' : '✓ Lượng thuốc còn đầy đủ')}
-          </span>
+          {(() => {
+            const low = hasRemainingEstimate && minDaysRemaining <= 5;
+            const tone = !activeMeds.length || !hasRemainingEstimate
+              ? 'var(--text-muted)'
+              : low ? 'var(--amber-warm)' : 'var(--emerald-ok)';
+
+            const headline = !activeMeds.length ? 'Chưa có thuốc'
+              : !hasRemainingEstimate ? 'Chưa tính được'
+              : minDaysRemaining === 0 ? 'Hết thuốc rồi'
+              : `Còn ${minDaysRemaining} ngày`;
+
+            const sub = !activeMeds.length ? 'Thêm đơn thuốc để app tính giúp ngày hết'
+              : !hasRemainingEstimate ? 'Đơn chưa ghi số ngày uống — bổ sung giúp nhé'
+              : minDaysRemaining === 0 ? '⚠️ Theo đơn thì đã hết — nhà mình mua thêm nhé'
+              : low ? '⚠️ Sắp hết, nhà mình mua thêm nhé'
+              : '✓ Lượng thuốc còn đủ dùng';
+
+            return (
+              <>
+                <div style={{ fontSize: 28, fontWeight: 800, color: tone, margin: '6px 0 2px' }}>{headline}</div>
+                <span style={{ fontSize: 13.5, color: tone === 'var(--text-muted)' ? 'var(--text-sub)' : tone, fontWeight: 700 }}>{sub}</span>
+              </>
+            );
+          })()}
         </div>
       </div>
 

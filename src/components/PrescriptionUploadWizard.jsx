@@ -145,7 +145,11 @@ export default function PrescriptionUploadWizard({
       source: m._manual ? 'MANUAL' : 'AI_EXTRACTED_HUMAN_CONFIRMED'
     }));
 
-    const explanation = await generatePlainExplanation(medications, selectedMember.display_name);
+    const explanation = await generatePlainExplanation(
+      medications,
+      selectedMember.display_name,
+      selectedMember   // để xưng hô theo đúng người, không mặc định "bác"
+    );
 
     const newPrescription = {
       id: `doc_${Date.now()}`,
@@ -157,13 +161,37 @@ export default function PrescriptionUploadWizard({
       medications
     };
 
+    /**
+     * ⚠️ Lưu TRƯỚC, và phải đọc kết quả lưu.
+     *
+     * Bản trước gọi `onAddPrescription(...)` rồi vứt giá trị trả về, và luôn
+     * nhảy sang màn "Đã lưu đơn thuốc". Mà hàm đó trả `{ ok: false }` thật khi
+     * Firestore từ chối — mất mạng, hết quyền, rules chặn. Nghĩa là: người nhà
+     * ngồi nhập tay xong cả đơn thuốc, app báo đã lưu, đóng máy — và trong hồ
+     * sơ không có gì cả. Ba mẹ không được nhắc uống thuốc, mà không ai biết.
+     *
+     * Đây đúng loại lỗi doc 33 mục C2: app nói nó đã làm một việc nó không làm.
+     *
+     * Thứ tự cũng đổi: đồng bộ Google chỉ chạy SAU khi đơn đã nằm trong hồ sơ.
+     * Không thì lịch nhắc mọc lên trên Calendar cho một đơn thuốc không tồn tại.
+     */
+    const saved = await onAddPrescription(newPrescription);
+
+    if (saved && saved.ok === false) {
+      setLoading(false);
+      setValidationError(
+        `Chưa lưu được đơn thuốc: ${saved.error_message || 'lỗi kết nối'}. `
+        + 'Bạn kiểm tra mạng rồi bấm "Xác nhận" lại nhé — nội dung vừa nhập vẫn còn nguyên ở đây.'
+      );
+      return;
+    }
+
     // Đồng bộ Google là việc PHỤ — thất bại không được làm mất đơn thuốc.
     // Kết quả thật được giữ lại để màn cuối nói đúng chuyện đã xảy ra, thay vì
     // luôn khẳng định "đã đồng bộ" như bản trước.
     const sync = await syncPrescriptionToWorkspace(newPrescription, selectedMember.display_name);
     setSyncResult(describeSyncResult(sync));
 
-    onAddPrescription(newPrescription);
     setLoading(false);
     setStep('success');
   };

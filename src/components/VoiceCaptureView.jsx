@@ -24,9 +24,13 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
   const [transcript, setTranscript] = useState('');
   const [message, setMessage] = useState(null);
   const recRef = useRef(null);
+  // Người dùng tự bấm dừng, hay máy tự hết tiếng? Hai việc đó ra hai câu khác
+  // nhau, mà cả hai đều đi qua `onend`.
+  const stoppedByUser = useRef(false);
   const say = s => speak(s, memberProfile);
 
-  const stop = () => {
+  const stop = ({ byUser = false } = {}) => {
+    stoppedByUser.current = byUser;
     try { recRef.current?.stop(); } catch { /* đã dừng rồi */ }
     recRef.current = null;
   };
@@ -46,7 +50,10 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
     rec.interimResults = true;
     rec.continuous = false;
 
-    rec.onstart = () => { setPhase('listening'); setTranscript(''); setMessage(null); };
+    rec.onstart = () => {
+      stoppedByUser.current = false;
+      setPhase('listening'); setTranscript(''); setMessage(null);
+    };
 
     rec.onresult = e => {
       let text = '';
@@ -71,8 +78,13 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
     rec.onend = () => {
       // Hết tiếng mà chưa ra chữ nào → nói thẳng là chưa nghe được, đừng để
       // màn hình đứng im ở trạng thái "đang nghe" mãi.
+      //
+      // ⚠️ Trừ khi chính người dùng vừa bấm vào vòng tròn để dừng. Bản trước
+      // không phân biệt, nên bác chủ động bấm dừng là lãnh ngay một dòng chữ đỏ
+      // "con chưa nghe thấy gì" — máy đổ lỗi cho bác về một việc bác cố ý làm.
       setPhase(p => {
         if (p !== 'listening') return p;
+        if (stoppedByUser.current) return 'idle';
         setMessage(say('{{Me}} chưa nghe thấy gì{{a}}. {{You}} bấm rồi nói lại giúp {{me}} {{nha}}.'));
         return 'error';
       });
@@ -84,7 +96,7 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
 
   useEffect(() => {
     if (isOpen) start();
-    return stop;
+    return () => stop({ byUser: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
@@ -105,7 +117,7 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
       padding: 28, textAlign: 'center'
     }}>
       <button
-        onClick={() => { stop(); onClose(); }}
+        onClick={() => { stop({ byUser: true }); onClose(); }}
         aria-label="Đóng"
         style={{ position: 'absolute', top: 'max(18px, env(safe-area-inset-top))', right: 18, width: 46, height: 46, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.14)', color: '#FFF', display: 'grid', placeItems: 'center', cursor: 'pointer' }}
       >
@@ -114,7 +126,7 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
 
       {/* Vòng tròn to — dấu hiệu duy nhất cần nhìn thấy từ xa */}
       <button
-        onClick={() => (listening ? stop() : start())}
+        onClick={() => (listening ? stop({ byUser: true }) : start())}
         disabled={thinking}
         aria-label={listening ? 'Dừng nghe' : 'Bắt đầu nói'}
         style={{
@@ -149,7 +161,7 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
       </div>
 
       <button
-        onClick={() => { stop(); onTypeInstead(); }}
+        onClick={() => { stop({ byUser: true }); onTypeInstead(); }}
         style={{
           marginTop: 26, padding: '15px 26px', borderRadius: 16,
           background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)',

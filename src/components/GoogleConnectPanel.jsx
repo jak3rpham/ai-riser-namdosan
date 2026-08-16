@@ -3,7 +3,7 @@ import { Link2, CheckCircle2, AlertTriangle, LogOut, RefreshCw, Loader2, Calenda
 import { connectGoogle, disconnectGoogle, isGoogleConnected, subscribeAuthState } from '../services/googleAuth';
 import { testCalendarConnection } from '../services/googleCalendar';
 import { testTasksConnection } from '../services/googleTasks';
-import { isAiConfigured } from '../services/geminiService';
+import { apiHealth } from '../services/apiClient';
 
 /**
  * Bảng kết nối tài khoản Google.
@@ -67,6 +67,55 @@ export default function GoogleConnectPanel({ onConnected }) {
   const [testing, setTesting] = useState(null);
   const [calendarState, setCalendarState] = useState({ state: 'off', detail: null });
   const [tasksState, setTasksState] = useState({ state: 'off', detail: null });
+
+  /**
+   * Trạng thái tầng AI, hỏi thẳng máy chủ.
+   *
+   * ⚠️ Trước đây dòng này hỏi `isAiConfigured()` — một hàm `return true` vô
+   * điều kiện — rồi in "Đã có khoá. Đọc đơn thuốc và trợ lý Cháu Bi hoạt động."
+   * Ngày 16/08 khoá bị Google trả 401 hàng giờ, mọi /ai/* trả 502, mà dòng này
+   * vẫn xanh và vẫn khẳng định y nguyên. Đúng thứ mà chính file này, ở đầu
+   * trang, đặt ra để chống: nhãn xanh phải có bằng chứng.
+   */
+  const [aiState, setAiState] = useState({ state: 'off', detail: 'Đang hỏi máy chủ...' });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await apiHealth();
+      if (cancelled) return;
+
+      if (!res.ok) {
+        setAiState({ state: 'error', detail: 'Không hỏi được máy chủ. Kiểm tra mạng hoặc backend.' });
+        return;
+      }
+
+      // Backend cũ chưa có trường này. Nói thẳng là chưa biết, đừng suy ra
+      // "chưa cấu hình khoá" — thứ tự deploy là backend trước, nhưng khoảng
+      // giữa hai lần deploy vẫn có thật.
+      if (!res.ai) {
+        setAiState({ state: 'off', detail: 'Máy chủ chưa báo tình trạng AI — bản backend cũ hơn bản web.' });
+        return;
+      }
+
+      const ai = res.ai;
+      if (!ai.key_configured) {
+        setAiState({ state: 'warn', detail: 'Máy chủ chưa được cấu hình khoá Gemini.' });
+      } else if (ai.last_call_ok === false) {
+        setAiState({
+          state: 'error',
+          detail: `Khoá có nhưng lần gọi gần nhất thất bại (${ai.last_error_code}). Đọc đơn thuốc và trợ lý đang không dùng được.`
+        });
+      } else if (ai.last_call_ok === true) {
+        setAiState({ state: 'ok', detail: `Đã gọi được. Model ${res.model}.` });
+      } else {
+        // Máy chủ vừa khởi động lại, chưa gọi lần nào — chưa có bằng chứng nào
+        // để nói xanh, mà cũng chưa có gì để nói hỏng.
+        setAiState({ state: 'off', detail: `Có khoá, chưa gọi lần nào từ lúc máy chủ khởi động. Model ${res.model}.` });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => subscribeAuthState(u => {
     if (u && !u.isAnonymous) {
@@ -195,10 +244,8 @@ export default function GoogleConnectPanel({ onConnected }) {
         <ServiceRow
           icon={Sparkles}
           name="Gemini API"
-          state={isAiConfigured() ? 'ok' : 'warn'}
-          detail={isAiConfigured()
-            ? 'Đã có khoá. Đọc đơn thuốc và trợ lý Cháu Bi hoạt động.'
-            : 'Chưa có VITE_GEMINI_API_KEY — scan đơn sẽ chuyển sang nhập tay'}
+          state={aiState.state}
+          detail={aiState.detail}
         />
       </div>
 

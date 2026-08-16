@@ -20,6 +20,32 @@ import { synthesizeSpeech } from '../lib/tts.js';
 
 const genAI = new GoogleGenerativeAI(config.geminiApiKey);
 
+/**
+ * Lần gọi Gemini gần nhất ra sao.
+ *
+ * ⚠️ Có để `/api/health` nói được SỰ THẬT thay vì nói suông.
+ *
+ * Trước: frontend hỏi `isAiConfigured()`, hàm đó `return true` vô điều kiện,
+ * và panel Kết nối in ra "Đã có khoá. Đọc đơn thuốc và trợ lý Cháu Bi hoạt
+ * động." Ngày 16/08 khoá bị Google trả 401 suốt nhiều giờ, mọi /ai/* trả 502,
+ * mà panel vẫn xanh và vẫn khẳng định y nguyên câu đó. Người tự dựng lại app
+ * theo hướng dẫn sẽ đi tìm lỗi ở mọi chỗ trừ chỗ thật.
+ *
+ * Ghi lại kết quả quan sát được thay vì gọi thêm một lượt để kiểm tra: gọi
+ * thêm là tốn tiền thật, mà kết quả cũng chỉ nói được đúng bằng lần gọi vừa rồi.
+ * Chưa gọi lần nào thì trả `unknown` — không đoán là tốt cũng không đoán là hỏng.
+ */
+let lastGemini = { ok: null, error_code: null, at: null };
+
+export function getAiStatus() {
+  return {
+    key_configured: !!config.geminiApiKey,
+    last_call_ok: lastGemini.ok,
+    last_error_code: lastGemini.error_code,
+    last_call_at: lastGemini.at
+  };
+}
+
 const medSchema = z.object({
   name: z.string().optional().nullable(),
   generic: z.string().optional().nullable(),
@@ -57,15 +83,30 @@ async function callGemini({ prompt, imageBase64, jsonMode, temperature, maxToken
 
   try {
     const result = await model.generateContent(parts);
+    lastGemini = { ok: true, error_code: null, at: new Date().toISOString() };
     return { ok: true, text: result.response.text() };
   } catch (err) {
     log?.error({ err: err.message }, 'gọi Gemini lỗi');
     const msg = String(err.message || '');
+    /**
+     * Mỗi thông điệp ở đây chỉ nói NGUYÊN NHÂN, không nói phải làm gì.
+     *
+     * Việc cần làm khác nhau theo từng route — quét đơn thì nhập tay, đọc máy
+     * đo thì nhập con số, hỏi trợ lý thì chờ chút — nên route tự thêm câu đó.
+     * Nhét sẵn "bạn nhập tay nhé" vào đây thì màn quét đơn hiện ra hai lần:
+     * "Không gọi được AI lúc này. Bạn thử lại hoặc nhập tay nhé. Bạn nhập tay
+     * giúp nhé — đừng đoán liều."
+     */
+    const failed = out => {
+      lastGemini = { ok: false, error_code: out.code, at: new Date().toISOString() };
+      return out;
+    };
+
     if (msg.includes('429') || msg.toLowerCase().includes('quota')) {
-      return { ok: false, code: 'GEMINI_QUOTA', message: 'Hết lượt gọi AI hôm nay. Bạn nhập tay giúp nhé.' };
+      return failed({ ok: false, code: 'GEMINI_QUOTA', message: 'Hết lượt gọi AI hôm nay.' });
     }
     if (msg.includes('404')) {
-      return { ok: false, code: 'MODEL_NOT_FOUND', message: 'Model AI không còn khả dụng. Cần cập nhật cấu hình máy chủ.' };
+      return failed({ ok: false, code: 'MODEL_NOT_FOUND', message: 'Model AI không còn khả dụng. Cần cập nhật cấu hình máy chủ.' });
     }
     /**
      * Khoá sai / hết hạn / bị thu hồi.
@@ -80,13 +121,13 @@ async function callGemini({ prompt, imageBase64, jsonMode, temperature, maxToken
      * ngoài không phân biệt được với mạng chập.
      */
     if (msg.includes('401') || msg.includes('403') || msg.includes('API_KEY_INVALID')) {
-      return {
+      return failed({
         ok: false,
         code: 'GEMINI_KEY_REJECTED',
         message: 'Máy chủ chưa có khoá AI hợp lệ. Đây là lỗi cấu hình, không phải do máy bạn.'
-      };
+      });
     }
-    return { ok: false, code: 'GEMINI_ERROR', message: 'Không gọi được AI lúc này. Bạn thử lại hoặc nhập tay nhé.' };
+    return failed({ ok: false, code: 'GEMINI_ERROR', message: 'Không gọi được AI lúc này.' });
   }
 }
 

@@ -1,7 +1,7 @@
 import Fastify from 'fastify';
 import { config, assertConfig } from './lib/config.js';
 import './plugins/auth.js'; // khởi tạo Firebase Admin sớm
-import aiRoutes from './routes/ai.js';
+import aiRoutes, { getAiStatus } from './routes/ai.js';
 import placesRoutes from './routes/places.js';
 import householdRoutes from './routes/household.js';
 import demoRoutes from './routes/demo.js';
@@ -35,10 +35,16 @@ app.addHook('onRequest', async (request, reply) => {
   }
 });
 
+/**
+ * `ai` báo tình trạng THẬT của tầng Gemini, lấy từ lần gọi gần nhất.
+ * Không có khối này thì health chỉ nói "tiến trình còn sống" — mà tiến trình
+ * vẫn sống nguyên trong suốt nhiều giờ khoá bị từ chối 401 ngày 16/08.
+ */
 app.get('/api/health', async () => ({
   ok: true,
   service: 'airiser-api',
   model: config.geminiModel,
+  ai: getAiStatus(),
   time: new Date().toISOString()
 }));
 

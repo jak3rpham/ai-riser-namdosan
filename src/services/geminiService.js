@@ -31,8 +31,17 @@ import { registerBrief, speak } from './honorifics';
  * Đây là các quyết định an toàn tất định, không phụ thuộc AI (doc 39 mục 3).
  */
 
-/** Có backend là có AI — không còn phụ thuộc khoá phía client */
-export const isAiConfigured = () => true;
+/**
+ * ⚠️ Đã BỎ `isAiConfigured()`.
+ *
+ * Nó `return true` vô điều kiện, với lý do "có backend là có AI". Lý do đó sai
+ * ở đúng chỗ quan trọng: có backend không có nghĩa là backend gọi được Gemini.
+ * Ngày 16/08 khoá bị Google trả 401 hàng giờ, và panel Kết nối — chỗ duy nhất
+ * trong app nói về tình trạng AI — vẫn xanh, vẫn ghi "trợ lý Cháu Bi hoạt động".
+ *
+ * Thay bằng `/api/health` → trường `ai`, lấy từ kết quả lần gọi Gemini gần nhất
+ * mà máy chủ quan sát được. Xem `getAiStatus()` trong server/src/routes/ai.js.
+ */
 
 /* ════════════════════════════════════════════════════════════════
  * 1. Trích xuất đơn thuốc từ ảnh

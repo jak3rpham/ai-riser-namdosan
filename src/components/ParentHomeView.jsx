@@ -5,6 +5,7 @@ import VoiceAssistantModal from './VoiceAssistantModal';
 import PharmacyModeModal from './PharmacyModeModal';
 import { I18N_STRINGS } from '../services/mockData';
 import { askVoiceAssistant } from '../services/geminiService';
+import { speak } from '../services/honorifics';
 
 export default function ParentHomeView({ selectedMember, prescriptions = [], onConfirmDose, onAlert, language = 'vi', demo = false }) {
   const [activeTab, setActiveTab] = useState('today'); // 'today' | 'cabinet' | 'ask' | 'me'
@@ -21,6 +22,8 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
   const [voiceSeed, setVoiceSeed] = useState(null);
 
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
+  // Xưng hô theo người đang dùng máy — xem src/services/honorifics.js
+  const say = (s) => speak(s, selectedMember);
 
   const activeMeds = prescriptions
     .filter(p => !selectedMember?.id || p.member_id === selectedMember.id)
@@ -34,7 +37,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
 
     const res = await onConfirmDose(currentMed, selectedMember.display_name);
     if (res && res.ok === false) {
-      setSaveError(res.error_message || 'Chưa lưu được lên đám mây. Bác thử lại giúp con nha.');
+      setSaveError(res.error_message || say('Chưa lưu được lên đám mây. {{You}} thử lại giúp {{me}} {{nha}}.'));
       return;
     }
 
@@ -50,8 +53,8 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
     }
     const res = await onAlert({ type: 'STATUS_OK', title: 'Hôm nay con thấy trong người ổn' });
     setStatusMessage(res?.ok
-      ? '❤️ Đã gửi lời nhắn cho con cái rồi ạ'
-      : '⚠️ Chưa gửi được, bác thử lại giúp con nha');
+      ? say('❤️ Đã gửi lời nhắn cho người nhà rồi{{a}}')
+      : say('⚠️ Chưa gửi được, {{you}} thử lại giúp {{me}} {{nha}}'));
     setTimeout(() => setStatusMessage(null), 4000);
   };
 
@@ -161,7 +164,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
                       Hôm nay chưa có thuốc nào trong hồ sơ của {selectedMember.display_name}
                     </h3>
                     <p style={{ fontSize: 13.5, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
-                      Nhờ con cái chụp đơn thuốc hoặc vỏ thuốc lên giúp bác nha.
+                      {say('Nhờ người nhà chụp đơn thuốc hoặc vỏ thuốc lên giúp {{you}} {{nha}}.')}
                     </p>
                   </div>
                 ) : (
@@ -242,7 +245,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
 
               <div style={{ flex: 1, padding: 16, borderRadius: 20, background: '#FFF', border: '1px solid var(--glass-border)', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ fontSize: 14, color: 'var(--text-dark)', background: '#F8FAFC', padding: 12, borderRadius: 14, fontWeight: 600 }}>
-                  Dạ con chào bác {selectedMember.display_name}! Bác cần hỏi gì về cách dùng thuốc hay kiêng kỵ gì không ạ?
+                  {say(`{{Da}} {{me}} chào ${selectedMember.display_name}! {{You}} cần hỏi gì về cách dùng thuốc hay kiêng kỵ gì không{{a}}?`)}
                 </div>
 
                 {askResponse && (

@@ -1,4 +1,5 @@
-import { runTriage, classifyUtterance, traumaResponse, OUTCOME } from '../src/services/symptomTriage.js';
+import { runTriage, classifyUtterance, traumaResponse, buildTriageResponse, OUTCOME, KIND_RANK } from '../src/services/symptomTriage.js';
+import { speak, registerFor, REGISTERS } from '../src/services/honorifics.js';
 import { resolveGenerics, isSpecialMissedDose } from '../src/services/medicalKnowledge.js';
 import { checkAllergies, checkDuplicateIngredients, checkDrugInteractions, evaluateVital } from '../src/services/safetyChecks.js';
 
@@ -105,6 +106,93 @@ t('Lời khuyên khi té KHÔNG được gợi ý uống thêm thứ gì',
 
 t('Té hồi xưa → không kích hoạt nhánh chấn thương',
   classifyUtterance('hồi năm ngoái bác bị té chứ giờ hết rồi').kind !== 'TRAUMA', true);
+
+console.log('\n── C3. Khớp theo TỪ, không theo chuỗi con ──');
+// Ba lỗi cùng một gốc: classifyUtterance dùng t.includes(phrase) nên chuỗi con
+// của từ khác cũng khớp. Xem ghi chú trong symptomTriage.js.
+
+// Nặng nhất: "đau đầu gối" chứa chuỗi "đau đầu" → té đau GỐI bị đọc thành té
+// ĐẬP ĐẦU và đẩy thẳng lên 115. Chính là ca demo trong doc 46.
+t('"té, đau đầu gối" → chấn thương KHÔNG nặng (không phải đập đầu)',
+  classifyUtterance('Bác mới bị té, đau đầu gối quá').severe, null);
+
+t('"té, đau đầu gối" → khám 24h, KHÔNG phải 115',
+  traumaResponse({ severe: classifyUtterance('Bác mới bị té, đau đầu gối quá').severe }).outcome,
+  OUTCOME.SEE_DOCTOR_24H);
+
+t('"té đập đầu" → vẫn phải là 115',
+  traumaResponse({ severe: classifyUtterance('Bác té đập đầu xuống nền nhà').severe }).outcome,
+  OUTCOME.EMERGENCY_115);
+
+t('"té, đau đầu quá" (đau đầu thật) → vẫn phải là 115',
+  traumaResponse({ severe: classifyUtterance('Bác vừa té xong, giờ đau đầu quá').severe }).outcome,
+  OUTCOME.EMERGENCY_115);
+
+// "rồi" chứa "oi" (ói), "rất" bỏ dấu thành "rat" (rát)
+t('"Quên uống thuốc trưa rồi cháu ơi" → KHÔNG phải triệu chứng',
+  classifyUtterance('Quên uống thuốc trưa rồi cháu ơi, giờ làm sao?').kind, 'NOT_SYMPTOM');
+
+t('"Thuốc này bác uống rất đều" → KHÔNG phải triệu chứng',
+  classifyUtterance('Thuốc này bác uống rất đều').kind, 'NOT_SYMPTOM');
+
+t('"Con nói với bác là mai đi khám" → KHÔNG phải triệu chứng',
+  classifyUtterance('Con nói với bác là mai đi khám nha').kind, 'NOT_SYMPTOM');
+
+// Đừng vá quá tay: những câu này vẫn phải bắt được
+t('"bác thấy tê tay" → vẫn bắt được',
+  classifyUtterance('bác thấy tê tay').kind !== 'NOT_SYMPTOM', true);
+
+t('"đau ngực dữ dội" → vẫn là cấp cứu',
+  classifyUtterance('bác đau ngực dữ dội').kind, 'EMERGENCY');
+
+t('"nôn ra máu" → vẫn là cấp cứu',
+  classifyUtterance('bác nôn ra máu').kind, 'EMERGENCY');
+
+console.log('\n── C4. Ranh giới trộn Gemini vào luồng triệu chứng ──');
+// classifyUtteranceSmart cần mạng nên không test ở đây được. Cái test được và
+// PHẢI test là bất biến mà nó dựa vào: thứ hạng mức độ.
+
+t('Thứ hạng mức độ đúng thứ tự nặng dần',
+  [KIND_RANK.NOT_SYMPTOM, KIND_RANK.PAST_TENSE_CHECK, KIND_RANK.NEEDS_INTAKE,
+   KIND_RANK.TRAUMA, KIND_RANK.EMERGENCY].every((v, i, a) => i === 0 || v > a[i - 1]),
+  true);
+
+t('EMERGENCY là nấc cao nhất — Gemini không thể hạ xuống dưới bằng cách nào',
+  Math.max(...Object.values(KIND_RANK)), KIND_RANK.EMERGENCY);
+
+console.log('\n── C5. Xưng hô đổi theo người nghe ──');
+
+t('Người 70 tuổi → con–bác', registerFor({ birth_year: 1956 }).id, 'elder');
+t('Người 30 tuổi → mình–bạn', registerFor({ birth_year: 1996 }).id, 'peer');
+t('Không biết tuổi → mặc định lễ phép', registerFor({}).id, 'elder');
+t('Khai báo tay thắng năm sinh', registerFor({ birth_year: 1996, address_style: 'elder' }).id, 'elder');
+
+t('Lời khuyên cấp cứu cho người già giữ nguyên giọng cũ',
+  speak('{{You}} gọi 115 ngay{{a}}, đừng chờ.', { birth_year: 1956 }),
+  'Bác gọi 115 ngay ạ, đừng chờ.');
+
+t('Cùng câu đó cho người trẻ: không "bác", không "ạ"',
+  speak('{{You}} gọi 115 ngay{{a}}, đừng chờ.', { birth_year: 1996 }),
+  'Bạn gọi 115 ngay, đừng chờ.');
+
+t('Bỏ {{Da}} không để lại khoảng trắng hay chữ thường đầu câu',
+  speak('{{Da}} {{me}} ghi lại rồi{{a}}.', { birth_year: 1996 }),
+  'Mình ghi lại rồi.');
+
+t('Không còn thẻ nào sót lại trong câu đã dựng',
+  /\{\{/.test(speak('{{Da}} {{Me}} báo người nhà rồi{{a}}, {{you}} nghỉ {{nha}}.', { birth_year: 1956 })),
+  false);
+
+// Câu cảnh báo là chỗ tuyệt đối không được lỗi định dạng
+for (const reg of ['elder', 'peer']) {
+  const profile = { display_name: 'Ba Mười', address_style: reg };
+  const built = buildTriageResponse(
+    runTriage({ region: 'chest', onset: 'sudden', severity: 'severe', accompanying: ['sweating'] }, cardiacCtx),
+    profile
+  );
+  t(`Câu cấp cứu (${reg}) không sót thẻ`, /\{\{/.test(built.text), false);
+  t(`Câu cấp cứu (${reg}) vẫn bảo gọi 115`, /115/.test(built.text), true);
+}
 
 console.log('\n── D. Ánh xạ biệt dược → hoạt chất ──');
 

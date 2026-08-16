@@ -5,9 +5,11 @@ import {
   classifyUtterance,
   traumaResponse,
   OUTCOME,
-  runTriage
+  runTriage,
+  KIND_RANK
 } from './symptomTriage';
 import { apiPost } from './apiClient';
+import { registerBrief, speak } from './honorifics';
 
 /**
  * Tầng AI phía trình duyệt — giờ chỉ là client gọi backend.
@@ -68,14 +70,15 @@ export async function readDeviceImage(base64Image) {
 /* ════════════════════════════════════════════════════════════════
  * 2. Giải thích đơn thuốc bằng lời bình dân
  * ════════════════════════════════════════════════════════════════ */
-export async function generatePlainExplanation(medications = [], patientName = 'Bác') {
+export async function generatePlainExplanation(medications = [], patientName = 'Bác', memberProfile = {}) {
   const names = medications.map(m => plainNameFor(m)).filter(Boolean);
-  const fallback = names.length
-    ? `${patientName} ơi, đợt này bác uống ${[...new Set(names)].slice(0, 3).join(', ')}. Bác uống đúng giờ theo lịch con đặt sẵn nha.`
-    : `${patientName} ơi, con đã lưu đơn thuốc rồi ạ. Bác uống theo đúng lịch con đặt nha.`;
+  const fallback = speak(names.length
+    ? `${patientName} ơi, đợt này {{you}} uống ${[...new Set(names)].slice(0, 3).join(', ')}. {{You}} uống đúng giờ theo lịch {{me}} đặt sẵn {{nha}}.`
+    : `${patientName} ơi, {{me}} đã lưu đơn thuốc rồi{{a}}. {{You}} uống theo đúng lịch {{me}} đặt {{nha}}.`, memberProfile);
 
   const res = await apiPost('/ai/explain', {
-    medications: medications.map(toWireMed)
+    medications: medications.map(toWireMed),
+    register: registerBrief(memberProfile)
   });
 
   return res.ok ? applyName(res.text, patientName) : fallback;
@@ -136,16 +139,128 @@ function medsOf(memberProfile, prescriptions) {
     .flatMap(p => p.medications || []);
 }
 
+/* ════════════════════════════════════════════════════════════════
+ * 3b. Trộn phân loại tại máy với phân loại Gemini
+ *
+ * ⚠️ ĐÂY LÀ RANH GIỚI. Đọc kỹ trước khi sửa.
+ *
+ * Gemini vào luồng triệu chứng để làm ĐÚNG MỘT VIỆC: hiểu câu nói. Nó đọc
+ * được chính tả sai, tiếng lóng, câu nói vòng, và văn bản voice nhận sai —
+ * những thứ từ điển bỏ dấu tại máy không bao giờ đọc được.
+ *
+ * Nó KHÔNG được ra quyết định. Quyết định 115 / khám 24h vẫn thuộc bảng luật
+ * tĩnh. Lý do ở doc 47 mục 6, và bằng chứng là ca té ngã: model biết đúng
+ * statin gây đau cơ, nhưng gán kiến thức đúng đó vào một ca chấn thương rồi
+ * khuyên chườm ấm. Knowledge base mạnh hơn không sửa được lỗi suy luận — nó
+ * chỉ làm câu sai nghe thuyết phục hơn.
+ *
+ * BA LUẬT CHẶN:
+ *
+ * 1. Gemini được ĐẨY LÊN tự do. Nó nói nặng hơn từ điển thì nghe nó.
+ *
+ * 2. Gemini chỉ được HẠ XUỐNG ở đúng một nấc: NEEDS_INTAKE → NOT_SYMPTOM,
+ *    và phải chắc chắn (confidence ≥ 0.8). Đây là nấc mà từ điển tự nhận là
+ *    "rộng tay" — nơi "Quên uống thuốc trưa rồi" bị bắt nhầm. Hạ sai ở nấc
+ *    này thì câu rơi về luồng hỏi thuốc thường, vốn đã có rào an toàn riêng.
+ *    Mọi nấc nặng hơn: KHÔNG hạ, bất kể Gemini nói gì.
+ *
+ * 3. Từ điển bắt được cụm cấp cứu rõ ràng hoặc cụm chấn thương → KHOÁ CỨNG,
+ *    không hạ, không bàn.
+ *
+ * Mạng hỏng / hết quota / Gemini trả rác → giữ nguyên kết quả từ điển. Luồng
+ * an toàn không bao giờ phụ thuộc vào việc gọi được mạng.
+ * ════════════════════════════════════════════════════════════════ */
+
+const DOWNGRADE_MIN_CONFIDENCE = 0.8;
+
+/**
+ * Đệm theo câu chữ, sống trong một phiên.
+ *
+ * Cần vì luồng escalate hỏi lại đúng một câu hai lần: bác gõ ở ô hỏi nhanh
+ * trong tab "Hỏi cháu" → phân loại lần 1 → tab thấy có triệu chứng nên mở
+ * modal kèm nguyên câu → modal gọi askVoiceAssistant → phân loại lần 2.
+ *
+ * Hạn mức là 60 lượt gọi AI mỗi người mỗi ngày. Không đệm thì một câu hỏi
+ * ăn tới 3 lượt (2 phân loại + 1 trả lời) và bác hết lượt sau 20 câu.
+ */
+const classifyCache = new Map();
+const CLASSIFY_CACHE_MAX = 50;
+
+export async function classifyUtteranceSmart(text, memberProfile = {}) {
+  const local = classifyUtterance(text);
+
+  const cacheKey = `${registerBrief(memberProfile)}|${String(text).trim()}`;
+  if (classifyCache.has(cacheKey)) return classifyCache.get(cacheKey);
+
+  const res = await apiPost('/ai/classify-symptom', {
+    text,
+    register: registerBrief(memberProfile)
+  });
+
+  if (!res.ok) {
+    // KHÔNG đệm kết quả hỏng: lần sau mạng có thể đã lên lại, và đây là
+    // luồng an toàn nên đáng thử lại.
+    return { ...local, source: 'LOCAL_ONLY', ai_error: res.error_code };
+  }
+
+  const localRank = KIND_RANK[local.kind] ?? 0;
+  const aiRank = KIND_RANK[res.kind] ?? 0;
+
+  // Luật 3 — từ điển đã bắt cụm rõ ràng thì khoá cứng
+  const lockedByLexicon = local.kind === 'EMERGENCY' || local.kind === 'TRAUMA';
+
+  let kind = local.kind;
+  if (aiRank > localRank) {
+    kind = res.kind;                                  // luật 1
+  } else if (
+    !lockedByLexicon &&                               // luật 3
+    aiRank < localRank &&
+    local.kind === 'NEEDS_INTAKE' &&
+    res.kind === 'NOT_SYMPTOM' &&
+    res.confidence >= DOWNGRADE_MIN_CONFIDENCE
+  ) {
+    kind = 'NOT_SYMPTOM';                             // luật 2
+  }
+
+  // Nếu kết luận cuối là chấn thương, mức nặng lấy theo bên nào nói nặng hơn.
+  const severe = kind === 'TRAUMA'
+    ? (local.severe || (res.trauma_severe ? 'AI' : null))
+    : null;
+
+  const merged = {
+    kind,
+    matched: local.matched,
+    severe,
+    source: kind === local.kind ? 'LOCAL+AI' : (aiRank > localRank ? 'AI_ESCALATED' : 'AI_CLEARED'),
+    // Khung đã điền sẵn — dùng để bỏ bớt câu hỏi trong bộ hỏi cấu trúc.
+    // KHÔNG dùng để chạy thẳng bảng luật: xem prefill trong SymptomIntakePanel.
+    prefill: {
+      region: res.region,
+      onset: res.onset,
+      severity: res.severity,
+      accompanying: res.accompanying || []
+    },
+    confidence: res.confidence
+  };
+
+  classifyCache.set(cacheKey, merged);
+  if (classifyCache.size > CLASSIFY_CACHE_MAX) {
+    classifyCache.delete(classifyCache.keys().next().value);
+  }
+  return merged;
+}
+
 export async function askVoiceAssistant(question, memberProfile = {}, prescriptions = [], language = 'vi') {
   const q = normalize(question);
-  const name = memberProfile.display_name || 'bác';
+  const name = memberProfile.display_name || '{{you}}';
+  const say = (s) => speak(s, memberProfile);
 
   // ── Mức 4a: xin đổi liều ──
   if (DOSE_CHANGE_PATTERNS.some(p => q.includes(p))) {
     return {
       tier: 4, isEmergency: false, source: 'RULE:DOSE_CHANGE',
       text: language === 'vi'
-        ? 'Dạ không nên bác ơi. Liều bác sĩ đã tính riêng theo cân nặng và sức khỏe gan thận của bác rồi ạ. Bác uống đúng như toa nha, con nhắc giờ cho bác.'
+        ? say('{{Da}} không nên {{you}} ơi. Liều bác sĩ đã tính riêng theo cân nặng và sức khỏe gan thận của {{you}} rồi{{a}}. {{You}} uống đúng như toa {{nha}}, {{me}} nhắc giờ cho {{you}}.')
         : 'Please do not change your dose on your own — it was calculated specifically for you.'
     };
   }
@@ -154,21 +269,24 @@ export async function askVoiceAssistant(question, memberProfile = {}, prescripti
   if (OTHERS_MEDS_PATTERNS.some(p => q.includes(p))) {
     return {
       tier: 4, isEmergency: false, source: 'RULE:OTHERS_MEDS',
-      text: 'Dạ không được đâu bác ơi. Đơn của bác khác đơn của người khác, cùng tên bệnh nhưng liều vẫn khác nhau ạ.'
+      text: say('{{Da}} không được đâu {{you}} ơi. Đơn của {{you}} khác đơn của người khác, cùng tên bệnh nhưng liều vẫn khác nhau{{a}}.')
     };
   }
 
   // ── Mức 3–4: có nhắc tới triệu chứng ──
-  const classification = classifyUtterance(question);
+  // Từ điển tại máy + Gemini, trộn theo ba luật chặn ở classifyUtteranceSmart.
+  const classification = await classifyUtteranceSmart(question, memberProfile);
 
   if (classification.kind === 'EMERGENCY') {
     const decision = {
       outcome: OUTCOME.EMERGENCY_115,
-      rule_id: 'LEXICON:' + classification.matched,
+      rule_id: classification.source === 'AI_ESCALATED'
+        ? 'AI_ESCALATED'
+        : 'LEXICON:' + classification.matched,
       reason: 'Người dùng mô tả rõ một dấu hiệu cấp cứu.',
-      advice: 'Bác gọi 115 ngay, hoặc gọi người nhà tới liền giúp con ạ.'
+      advice: '{{You}} gọi 115 ngay, hoặc gọi người nhà tới liền giúp {{me}}{{a}}.'
     };
-    return { ...buildTriageResponse(decision, name), source: 'TRIAGE:LEXICON' };
+    return { ...buildTriageResponse(decision, memberProfile), source: 'TRIAGE:' + classification.source };
   }
 
   // ── Chấn thương: trả lời cố định, KHÔNG qua bộ hỏi, KHÔNG qua model ──
@@ -178,15 +296,15 @@ export async function askVoiceAssistant(question, memberProfile = {}, prescripti
   if (classification.kind === 'TRAUMA') {
     const decision = {
       ...traumaResponse({ severe: classification.severe }),
-      rule_id: 'TRAUMA:' + classification.matched
+      rule_id: 'TRAUMA:' + (classification.matched || classification.source)
     };
-    return { ...buildTriageResponse(decision, name), source: 'TRIAGE:TRAUMA' };
+    return { ...buildTriageResponse(decision, memberProfile), source: 'TRIAGE:TRAUMA' };
   }
 
   if (classification.kind === 'PAST_TENSE_CHECK') {
     return {
       tier: 3, isEmergency: false, source: 'TRIAGE:PAST_TENSE',
-      text: 'Dạ con nghe rồi ạ. Cho con hỏi lại cho chắc: bây giờ bác còn thấy vậy nữa không ạ?',
+      text: say('{{Da}} {{me}} nghe rồi{{a}}. Cho {{me}} hỏi lại cho chắc: bây giờ {{you}} còn thấy vậy nữa không{{a}}?'),
       quickReplies: [
         { label: 'Giờ vẫn còn', action: 'START_INTAKE' },
         { label: 'Hết rồi, chuyện cũ thôi', action: 'DISMISS' }
@@ -197,7 +315,10 @@ export async function askVoiceAssistant(question, memberProfile = {}, prescripti
   if (classification.kind === 'NEEDS_INTAKE') {
     return {
       tier: 3, isEmergency: false, source: 'TRIAGE:NEEDS_INTAKE', startIntake: true,
-      text: 'Dạ con ghi lại rồi ạ. Để con hỏi bác vài câu ngắn cho rõ, rồi con biết nên làm gì nha bác.'
+      // Khung Gemini điền sẵn — bộ hỏi dùng để bỏ bớt câu đã rõ, KHÔNG dùng
+      // để chạy thẳng bảng luật.
+      prefill: classification.prefill,
+      text: say('{{Da}} {{me}} ghi lại rồi{{a}}. Để {{me}} hỏi {{you}} vài câu ngắn cho rõ, rồi {{me}} biết nên làm gì {{nha}}.')
     };
   }
 
@@ -207,7 +328,8 @@ export async function askVoiceAssistant(question, memberProfile = {}, prescripti
   const res = await apiPost('/ai/ask', {
     question,
     profile: toWireProfile(memberProfile),
-    medications: meds.map(toWireMed)
+    medications: meds.map(toWireMed),
+    register: registerBrief(memberProfile)
   });
 
   if (res.ok) {
@@ -221,8 +343,8 @@ export async function askVoiceAssistant(question, memberProfile = {}, prescripti
     isEmergency: false,
     source: `FALLBACK:${res.error_code}`,
     text: next
-      ? `Dạ ${name}, hôm nay bác có ${next.name} — ${next.dosage || ''} ${next.timing || ''} ạ. Con đang không hỏi được trợ lý (${res.error_message}), bác hỏi kỹ hơn thì nhắn con cái giúp con nha.`
-      : `Dạ con đang không kết nối được ạ. ${res.error_message}`
+      ? say(`{{Da}} ${name}, hôm nay {{you}} có ${next.name} — ${next.dosage || ''} ${next.timing || ''}{{a}}. {{Me}} đang không hỏi được trợ lý (${res.error_message}), {{you}} hỏi kỹ hơn thì nhắn con cái giúp {{me}} {{nha}}.`)
+      : say(`{{Da}} {{me}} đang không kết nối được{{a}}. ${res.error_message}`)
   };
 }
 
@@ -231,13 +353,14 @@ export async function askVoiceAssistant(question, memberProfile = {}, prescripti
  * AI chỉ được gọi SAU khi bảng luật tĩnh đã kết luận là nhánh nhẹ.
  * ════════════════════════════════════════════════════════════════ */
 export async function narrateMildSymptom(answersDescription, memberProfile = {}, prescriptions = []) {
-  const name = memberProfile.display_name || 'bác';
-  const fallback = 'Dạ con ghi lại rồi ạ và con nhắn cho con cái của bác luôn. Bác nghỉ ngơi, uống đủ nước nha. Nếu qua 3 ngày không đỡ, hoặc bác thấy nặng hơn, thì mình đi khám ạ.';
+  const name = memberProfile.display_name || '{{you}}';
+  const fallback = speak('{{Da}} {{me}} ghi lại rồi{{a}} và {{me}} nhắn cho người nhà luôn. {{You}} nghỉ ngơi, uống đủ nước {{nha}}. Nếu qua 3 ngày không đỡ, hoặc {{you}} thấy nặng hơn, thì mình đi khám{{a}}.', memberProfile);
 
   const res = await apiPost('/ai/narrate-symptom', {
     summary: answersDescription,
     profile: toWireProfile(memberProfile),
-    medications: medsOf(memberProfile, prescriptions).map(toWireMed)
+    medications: medsOf(memberProfile, prescriptions).map(toWireMed),
+    register: registerBrief(memberProfile)
   });
 
   return res.ok ? applyName(res.text, name) : fallback;

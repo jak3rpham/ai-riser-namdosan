@@ -29,11 +29,39 @@ export const config = {
   /** Model ghim cứng — phải khớp với GEMINI_MODEL phía frontend */
   geminiModel: process.env.GEMINI_MODEL || 'gemini-3.6-flash',
 
+  /**
+   * Model đọc thành tiếng. Tách riêng vì TTS là họ model khác model chat, và
+   * khoá có thể chưa được bật quyền dùng nó.
+   *
+   * Không có/không bật → `/ai/speak` trả TTS_MODEL_UNAVAILABLE và frontend
+   * quay về giọng của trình duyệt. Đây là suy giảm có kiểm soát, không phải lỗi.
+   */
+  ttsModel: process.env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts',
 
-  /** Hạn mức chống lạm dụng, tính theo từng người dùng */
+  /** Giọng đọc. Đổi bằng env, không phải sửa code rồi deploy lại. */
+  ttsVoice: process.env.GEMINI_TTS_VOICE || 'Leda',
+
+  /** Bật/tắt TTS phía server mà không cần deploy lại frontend */
+  ttsEnabled: process.env.TTS_ENABLED !== 'false',
+
+
+  /**
+   * Hạn mức chống lạm dụng, tính theo từng người dùng.
+   *
+   * ⚠️ Đây là TRẦN CHỐNG LẠM DỤNG, không phải công cụ kiểm soát ngân sách.
+   * Kiểm soát ngân sách là budget alert trên Cloud Billing (mục 5 doc 47).
+   *
+   * Nâng 60 → 150 vì một câu hỏi giờ tốn nhiều lượt hơn hẳn:
+   *   1 lượt  /ai/classify-symptom  (hiểu câu nói)
+   *   1 lượt  /ai/ask               (trả lời)
+   *   1 lượt  /ai/speak             (đọc thành tiếng)
+   * Giữ 60 thì bác hết lượt sau 20 câu — trong khi trước đây 60 câu.
+   * Phần nào đệm được thì đã đệm: phân loại đệm theo câu chữ ở client,
+   * TTS đệm theo nội dung ở server.
+   */
   limits: {
-    aiCallsPerUserPerDay: Number(process.env.AI_CALLS_PER_DAY) || 60,
-    aiCallsPerUserPerMinute: Number(process.env.AI_CALLS_PER_MIN) || 6
+    aiCallsPerUserPerDay: Number(process.env.AI_CALLS_PER_DAY) || 150,
+    aiCallsPerUserPerMinute: Number(process.env.AI_CALLS_PER_MIN) || 12
   },
 
   /** Nguồn được phép gọi API. Cùng origin qua Hosting rewrite nên rất hẹp. */

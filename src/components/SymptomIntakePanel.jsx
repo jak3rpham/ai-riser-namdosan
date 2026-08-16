@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronRight, PhoneCall, AlertTriangle, CalendarClock, CheckCircle2, Loader2 } from 'lucide-react';
 import { INTAKE_STEPS, OUTCOME, describeAnswers } from '../services/symptomTriage';
+import { speak } from '../services/honorifics';
 import { evaluateSymptomAnswers, narrateMildSymptom } from '../services/geminiService';
 import MedicalDisclaimer from './MedicalDisclaimer';
 
@@ -13,9 +14,25 @@ import MedicalDisclaimer from './MedicalDisclaimer';
  *
  * Nút chọn để cỡ lớn vì người dùng có thể 70 tuổi và đang khó chịu.
  */
-export default function SymptomIntakePanel({ memberProfile, prescriptions, onFinish, onCancel, onAlert }) {
+export default function SymptomIntakePanel({ memberProfile, prescriptions, onFinish, onCancel, onAlert, prefill = null }) {
+  /**
+   * `prefill` = khung Gemini đã điền từ câu người dùng vừa nói.
+   *
+   * ⚠️ Nó CHỈ được dùng làm ĐÁP ÁN CHỌN SẴN, không được dùng để bỏ qua câu hỏi.
+   * Người dùng vẫn nhìn thấy từng câu và vẫn phải bấm xác nhận.
+   *
+   * Vì sao không bỏ qua cho nhanh: nếu Gemini đọc "đau âm ỉ mấy hôm nay" thành
+   * severity 'mild' mà thật ra người ta đang đau dữ dội, thì bảng luật chạy
+   * trên một câu trả lời KHÔNG AI XÁC NHẬN. Bấm một nút to là rẻ; kết luận sai
+   * mức độ đau thì không.
+   */
   const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState({ accompanying: [] });
+  const [answers, setAnswers] = useState({
+    accompanying: prefill?.accompanying?.length ? prefill.accompanying : [],
+    ...(prefill?.region ? { region: prefill.region } : {}),
+    ...(prefill?.onset ? { onset: prefill.onset } : {}),
+    ...(prefill?.severity ? { severity: prefill.severity } : {})
+  });
   const [decision, setDecision] = useState(null);
   const [mildText, setMildText] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -78,10 +95,10 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
             <AlertTriangle size={24} color="#DC2626" style={{ flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#DC2626', marginBottom: 4 }}>
-                Cái này con không dám chờ ạ
+                {speak('Cái này {{me}} không dám chờ{{a}}', memberProfile)}
               </div>
               <div style={{ fontSize: 14.5, color: '#7F1D1D', fontWeight: 600, lineHeight: 1.5 }}>
-                {decision.advice}
+                {speak(decision.advice, memberProfile)}
               </div>
             </div>
           </div>
@@ -109,10 +126,10 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
             <CalendarClock size={22} color="#B45309" style={{ flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 15.5, fontWeight: 800, color: '#B45309', marginBottom: 4 }}>
-                Dạ con ghi lại rồi ạ — cái này nên đi khám hôm nay
+                {speak('{{Da}} {{me}} ghi lại rồi{{a}} — cái này nên đi khám hôm nay', memberProfile)}
               </div>
               <div style={{ fontSize: 14.5, color: '#78350F', fontWeight: 600, lineHeight: 1.5 }}>
-                {decision.advice}
+                {speak(decision.advice, memberProfile)}
               </div>
             </div>
           </div>
@@ -173,8 +190,14 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
       </div>
 
       <h4 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 12, lineHeight: 1.4 }}>
-        {step.question}
+        {speak(step.question, memberProfile)}
       </h4>
+
+      {selected != null && (Array.isArray(selected) ? selected.length > 0 : true) && (
+        <div style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 8 }}>
+          Con chọn sẵn theo lời {speak('{{you}}', memberProfile)} vừa nói — không đúng thì bấm chọn lại
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 260, overflowY: 'auto' }}>
         {step.options.map(opt => {
@@ -204,7 +227,7 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
 
       {step.multi && (
         <button className="btn-primary" onClick={submitMulti} style={{ width: '100%', marginTop: 12, padding: 14, borderRadius: 14, fontSize: 16 }}>
-          Xong, con xem giúp bác
+          {speak('Xong, {{me}} xem giúp {{you}}', memberProfile)}
         </button>
       )}
     </div>

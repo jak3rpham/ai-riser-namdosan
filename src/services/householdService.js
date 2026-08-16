@@ -62,6 +62,8 @@ export async function createHousehold({ name, displayName, subjects = [] } = {})
       display_name: s.display_name,
       relation: s.relation || null,
       birth_year: s.birth_year || null,
+      // Cách Cháu Bi xưng hô. Thiếu → honorifics.js suy từ năm sinh, mặc định lễ phép.
+      address_style: s.address_style || null,
       capability: s.capability || 'C2',
       conditions: s.conditions || [],
       allergies: s.allergies || [],
@@ -134,6 +136,7 @@ export async function saveSubject(hid, subject) {
         display_name: subject.display_name,
         relation: subject.relation || null,
         birth_year: subject.birth_year || null,
+        address_style: subject.address_style || null,
         capability: subject.capability || 'C2',
         conditions: subject.conditions || [],
         allergies: subject.allergies || [],

@@ -23,6 +23,7 @@
  */
 
 import { normalizeText, resolveGenerics } from './medicalKnowledge';
+import { speak } from './honorifics';
 
 export const TRIAGE_RULES_STATUS = {
   version: '0.1.0',
@@ -39,19 +40,59 @@ export const TRIAGE_RULES_STATUS = {
  * ──────────────────────────────────────────────────────────────── */
 const SYMPTOM_LEXICON = [
   // đau
-  'dau', 'nhuc', 'buot', 'tuc', 'nang nguc', 'rat', 'quan that', 'am i',
+  'dau', 'nhuc', 'buot', 'tuc', 'nang nguc', 'quan that', 'am i',
   // hô hấp
   'kho tho', 'hut hoi', 'tho khong ra hoi', 'tho gap', 'tho nhanh', 'nghet tho', 'ho ra mau',
   // thần kinh
   'chong mat', 'xay xam', 'choang', 'ngat', 'bat tinh', 'te', 'yeu tay', 'yeu chan',
   'noi kho', 'noi do', 'meo mieng', 'mo mat', 'lu lan', 'co giat',
   // tiêu hoá
-  'buon non', 'non', 'oi', 'tieu chay', 'tao bon', 'day bung', 'chuong bung', 'phan den',
+  'buon non', 'non', 'tieu chay', 'tao bon', 'day bung', 'chuong bung', 'phan den',
   // toàn thân
   'sot', 'lanh run', 'met', 'met moi', 'va mo hoi', 'sut can', 'chan an', 'kho ngu',
   // khác
   'chay mau', 'ra mau', 'sung', 'phat ban', 'ngua', 'noi me day', 'kho chiu', 'trong nguoi'
 ];
+
+/**
+ * ⚠️ Đã BỎ khỏi danh sách trên: 'rat' và 'oi'.
+ *
+ * `normalizeText` bỏ dấu, nên "rất" và "rát" cùng thành `rat`, "ơi"/"rồi"/"tôi"
+ * cùng chứa `oi`. Hai token này biến câu tiếng Việt bình thường thành triệu chứng:
+ *   "Thuốc này bác uống rất đều"        → NEEDS_INTAKE
+ *   "Quên uống thuốc trưa rồi cháu ơi"  → NEEDS_INTAKE
+ * Bác đang hỏi giờ uống thuốc thì bị lôi vào bộ hỏi "đau ở chỗ nào".
+ *
+ * Không vá được bằng ranh giới từ vì sau khi bỏ dấu chúng là CÙNG MỘT TỪ.
+ * Phần nghĩa mất đi ("rát", "ói") do lớp phân loại Gemini ở
+ * `/ai/classify-symptom` gánh — lớp đó đọc được dấu và đọc được ngữ cảnh.
+ */
+
+/**
+ * Sau "đau đầu", những từ này biến nó thành bộ phận khác — "đầu gối",
+ * "đầu ngón tay". Không phải đau đầu.
+ */
+const HEAD_FALSE_FRIENDS = ['goi', 'ngon', 'chan', 'tay', 'vai', 'mui', 'luoi'];
+
+/**
+ * Đưa câu về dạng ` tu tu tu ` để so khớp theo TỪ, không theo chuỗi con.
+ *
+ * Trước đây dùng `t.includes(phrase)` thẳng. Hậu quả nặng nhất không phải
+ * mấy câu bắt nhầm ở trên, mà là: "đau đầu gối" chứa chuỗi "đau đầu", nên
+ * ca té ngã đau GỐI bị đọc thành té ĐẬP ĐẦU và đẩy thẳng lên 115.
+ */
+function padded(t) {
+  return ' ' + String(t).replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+}
+
+const hasPhrase = (p, phrase) => p.includes(' ' + phrase + ' ');
+const findPhrase = (p, list) => list.find(x => hasPhrase(p, x)) || null;
+
+/** "đau đầu" thật sự, không phải "đau đầu gối" */
+function hasHeadPain(p) {
+  const re = new RegExp(` dau dau (?!(${HEAD_FALSE_FRIENDS.join('|')}) )`);
+  return re.test(p) || / dau dau $/.test(p);
+}
 
 /** Dấu hiệu câu đang nói về QUÁ KHỨ hoặc PHỦ ĐỊNH → không tự động báo động */
 const NEGATION_PAST_MARKERS = [
@@ -86,9 +127,12 @@ const TRAUMA_PHRASES = [
   'nga cau thang', 'te cau thang', 'va dap', 'dung dau', 'dap dau', 'dap mat'
 ];
 
-/** Chấn thương kèm những thứ này thì không chờ được. */
+/**
+ * Chấn thương kèm những thứ này thì không chờ được.
+ * 'dau dau' xét riêng qua hasHeadPain() vì "đau đầu gối" không phải đau đầu.
+ */
 const TRAUMA_EMERGENCY_MARKERS = [
-  'dau dau', 'dung dau', 'dap dau', 'chay mau', 'khong dung day duoc',
+  'dung dau', 'dap dau', 'chay mau', 'khong dung day duoc',
   'khong di duoc', 'khong dung len duoc', 'bat tinh', 'ngat', 'non', 'lu lan'
 ];
 
@@ -101,22 +145,22 @@ const TRAUMA_EMERGENCY_MARKERS = [
  * nhồi máu cơ tim mà cũng có thể là đau cơ thành ngực do ho nhiều.
  */
 export function classifyUtterance(text) {
-  const t = normalizeText(text);
-  if (!t) return { kind: 'NOT_SYMPTOM' };
+  const p = padded(normalizeText(text));
+  if (p.trim() === '') return { kind: 'NOT_SYMPTOM' };
 
-  const pastMarker = NEGATION_PAST_MARKERS.find(m => t.includes(m));
+  const pastMarker = findPhrase(p, NEGATION_PAST_MARKERS);
 
   // Chấn thương xét TRƯỚC từ điển triệu chứng: "mới bị té" có thể không chứa
   // từ đau nào, mà vẫn là việc phải xử lý.
-  const trauma = TRAUMA_PHRASES.find(pz => t.includes(pz));
+  const trauma = findPhrase(p, TRAUMA_PHRASES);
   if (trauma && !pastMarker) {
-    const severe = TRAUMA_EMERGENCY_MARKERS.find(m => t.includes(m));
-    return { kind: 'TRAUMA', matched: trauma, severe: severe || null };
+    const severe = findPhrase(p, TRAUMA_EMERGENCY_MARKERS) || (hasHeadPain(p) ? 'dau dau' : null);
+    return { kind: 'TRAUMA', matched: trauma, severe };
   }
 
-  const hasSymptomWord = SYMPTOM_LEXICON.some(w => t.includes(w));
+  const hasSymptomWord = SYMPTOM_LEXICON.some(w => hasPhrase(p, w));
   if (!hasSymptomWord) return { kind: 'NOT_SYMPTOM' };
-  const immediate = IMMEDIATE_EMERGENCY_PHRASES.find(p => t.includes(p));
+  const immediate = findPhrase(p, IMMEDIATE_EMERGENCY_PHRASES);
 
   // Câu nói về quá khứ / phủ định: KHÔNG bắn báo động (tránh alarm fatigue),
   // hỏi lại một câu cho chắc.
@@ -128,6 +172,18 @@ export function classifyUtterance(text) {
 
   return { kind: 'NEEDS_INTAKE' };
 }
+
+/**
+ * Thứ hạng mức độ — dùng để trộn kết quả từ điển tại máy với kết quả Gemini.
+ * Gemini được phép ĐẨY LÊN, chỉ được hạ ở đúng một nấc (xem geminiService).
+ */
+export const KIND_RANK = {
+  NOT_SYMPTOM: 0,
+  PAST_TENSE_CHECK: 1,
+  NEEDS_INTAKE: 2,
+  TRAUMA: 3,
+  EMERGENCY: 4
+};
 
 /* ────────────────────────────────────────────────────────────────
  * B. Bộ hỏi cấu trúc — cố định, không do AI sinh
@@ -180,10 +236,10 @@ export const SEVERITY_OPTIONS = [
 
 /** Thứ tự các bước hỏi. UI chỉ việc render theo mảng này. */
 export const INTAKE_STEPS = [
-  { key: 'region', question: 'Bác chỉ giúp con đau ở chỗ nào ạ?', options: BODY_REGIONS, multi: false },
-  { key: 'onset', question: 'Bác thấy vậy từ khi nào ạ?', options: ONSET_OPTIONS, multi: false },
-  { key: 'severity', question: 'Bác thấy khó chịu tới mức nào ạ?', options: SEVERITY_OPTIONS, multi: false },
-  { key: 'accompanying', question: 'Bác có thấy thêm cái nào dưới đây không ạ? (chọn được nhiều)', options: ACCOMPANYING_SYMPTOMS, multi: true }
+  { key: 'region', question: '{{You}} chỉ giúp {{me}} đau ở chỗ nào{{a}}?', options: BODY_REGIONS, multi: false },
+  { key: 'onset', question: '{{You}} thấy vậy từ khi nào{{a}}?', options: ONSET_OPTIONS, multi: false },
+  { key: 'severity', question: '{{You}} thấy khó chịu tới mức nào{{a}}?', options: SEVERITY_OPTIONS, multi: false },
+  { key: 'accompanying', question: '{{You}} có thấy thêm cái nào dưới đây không{{a}}? (chọn được nhiều)', options: ACCOMPANYING_SYMPTOMS, multi: true }
 ];
 
 /* ────────────────────────────────────────────────────────────────
@@ -212,14 +268,14 @@ export function traumaResponse({ severe } = {}) {
     return {
       outcome: OUTCOME.EMERGENCY_115,
       reason: 'Té kèm chấn thương đầu, chảy máu, hoặc không đứng dậy được.',
-      advice: 'Bác nằm yên, đừng cố đứng dậy, và gọi 115 ngay ạ. Con báo người nhà cùng lúc.'
+      advice: '{{You}} nằm yên, đừng cố đứng dậy, và gọi 115 ngay{{a}}. {{Me}} báo người nhà cùng lúc.'
     };
   }
   return {
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Người lớn tuổi bị té cần được khám, kể cả khi lúc đầu thấy đau ít.',
-    advice: 'Con báo người nhà ngay rồi ạ. Bác ngồi nghỉ, đừng tự xoa bóp hay chườm chỗ đau, '
-          + 'và nhờ người nhà đưa đi khám trong hôm nay giúp con nhé.'
+    advice: '{{Me}} báo người nhà ngay rồi{{a}}. {{You}} ngồi nghỉ, đừng tự xoa bóp hay chườm chỗ đau, '
+          + 'và nhờ người nhà đưa đi khám trong hôm nay giúp {{me}} {{nha}}.'
   };
 }
 
@@ -233,7 +289,7 @@ export const RED_FLAG_RULES = [
     when: (a) => has(a.accompanying, 'weakness_one_side') || has(a.accompanying, 'speech'),
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Yếu/tê một bên người hoặc nói khó, méo miệng là dấu hiệu cần loại trừ đột quỵ.',
-    advice: 'Bác gọi 115 ngay, đừng chờ xem có đỡ không ạ. Bác đừng tự đi xe.'
+    advice: '{{You}} gọi 115 ngay, đừng chờ xem có đỡ không{{a}}. {{You}} đừng tự đi xe.'
   },
 
   // ══ Ngất / mất ý thức ══
@@ -242,7 +298,7 @@ export const RED_FLAG_RULES = [
     when: (a) => has(a.accompanying, 'faint'),
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Ngất hoặc gần ngất ở người lớn tuổi cần được khám ngay.',
-    advice: 'Bác nằm nghỉ chỗ thoáng và gọi 115 hoặc gọi người nhà tới ngay ạ.'
+    advice: '{{You}} nằm nghỉ chỗ thoáng và gọi 115 hoặc gọi người nhà tới ngay{{a}}.'
   },
 
   // ══ Xuất huyết tiêu hoá ══
@@ -251,7 +307,7 @@ export const RED_FLAG_RULES = [
     when: (a) => has(a.accompanying, 'vomit_blood') || has(a.accompanying, 'black_stool'),
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Nôn ra máu hoặc đi cầu phân đen là dấu hiệu chảy máu trong đường tiêu hoá.',
-    advice: 'Bác không ăn uống gì thêm và gọi 115 ngay ạ.'
+    advice: '{{You}} không ăn uống gì thêm và gọi 115 ngay{{a}}.'
   },
 
   // ══ Hội chứng vành cấp — điển hình ══
@@ -266,7 +322,7 @@ export const RED_FLAG_RULES = [
     ),
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Đau ngực kèm vã mồ hôi, khó thở, đau lan, hoặc khởi phát đột ngột — cần loại trừ nhồi máu cơ tim.',
-    advice: 'Bác ngồi nghỉ, đừng gắng sức, và gọi 115 ngay ạ. Con báo người nhà cùng lúc.'
+    advice: '{{You}} ngồi nghỉ, đừng gắng sức, và gọi 115 ngay{{a}}. {{Me}} báo người nhà cùng lúc.'
   },
 
   // ══ Hội chứng vành cấp — thể KHÔNG điển hình ══
@@ -288,7 +344,7 @@ export const RED_FLAG_RULES = [
     ),
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Đau vùng trên rốn kèm vã mồ hôi/khó thở/buồn nôn ở người lớn tuổi có yếu tố tim mạch có thể là biểu hiện không điển hình của nhồi máu cơ tim.',
-    advice: 'Cái này con không dám chờ ạ. Bác ngồi nghỉ và gọi 115 ngay giúp con.'
+    advice: 'Cái này {{me}} không dám chờ{{a}}. {{You}} ngồi nghỉ và gọi 115 ngay giúp {{me}}.'
   },
 
   // ══ Khó thở nặng ══
@@ -297,7 +353,7 @@ export const RED_FLAG_RULES = [
     when: (a) => has(a.accompanying, 'dyspnea') && (a.severity === 'severe' || a.onset === 'sudden'),
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Khó thở dữ dội hoặc khởi phát đột ngột cần cấp cứu.',
-    advice: 'Bác ngồi thẳng cho dễ thở và gọi 115 ngay ạ.'
+    advice: '{{You}} ngồi thẳng cho dễ thở và gọi 115 ngay{{a}}.'
   },
 
   // ══ Nhiễm toan lactic do metformin ══
@@ -308,7 +364,7 @@ export const RED_FLAG_RULES = [
       (a.region === 'whole' || has(a.accompanying, 'nausea')),
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Mệt lả kèm thở nhanh/khó thở ở người đang uống metformin cần loại trừ nhiễm toan lactic.',
-    advice: 'Bác ngưng chưa uống liều tiếp theo và gọi 115 hoặc tới bệnh viện ngay ạ. Con báo người nhà rồi.'
+    advice: '{{You}} ngưng chưa uống liều tiếp theo và gọi 115 hoặc tới bệnh viện ngay{{a}}. {{Me}} báo người nhà rồi.'
   },
 
   // ══ Sốc phản vệ ══
@@ -317,7 +373,7 @@ export const RED_FLAG_RULES = [
     when: (a) => has(a.accompanying, 'rash') && has(a.accompanying, 'dyspnea'),
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Nổi mẩn kèm khó thở là dấu hiệu phản ứng dị ứng nặng.',
-    advice: 'Bác ngưng thuốc vừa uống và gọi 115 ngay ạ.'
+    advice: '{{You}} ngưng thuốc vừa uống và gọi 115 ngay{{a}}.'
   },
 
   // ══ Đau bụng dữ dội ══
@@ -327,7 +383,7 @@ export const RED_FLAG_RULES = [
       a.severity === 'severe' && a.onset === 'sudden',
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Đau bụng dữ dội khởi phát đột ngột cần loại trừ bụng ngoại khoa cấp.',
-    advice: 'Bác đừng ăn uống gì và đi cấp cứu ngay ạ.'
+    advice: '{{You}} đừng ăn uống gì và đi cấp cứu ngay{{a}}.'
   },
 
   // ── Từ đây xuống: khám trong 24h ──
@@ -339,7 +395,7 @@ export const RED_FLAG_RULES = [
       (has(a.accompanying, 'fever') || has(a.accompanying, 'nausea')),
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Đau bụng dưới bên phải kèm sốt hoặc buồn nôn cần loại trừ viêm ruột thừa.',
-    advice: 'Nhà mình đưa bác đi khám trong hôm nay ạ, đừng để qua đêm. Bác đừng uống thuốc giảm đau vì sẽ làm khó chẩn đoán.'
+    advice: 'Nhà mình đưa {{you}} đi khám trong hôm nay{{a}}, đừng để qua đêm. {{You}} đừng uống thuốc giảm đau vì sẽ làm khó chẩn đoán.'
   },
 
   // ══ Viêm tuỵ / bệnh lý mật ══
@@ -349,7 +405,7 @@ export const RED_FLAG_RULES = [
       (has(a.accompanying, 'radiating') || has(a.accompanying, 'fever') || a.severity === 'severe'),
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Đau vùng trên rốn hoặc dưới sườn phải lan ra sau lưng, kèm sốt, cần khám sớm.',
-    advice: 'Nhà mình sắp xếp cho bác đi khám trong hôm nay ạ.'
+    advice: 'Nhà mình sắp xếp cho {{you}} đi khám trong hôm nay{{a}}.'
   },
 
   // ══ Tiêu cơ vân do statin ══
@@ -360,7 +416,7 @@ export const RED_FLAG_RULES = [
       (has(a.accompanying, 'dark_urine') || a.severity === 'severe'),
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Đau cơ kèm nước tiểu sẫm màu ở người đang uống thuốc mỡ máu cần loại trừ tổn thương cơ.',
-    advice: 'Bác đi khám trong hôm nay và nhớ mang theo vỉ thuốc mỡ máu cho bác sĩ xem ạ. Bác đừng tự ngưng thuốc khi chưa hỏi bác sĩ.'
+    advice: '{{You}} đi khám trong hôm nay và nhớ mang theo vỉ thuốc mỡ máu cho bác sĩ xem{{a}}. {{You}} đừng tự ngưng thuốc khi chưa hỏi bác sĩ.'
   },
 
   // ══ Huyết khối tĩnh mạch sâu ══
@@ -369,7 +425,7 @@ export const RED_FLAG_RULES = [
     when: (a) => a.region === 'leg' && has(a.accompanying, 'swelling'),
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Một bên chân sưng đau cần loại trừ cục máu đông tĩnh mạch sâu.',
-    advice: 'Bác hạn chế xoa bóp chỗ sưng và đi khám trong hôm nay ạ.'
+    advice: '{{You}} hạn chế xoa bóp chỗ sưng và đi khám trong hôm nay{{a}}.'
   },
 
   // ══ Đau đầu dữ dội đột ngột ══
@@ -378,14 +434,14 @@ export const RED_FLAG_RULES = [
     when: (a) => a.region === 'head' && a.severity === 'severe' && a.onset === 'sudden',
     outcome: OUTCOME.EMERGENCY_115,
     reason: 'Đau đầu dữ dội khởi phát đột ngột cần loại trừ xuất huyết não.',
-    advice: 'Bác gọi 115 ngay ạ, đừng chờ.'
+    advice: '{{You}} gọi 115 ngay{{a}}, đừng chờ.'
   },
   {
     id: 'RF-HEADACHE',
     when: (a) => a.region === 'head' && (a.severity === 'severe' || has(a.accompanying, 'fever')),
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Đau đầu dữ dội hoặc kèm sốt cần được khám.',
-    advice: 'Nhà mình cho bác đi khám trong hôm nay ạ.'
+    advice: 'Nhà mình cho {{you}} đi khám trong hôm nay{{a}}.'
   },
 
   // ══ Sốt kéo dài ══
@@ -394,7 +450,7 @@ export const RED_FLAG_RULES = [
     when: (a) => has(a.accompanying, 'fever') && (a.onset === 'few_days' || a.onset === 'over_week'),
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Sốt kéo dài nhiều ngày ở người lớn tuổi cần được khám tìm nguyên nhân.',
-    advice: 'Bác sốt mấy ngày rồi thì mình đi khám nha bác, đừng tự uống hạ sốt tiếp ạ.'
+    advice: 'Sốt mấy ngày rồi thì nhà mình đi khám {{nha}}, đừng tự uống hạ sốt tiếp{{a}}.'
   },
 
   // ══ Dị ứng thuốc ══
@@ -403,7 +459,7 @@ export const RED_FLAG_RULES = [
     when: (a) => has(a.accompanying, 'rash'),
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Nổi mẩn có thể là phản ứng dị ứng với thuốc đang dùng.',
-    advice: 'Bác chụp giúp con chỗ nổi mẩn và mang theo hết vỏ thuốc khi đi khám nha. Nếu thấy khó thở thì gọi 115 ngay ạ.'
+    advice: '{{You}} chụp giúp {{me}} chỗ nổi mẩn và mang theo hết vỏ thuốc khi đi khám {{nha}}. Nếu thấy khó thở thì gọi 115 ngay{{a}}.'
   },
 
   // ══ Triệu chứng kéo dài ══
@@ -412,7 +468,7 @@ export const RED_FLAG_RULES = [
     when: (a) => a.onset === 'over_week' && a.severity !== 'mild',
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Triệu chứng kéo dài hơn một tuần và không nhẹ.',
-    advice: 'Kéo dài vậy thì mình đi khám cho yên tâm nha bác. Con đặt lịch nhắc giúp bác ạ.'
+    advice: 'Kéo dài vậy thì mình đi khám cho yên tâm {{nha}}. {{Me}} đặt lịch nhắc giúp {{you}}{{a}}.'
   },
 
   // ══ Đau dữ dội bất kỳ vùng nào ══
@@ -421,7 +477,7 @@ export const RED_FLAG_RULES = [
     when: (a) => a.severity === 'severe',
     outcome: OUTCOME.SEE_DOCTOR_24H,
     reason: 'Đau ở mức dữ dội cần được bác sĩ xem.',
-    advice: 'Đau tới mức đó thì mình đi khám hôm nay nha bác.'
+    advice: 'Đau tới mức đó thì mình đi khám hôm nay {{nha}}.'
   }
 ];
 
@@ -465,13 +521,22 @@ export function runTriage(answers, context = {}) {
  * Câu trả lời CỐ ĐỊNH cho hai nhánh nặng. Không để AI ứng biến ở đây
  * (doc 31 mục 7: "soạn câu trả lời cố định cho Mức 4").
  */
-export function buildTriageResponse(decision, memberName = 'bác') {
+export function buildTriageResponse(decision, memberProfile = {}) {
+  // Nhận cả chuỗi tên (cách gọi cũ) lẫn nguyên hồ sơ. Có hồ sơ mới biết
+  // xưng "con–bác" hay "mình–bạn".
+  const profile = typeof memberProfile === 'string'
+    ? { display_name: memberProfile }
+    : (memberProfile || {});
+  const name = profile.display_name || '{{you}}';
+  const say = (s) => speak(s, profile);
+
   if (decision.outcome === OUTCOME.EMERGENCY_115) {
     return {
       tier: 4,
       isEmergency: true,
       showCallButton: true,
-      text: `⚠️ ${memberName} ơi, cái này con không tự xử được ạ. ${decision.advice}`,
+      text: say(`⚠️ ${name} ơi, cái này {{me}} không tự xử được{{a}}. ${decision.advice}`),
+      advice: say(decision.advice),
       reason: decision.reason,
       rule_id: decision.rule_id
     };
@@ -483,7 +548,8 @@ export function buildTriageResponse(decision, memberName = 'bác') {
       isEmergency: false,
       showCallButton: false,
       needsAppointment: true,
-      text: `Dạ con ghi lại rồi ạ. ${decision.advice}`,
+      text: say(`{{Da}} {{me}} ghi lại rồi{{a}}. ${decision.advice}`),
+      advice: say(decision.advice),
       reason: decision.reason,
       rule_id: decision.rule_id
     };

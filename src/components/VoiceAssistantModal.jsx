@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, X, Send, Loader2, PhoneCall, AlertTriangle } from 'lucide-react';
 import { askVoiceAssistant } from '../services/geminiService';
+import { speakOut, stopSpeaking } from '../services/speechService';
+import { speak } from '../services/honorifics';
 import SymptomIntakePanel from './SymptomIntakePanel';
 import MedicalDisclaimer from './MedicalDisclaimer';
 
@@ -28,29 +30,27 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
   const [isListening, setIsListening] = useState(false);
   const [emergency, setEmergency] = useState(null);
   const [intakeOpen, setIntakeOpen] = useState(false);
+  // Khung Gemini đã điền sẵn từ câu bác vừa nói — bộ hỏi dùng để bỏ bớt câu
+  // đã rõ. KHÔNG dùng để chạy thẳng bảng luật.
+  const [intakePrefill, setIntakePrefill] = useState(null);
   const [quickReplies, setQuickReplies] = useState(null);
   const [familyNotified, setFamilyNotified] = useState(false);
   const [messages, setMessages] = useState([
     {
       sender: 'assistant',
-      text: `Dạ con chào ${memberProfile.display_name}! Con là "Cháu Bi" đây ạ. Bác muốn hỏi gì về thuốc hay giờ uống thuốc hôm nay không ạ?`
+      text: speak(`{{Da}} {{me}} chào ${memberProfile.display_name}! {{Me}} là "Cháu Bi" đây{{a}}. {{You}} muốn hỏi gì về thuốc hay giờ uống thuốc hôm nay không{{a}}?`, memberProfile)
     }
   ]);
 
-  const speakText = (text) => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'vi-VN';
-    u.rate = 0.95;
-    window.speechSynthesis.speak(u);
-  };
+  // Giọng Gemini trước, giọng trình duyệt làm lưới đỡ. Chi tiết vì sao phải
+  // có lưới đỡ: src/services/speechService.js
+  const speakText = (text) => { speakOut(text, memberProfile); };
 
   const startVoiceInput = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       // Safari trên iOS thường rơi vào nhánh này — xem doc 34 mục 4
-      alert('Trình duyệt này chưa hỗ trợ nhận diện giọng nói. Bác nhập chữ giúp con nha.');
+      alert(speak('Trình duyệt này chưa hỗ trợ nhận diện giọng nói. {{You}} nhập chữ giúp {{me}} {{nha}}.', memberProfile));
       return;
     }
     const rec = new SR();
@@ -95,7 +95,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     setLoading(false);
 
     if (res.isEmergency) setEmergency(res);
-    if (res.startIntake) setIntakeOpen(true);
+    if (res.startIntake) { setIntakePrefill(res.prefill || null); setIntakeOpen(true); }
     if (res.quickReplies) setQuickReplies(res.quickReplies);
 
     speakText(res.text);
@@ -107,7 +107,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     if (reply.action === 'START_INTAKE') {
       setIntakeOpen(true);
     } else {
-      setMessages(m => [...m, { sender: 'assistant', text: 'Dạ vậy thì con yên tâm ạ. Bác có gì cứ gọi con nha.' }]);
+      setMessages(m => [...m, { sender: 'assistant', text: speak('{{Da}} vậy thì {{me}} yên tâm{{a}}. {{You}} có gì cứ gọi {{me}} {{nha}}.', memberProfile) }]);
     }
   };
 
@@ -122,7 +122,8 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     .flatMap(p => p.medications || [])
     .filter(m => m?.name);
 
-  const sampleQuestions = myMeds.slice(0, 2).map(m => `${m.name} uống trước hay sau ăn ạ?`);
+  const sampleQuestions = myMeds.slice(0, 2)
+    .map(m => speak(`${m.name} uống trước hay sau ăn{{a}}?`, memberProfile));
   if (myMeds.length) sampleQuestions.push('Quên uống thuốc trưa rồi thì giờ làm sao?');
 
   return (
@@ -141,7 +142,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
               </span>
             </div>
           </div>
-          <button onClick={onClose} style={{ border: 'none', background: 'rgba(0,0,0,0.05)', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
+          <button onClick={() => { stopSpeaking(); onClose(); }} style={{ border: 'none', background: 'rgba(0,0,0,0.05)', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'grid', placeItems: 'center' }}>
             <X size={20} />
           </button>
         </div>
@@ -195,10 +196,11 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
               prescriptions={prescriptions}
               onCancel={() => setIntakeOpen(false)}
               onAlert={onAlert}
+              prefill={intakePrefill}
               onFinish={({ summary, decision }) => {
                 setMessages(m => [...m, {
                   sender: 'assistant',
-                  text: `Con ghi lại rồi ạ: ${summary}`,
+                  text: speak(`{{Me}} ghi lại rồi{{a}}: ${summary}`, memberProfile),
                   source: `TRIAGE:${decision.rule_id || 'NO_RULE'}`
                 }]);
               }}

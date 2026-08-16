@@ -4,7 +4,8 @@ import { config } from '../lib/config.js';
 import { fail, requireAuth } from '../plugins/auth.js';
 import { enforceAiQuota } from '../plugins/rateLimit.js';
 import { buildPseudonymousProfile, findIdentifiers, stripExtractionIdentifiers } from '../lib/pseudonym.js';
-import { EXTRACT_PROMPT, DEVICE_READ_PROMPT, askPrompt, explainPrompt, narrateSymptomPrompt } from '../lib/prompts.js';
+import { EXTRACT_PROMPT, DEVICE_READ_PROMPT, askPrompt, explainPrompt, narrateSymptomPrompt, classifySymptomPrompt } from '../lib/prompts.js';
+import { synthesizeSpeech } from '../lib/tts.js';
 
 
 /**
@@ -96,42 +97,25 @@ export default async function aiRoutes(fastify) {
       log: request.log
     });
 
+    // ⚠️ KHÔNG dựng đơn thuốc dự phòng ở đây.
+    //
+    // Bản trước, khi Gemini lỗi, route này trả về một đơn BỊA HOÀN TOÀN:
+    // "Amlodipine 5mg, uống 1 viên buổi trưa", "Paracetamol 500mg", bác sĩ
+    // "TS.BS Nguyễn Văn An", est_remaining 18 viên. Kèm cờ `is_fallback: true`
+    // — mà KHÔNG chỗ nào phía frontend đọc cờ đó (đã grep toàn repo).
+    //
+    // Nghĩa là: mạng chập một cái lúc bác chụp đơn thuốc, app hiện ra hai
+    // loại thuốc bác chưa từng được kê, bác bấm xác nhận, và từ đó app nhắc
+    // bác uống Amlodipine mỗi trưa. Thuốc huyết áp, cho người có thể đang
+    // không bị huyết áp.
+    //
+    // Hỏng thì nói là hỏng. Nhập tay vẫn còn đó.
     if (!res.ok) {
-      request.log.warn({ code: res.code, message: res.message }, 'dùng OCR nhận diện dự phòng');
+      request.log.warn({ code: res.code }, 'đọc đơn thuốc thất bại — trả lỗi thật');
       return reply.send({
-        ok: true,
-        is_fallback: true,
-        document_title: 'Đơn khám mẫu (Nhận diện dự phòng)',
-        doctor_name: 'TS.BS Nguyễn Văn An',
-        created_at: new Date().toISOString().split('T')[0],
-        medications: [
-          {
-            name: 'Amlodipine 5mg',
-            nick_name: 'Viên huyết áp màu trắng',
-            generic: 'Amlodipine besylate',
-            strength: '5mg',
-            dosage: 'Uống 1 viên vào buổi trưa',
-            timing: 'Trưa (sau khi ăn)',
-            time_slot: 'Trưa',
-            frequency: '1 lần/ngày',
-            duration_days: 30,
-            est_remaining: 18,
-            confidence: 0.95
-          },
-          {
-            name: 'Paracetamol 500mg',
-            nick_name: 'Viên giảm đau hạ sốt',
-            generic: 'Paracetamol',
-            strength: '500mg',
-            dosage: 'Uống 1 viên khi đau nhức',
-            timing: 'Khi cần',
-            time_slot: 'Sáng',
-            frequency: 'Khi cần',
-            duration_days: 10,
-            est_remaining: 5,
-            confidence: 0.9
-          }
-        ]
+        ok: false,
+        error_code: res.code,
+        error_message: `${res.message} Bạn nhập tay giúp nhé — đừng đoán liều.`
       });
     }
 
@@ -168,7 +152,8 @@ export default async function aiRoutes(fastify) {
     const parsed = z.object({
       question: z.string().min(1).max(1000),
       profile: profileSchema.optional().default({}),
-      medications: z.array(medSchema).max(40).optional().default([])
+      medications: z.array(medSchema).max(40).optional().default([]),
+      register: z.enum(['elder', 'peer']).optional().default('elder')
     }).safeParse(request.body);
 
     if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Câu hỏi không hợp lệ.');
@@ -182,7 +167,7 @@ export default async function aiRoutes(fastify) {
     }
 
     const res = await callGemini({
-      prompt: askPrompt(pseudo, parsed.data.question),
+      prompt: askPrompt(pseudo, parsed.data.question, parsed.data.register),
       jsonMode: false,
       temperature: 0.5,
       maxTokens: 2500,
@@ -193,10 +178,103 @@ export default async function aiRoutes(fastify) {
     return reply.send({ ok: true, text: res.text.trim() });
   });
 
+  /* ── Phân loại câu nói thành KHUNG ──
+   *
+   * ⚠️ Route này KHÔNG trả lời người dùng và KHÔNG ra quyết định. Nó chỉ điền
+   * nhãn vào khung cố định; bảng luật tĩnh phía client mới quyết định 115 hay
+   * khám 24h. Client còn trộn kết quả này với từ điển tại máy theo luật
+   * "chỉ được đẩy nặng lên" — xem classifyUtteranceSmart trong geminiService.js.
+   *
+   * Không cần hồ sơ thuốc ở đây: phân loại chỉ đọc câu chữ. Gửi ít dữ liệu
+   * hơn thì lộ ít hơn.
+   */
+  const KINDS = ['NOT_SYMPTOM', 'PAST_TENSE_CHECK', 'NEEDS_INTAKE', 'TRAUMA', 'EMERGENCY'];
+  const REGIONS = ['chest', 'epigastric', 'ruq', 'periumbilical', 'rlq', 'llq',
+                   'suprapubic', 'back', 'head', 'leg', 'joint', 'whole'];
+  const ONSETS = ['sudden', 'today', 'few_days', 'over_week'];
+  const SEVERITIES = ['mild', 'moderate', 'severe'];
+  const ACCOMPANYING = ['sweating', 'dyspnea', 'radiating', 'nausea', 'vomit_blood',
+                        'black_stool', 'fever', 'faint', 'weakness_one_side', 'speech',
+                        'dark_urine', 'swelling', 'rash'];
+
+  fastify.post('/classify-symptom', guard, async (request, reply) => {
+    const parsed = z.object({
+      text: z.string().min(1).max(1000),
+      register: z.enum(['elder', 'peer']).optional().default('elder')
+    }).safeParse(request.body);
+
+    if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Câu nói không hợp lệ.');
+
+    const res = await callGemini({
+      prompt: `${classifySymptomPrompt(parsed.data.register)}\n\nCâu người dùng vừa nói: "${parsed.data.text}"`,
+      jsonMode: true,
+      temperature: 0,   // phân loại phải ổn định: cùng câu, cùng nhãn
+      maxTokens: 500,
+      log: request.log
+    });
+
+    if (!res.ok) return fail(reply, 502, res.code, res.message);
+
+    let data;
+    try {
+      data = JSON.parse(res.text.replace(/```json/g, '').replace(/```/g, '').trim());
+    } catch {
+      return fail(reply, 502, 'BAD_JSON', 'AI trả về phân loại không đọc được.');
+    }
+
+    // Lọc trắng danh sách. Model bịa ra nhãn lạ thì vứt, KHÔNG chuyển tiếp —
+    // nhãn lạ lọt xuống bảng luật sẽ không khớp luật nào và im lặng thành
+    // "không có gì bất thường".
+    const pick = (v, list) => (list.includes(v) ? v : null);
+
+    return reply.send({
+      ok: true,
+      kind: pick(data.kind, KINDS) || 'NOT_SYMPTOM',
+      trauma_severe: data.trauma_severe === true,
+      region: pick(data.region, REGIONS),
+      onset: pick(data.onset, ONSETS),
+      severity: pick(data.severity, SEVERITIES),
+      accompanying: Array.isArray(data.accompanying)
+        ? [...new Set(data.accompanying.filter(x => ACCOMPANYING.includes(x)))]
+        : [],
+      confidence: typeof data.confidence === 'number'
+        ? Math.min(1, Math.max(0, data.confidence))
+        : 0.5
+    });
+  });
+
+  /* ── Đọc thành tiếng ──
+   * Lớp tăng cường. Hỏng thì frontend quay về speechSynthesis của trình duyệt,
+   * không bao giờ để câu cảnh báo bị câm. Xem server/src/lib/tts.js. */
+  fastify.post('/speak', guard, async (request, reply) => {
+    if (!config.ttsEnabled) {
+      return fail(reply, 503, 'TTS_DISABLED', 'Giọng đọc đang tắt.');
+    }
+
+    const parsed = z.object({
+      // Giới hạn 600 ký tự: câu trả lời của app tối đa 3 câu. Dài hơn nghĩa là
+      // có ai đó đang mượn endpoint này làm dịch vụ đọc sách.
+      text: z.string().min(1).max(600),
+      register: z.enum(['elder', 'peer']).optional().default('elder')
+    }).safeParse(request.body);
+
+    if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Nội dung đọc không hợp lệ.');
+
+    const res = await synthesizeSpeech({
+      text: parsed.data.text,
+      register: parsed.data.register,
+      log: request.log
+    });
+
+    if (!res.ok) return fail(reply, 502, res.code, res.message);
+    return reply.send({ ok: true, audio: res.audio, mime: res.mime, cached: res.cached });
+  });
+
   /* ── Giải thích đơn thuốc bằng lời bình dân ── */
   fastify.post('/explain', guard, async (request, reply) => {
     const parsed = z.object({
-      medications: z.array(medSchema).max(40)
+      medications: z.array(medSchema).max(40),
+      register: z.enum(['elder', 'peer']).optional().default('elder')
     }).safeParse(request.body);
 
     if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Danh sách thuốc không hợp lệ.');
@@ -204,7 +282,7 @@ export default async function aiRoutes(fastify) {
     const pseudo = buildPseudonymousProfile({}, parsed.data.medications);
 
     const res = await callGemini({
-      prompt: explainPrompt(pseudo),
+      prompt: explainPrompt(pseudo, parsed.data.register),
       jsonMode: false,
       temperature: 0.6,
       maxTokens: 2500,
@@ -221,7 +299,8 @@ export default async function aiRoutes(fastify) {
     const parsed = z.object({
       summary: z.string().min(1).max(600),
       profile: profileSchema.optional().default({}),
-      medications: z.array(medSchema).max(40).optional().default([])
+      medications: z.array(medSchema).max(40).optional().default([]),
+      register: z.enum(['elder', 'peer']).optional().default('elder')
     }).safeParse(request.body);
 
     if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Dữ liệu triệu chứng không hợp lệ.');
@@ -229,7 +308,7 @@ export default async function aiRoutes(fastify) {
     const pseudo = buildPseudonymousProfile(parsed.data.profile, parsed.data.medications);
 
     const res = await callGemini({
-      prompt: narrateSymptomPrompt(pseudo, parsed.data.summary),
+      prompt: narrateSymptomPrompt(pseudo, parsed.data.summary, parsed.data.register),
       jsonMode: false,
       temperature: 0.5,
       maxTokens: 2500,
@@ -261,14 +340,16 @@ export default async function aiRoutes(fastify) {
       log: request.log
     });
 
+    // ⚠️ Cùng một lỗi, hậu quả nặng hơn: bản trước trả về 128/82 mạch 74 khi
+    // đọc ảnh thất bại. Chỉ số bịa đó chạy thẳng vào `evaluateVital`, ra
+    // "trong ngưỡng bình thường", và hiện lên cho một người có thể đang
+    // 180/110 thật. Người đó tin app rồi đi ngủ.
     if (!res.ok) {
+      request.log.warn({ code: res.code }, 'đọc máy đo thất bại — trả lỗi thật');
       return reply.send({
-        ok: true,
-        is_fallback: true,
-        systolic: 128,
-        diastolic: 82,
-        pulse: 74,
-        confidence: 0.85
+        ok: false,
+        error_code: res.code,
+        error_message: `${res.message} Bạn nhập tay con số trên màn hình giúp nhé.`
       });
     }
 

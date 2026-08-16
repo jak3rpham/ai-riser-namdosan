@@ -13,7 +13,22 @@ import { X, UserPlus, Loader2 } from 'lucide-react';
  * còn nguy hiểm hơn bỏ trống. Bỏ trống thì app biết là chưa biết.
  */
 
-const RELATIONS = ['Ba', 'Mẹ', 'Ông', 'Bà', 'Người thân'];
+const RELATIONS = ['Ba', 'Mẹ', 'Ông', 'Bà', 'Vợ/Chồng', 'Anh/Chị/Em', 'Chính tôi', 'Người thân'];
+
+/**
+ * Cách Cháu Bi xưng hô với người này.
+ *
+ * Để người dùng chọn tay chứ không chỉ suy từ năm sinh, vì năm sinh KHÔNG bắt
+ * buộc — bỏ trống thì app mặc định "con–bác", và gọi một người 30 tuổi là
+ * "bác" là hỏng ngay câu đầu tiên. Mà app này cả nhà dùng, không riêng ba mẹ.
+ */
+const ADDRESS_STYLES = [
+  { value: 'elder', label: 'Con – Bác', hint: 'Cháu Bi xưng "con", gọi "bác". Cho ông bà, ba mẹ.' },
+  { value: 'peer', label: 'Mình – Bạn', hint: 'Xưng "mình", gọi "bạn". Cho người trẻ trong nhà.' }
+];
+
+/** Người sinh từ năm này trở về trước thì mặc định chọn giọng con–bác */
+const ELDER_BORN_BEFORE = new Date().getFullYear() - 60;
 
 /** Mức tự lập, quyết định app hiển thị đơn giản tới đâu (doc 39). */
 const CAPABILITIES = [
@@ -34,6 +49,9 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
   const [name, setName] = useState('');
   const [relation, setRelation] = useState('Ba');
   const [birthYear, setBirthYear] = useState('');
+  // null = chưa ai đụng tới, cứ suy theo năm sinh. Người dùng bấm một lần thì
+  // lựa chọn của họ thắng, kể cả khi sau đó sửa năm sinh.
+  const [addressStyle, setAddressStyle] = useState(null);
   const [capability, setCapability] = useState('C2');
   const [conditions, setConditions] = useState('');
   const [allergies, setAllergies] = useState('');
@@ -44,6 +62,14 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
 
   const splitList = raw =>
     raw.split(',').map(s => s.trim()).filter(Boolean);
+
+  // Suy từ năm sinh khi người dùng chưa chọn tay
+  const guessedStyle = (() => {
+    const y = Number(birthYear);
+    if (Number.isInteger(y) && y > 1900) return y <= ELDER_BORN_BEFORE ? 'elder' : 'peer';
+    return 'elder';
+  })();
+  const effectiveStyle = addressStyle || guessedStyle;
 
   const submit = async () => {
     if (!name.trim()) {
@@ -64,6 +90,7 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
       display_name: name.trim(),
       relation,
       birth_year: year || null,
+      address_style: effectiveStyle,
       capability,
       conditions: splitList(conditions),
       allergies: splitList(allergies),
@@ -73,7 +100,7 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
     setSaving(false);
 
     if (res.ok) {
-      setName(''); setBirthYear(''); setConditions(''); setAllergies('');
+      setName(''); setBirthYear(''); setConditions(''); setAllergies(''); setAddressStyle(null);
       onClose();
     } else {
       setError(res.error_message || 'Chưa lưu được. Bạn thử lại nhé.');
@@ -111,6 +138,19 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
               inputMode="numeric"
               style={inputStyle}
             />
+          </Field>
+
+          <Field label="Cháu Bi xưng hô thế nào">
+            <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
+              {ADDRESS_STYLES.map(a => (
+                <Chip key={a.value} active={effectiveStyle === a.value} onClick={() => setAddressStyle(a.value)} block>
+                  <span style={{ fontWeight: 800 }}>{a.label}</span>
+                  <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, opacity: 0.75, marginTop: 2 }}>
+                    {a.hint}
+                  </span>
+                </Chip>
+              ))}
+            </div>
           </Field>
 
           <Field label="Dùng điện thoại thế nào">

@@ -269,10 +269,26 @@ export default async function aiRoutes(fastify) {
       prompt: `${classifySymptomPrompt(parsed.data.register)}\n\nCâu người dùng vừa nói: "${parsed.data.text}"`,
       jsonMode: true,
       temperature: 0,   // phân loại phải ổn định: cùng câu, cùng nhãn
-      // JSON trả về chỉ vài chục token. Để 500 không tốn thêm tiền nhưng cho
-      // model chỗ để lan man, mà route này nằm chắn trước MỌI câu trả lời nên
-      // mỗi trăm mili giây đều thấy được.
-      maxTokens: 200,
+      /**
+       * ⚠️ Từng để 200 và route này HỎNG HOÀN TOÀN — mọi lời gọi trả BAD_JSON.
+       *
+       * Lý do: `maxOutputTokens` tính cả phần model suy nghĩ trước khi viết,
+       * không chỉ phần chữ nó trả ra. Với gemini-3.6-flash, 200 token bị phần
+       * suy nghĩ ăn hết, JSON ra cụt giữa chừng, JSON.parse ném lỗi.
+       *
+       * Bằng chứng khi truy: /extract-prescription (JSON, 8000 token) chạy tốt,
+       * /ask (2500) chạy tốt, chỉ mỗi route 200 token hỏng — cùng khoá, cùng
+       * model, cùng chế độ JSON.
+       *
+       * Hỏng theo kiểu im lặng: client bắt lỗi rồi lặng lẽ giữ kết quả từ điển
+       * tại máy, nên nhìn ngoài app vẫn chạy. Chỉ mất đúng cái mà lớp Gemini
+       * sinh ra để làm — đọc chính tả sai, tiếng lóng, câu nói vòng.
+       *
+       * Đừng hạ xuống để "tiết kiệm". Chỉ trả tiền cho token thật sự sinh ra,
+       * mà JSON này chỉ vài chục token; con số dưới đây là trần, không phải
+       * lượng dùng.
+       */
+      maxTokens: 1200,
       log: request.log
     });
 
@@ -282,6 +298,10 @@ export default async function aiRoutes(fastify) {
     try {
       data = JSON.parse(res.text.replace(/```json/g, '').replace(/```/g, '').trim());
     } catch {
+      // Ghi lại NGUYÊN VĂN thứ model trả về. Không có dòng này thì lần trước
+      // phải suy luận gián tiếp qua các route khác mới ra được nguyên nhân là
+      // hết ngân sách token — mà lỗi thì im lặng, không ai biết để đi tìm.
+      request.log.warn({ raw: String(res.text || '').slice(0, 300) }, 'phân loại: JSON không đọc được');
       return fail(reply, 502, 'BAD_JSON', 'AI trả về phân loại không đọc được.');
     }
 

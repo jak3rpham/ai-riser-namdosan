@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Mic, Heart, Pill, User, UserCheck, ShieldAlert, PhoneCall, Copy, Check } from 'lucide-react';
+import { CheckCircle2, Mic, Heart, Pill, User, UserCheck, ShieldAlert, PhoneCall } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import VoiceAssistantModal from './VoiceAssistantModal';
 import PharmacyModeModal from './PharmacyModeModal';
@@ -13,12 +13,12 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
   const [isPharmacyOpen, setIsPharmacyOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
   const [saveError, setSaveError] = useState(null);
-  const [copiedCode, setCopiedCode] = useState(false);
 
   // Quick ask state inside 'ask' tab
   const [askQuery, setAskQuery] = useState('');
   const [askLoading, setAskLoading] = useState(false);
   const [askResponse, setAskResponse] = useState(null);
+  const [voiceSeed, setVoiceSeed] = useState(null);
 
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
 
@@ -61,7 +61,25 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
     setAskResponse(null);
     const res = await askVoiceAssistant(text, selectedMember, prescriptions);
     setAskLoading(false);
+
+    // ⚠️ Ô hỏi nhanh ở tab này chỉ in ra chữ. Nó KHÔNG có nút gọi 115, nút báo
+    // người nhà, hay bộ hỏi triệu chứng — nên mọi câu chạm tới sức khỏe phải
+    // được chuyển sang trợ lý đầy đủ, không được trả lời cụt ở đây.
+    // Trước đây bác gõ "bác chóng mặt" thì app hứa "để con hỏi bác vài câu"
+    // rồi im luôn; gõ "đau ngực khó thở" thì cảnh báo hiện ra mà không có nút gọi.
+    if (res.isEmergency || res.startIntake || res.quickReplies) {
+      setVoiceSeed(text);
+      setIsVoiceOpen(true);
+      setAskQuery('');
+      return;
+    }
+
     setAskResponse(res.text);
+  };
+
+  const closeVoice = () => {
+    setIsVoiceOpen(false);
+    setVoiceSeed(null);
   };
 
   const frameStyle = demo
@@ -275,24 +293,12 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
                   </div>
                 </div>
 
-                <div style={{ paddingTop: 10, borderTop: '1px dashed var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800 }}>Mã nhà (Mời con cái vào xem):</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--coral-main)', marginTop: 2 }}>{selectedMember.id}</div>
-                  </div>
-                  <button
-                    className="btn-secondary"
-                    onClick={() => {
-                      navigator.clipboard.writeText(selectedMember.id || '');
-                      setCopiedCode(true);
-                      setTimeout(() => setCopiedCode(false), 2000);
-                    }}
-                    style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12 }}
-                  >
-                    {copiedCode ? <Check size={14} color="var(--emerald-ok)" /> : <Copy size={14} />}
-                    {copiedCode ? 'Đã sao chép' : 'Sao chép mã'}
-                  </button>
-                </div>
+                {/* Khối "Mã nhà (Mời con cái vào xem)" đã bỏ: nó in ra
+                    `selectedMember.id` — một id nội bộ, KHÔNG phải mã mời. Từ khi
+                    kết nạp thành viên đi qua `invites/{code}` ở backend, id này
+                    không mời được ai, nhưng vẫn nằm trên màn hình và lọt vào
+                    khung hình khi quay video. Mã mời thật ở HouseholdBar (app Con):
+                    hết hạn 7 ngày, giới hạn lượt, thu hồi được. */}
               </div>
             </div>
           )}
@@ -338,7 +344,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], onC
         </div>
       </div>
 
-      <VoiceAssistantModal isOpen={isVoiceOpen} onClose={() => setIsVoiceOpen(false)} memberProfile={selectedMember} prescriptions={prescriptions} onAlert={onAlert} />
+      <VoiceAssistantModal isOpen={isVoiceOpen} onClose={closeVoice} memberProfile={selectedMember} prescriptions={prescriptions} onAlert={onAlert} initialQuestion={voiceSeed} />
       <PharmacyModeModal isOpen={isPharmacyOpen} onClose={() => setIsPharmacyOpen(false)} memberProfile={selectedMember} prescriptions={prescriptions} language={language} />
     </div>
   );

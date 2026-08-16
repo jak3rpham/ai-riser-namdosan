@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mic, X, Send, Loader2, PhoneCall, AlertTriangle } from 'lucide-react';
 import { askVoiceAssistant } from '../services/geminiService';
 import SymptomIntakePanel from './SymptomIntakePanel';
@@ -17,8 +17,12 @@ import MedicalDisclaimer from './MedicalDisclaimer';
  *
  * 2. Câu hỏi triệu chứng không còn rơi vào chat tự do. Nó chuyển sang bộ hỏi
  *    cấu trúc (SymptomIntakePanel) rồi qua bảng luật tĩnh.
+ *
+ * `initialQuestion`: câu bác đã gõ ở ô hỏi nhanh trong tab "Hỏi cháu". Ô đó chỉ
+ * in chữ, không có nút 115 / báo người nhà / bộ hỏi, nên khi câu chạm tới sức
+ * khỏe thì tab mở modal này kèm nguyên câu để xử lại cho đủ.
  */
-export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, prescriptions = [], onAlert }) {
+export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, prescriptions = [], onAlert, initialQuestion = null }) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -63,6 +67,15 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     rec.start();
   };
 
+  // Câu chuyển từ ô hỏi nhanh sang — chạy đúng một lần cho mỗi câu.
+  const sentSeed = useRef(null);
+  useEffect(() => {
+    if (!isOpen) { sentSeed.current = null; return; }
+    if (!initialQuestion || sentSeed.current === initialQuestion) return;
+    sentSeed.current = initialQuestion;
+    handleSend(initialQuestion);
+  }, [isOpen, initialQuestion]);
+
   if (!isOpen) return null;
 
   const handleSend = async (textToSend) => {
@@ -98,11 +111,19 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     }
   };
 
-  const sampleQuestions = [
-    'Thuốc huyết áp này uống trước hay sau ăn?',
-    'Quên uống thuốc trưa rồi thì giờ làm sao?',
-    'Bác đau bụng trên, buồn nôn quá cháu ơi'
-  ];
+  // Gợi ý dựng từ thuốc CÓ THẬT trong hồ sơ, không phải danh sách cố định.
+  //
+  // Bản trước có ba câu cứng giống hệt nhau cho mọi người, trong đó một câu là
+  // "Bác đau bụng trên, buồn nôn quá cháu ơi" — bấm vào là app tin bác đang đau
+  // bụng và buồn nôn thật, rồi chạy bộ hỏi triệu chứng cho một triệu chứng bác
+  // không hề có. Gợi ý giờ chỉ hỏi về thuốc; triệu chứng để bác tự nói.
+  const myMeds = prescriptions
+    .filter(p => !memberProfile?.id || p.member_id === memberProfile.id)
+    .flatMap(p => p.medications || [])
+    .filter(m => m?.name);
+
+  const sampleQuestions = myMeds.slice(0, 2).map(m => `${m.name} uống trước hay sau ăn ạ?`);
+  if (myMeds.length) sampleQuestions.push('Quên uống thuốc trưa rồi thì giờ làm sao?');
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(16px)', display: 'grid', placeItems: 'center', padding: 20 }}>
@@ -221,7 +242,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
 
         {!intakeOpen && (
           <>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: sampleQuestions.length ? 16 : 0 }}>
               {sampleQuestions.map((q, i) => (
                 <button key={i} onClick={() => handleSend(q)} style={{ border: '1px solid var(--glass-border)', background: 'var(--coral-soft)', color: 'var(--coral-main)', fontSize: 12, fontWeight: 700, padding: '6px 12px', borderRadius: 99, cursor: 'pointer', textAlign: 'left' }}>
                   💬 "{q}"

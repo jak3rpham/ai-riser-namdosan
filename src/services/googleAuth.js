@@ -22,7 +22,7 @@
 
 import {
   GoogleAuthProvider, signInWithPopup, signInWithCredential, linkWithPopup,
-  signInAnonymously, signOut, onAuthStateChanged
+  signInAnonymously, onAuthStateChanged
 } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebaseConfig';
 
@@ -192,7 +192,12 @@ function describeAuthError(err) {
     'auth/unauthorized-domain': 'Tên miền này chưa được thêm vào Firebase Authentication → Settings → Authorized domains. Xem doc 36 mục 3.',
     'auth/operation-not-allowed': 'Chưa bật phương thức đăng nhập Google trong Firebase Console → Authentication → Sign-in method.',
     'auth/invalid-api-key': 'Khoá Firebase không hợp lệ. Kiểm tra VITE_FIREBASE_API_KEY trong file .env.',
-    'auth/network-request-failed': 'Không có mạng hoặc mạng chặn. Kiểm tra kết nối rồi thử lại.'
+    'auth/network-request-failed': 'Không có mạng hoặc mạng chặn. Kiểm tra kết nối rồi thử lại.',
+
+    // ── Mấy mã của luồng LIÊN KẾT tài khoản (linkWithPopup) ──
+    'auth/credential-already-in-use': 'Tài khoản Google này đã được dùng ở một nhà khác. Bạn đăng nhập lại bằng nó để vào nhà cũ, hoặc chọn tài khoản Google khác cho nhà này.',
+    'auth/email-already-in-use': 'Email này đã gắn với một tài khoản khác trong app. Bạn chọn tài khoản Google khác nhé.',
+    'auth/provider-already-linked': 'Tài khoản này đã nối Google rồi. Bạn tải lại trang là dùng được.'
   };
 
   return {
@@ -287,14 +292,29 @@ export async function signInParentAnonymously() {
   }
 }
 
+/**
+ * Ngắt kết nối Google = bỏ quyền dùng Lịch và Việc cần làm.
+ *
+ * ⚠️ KHÔNG đăng xuất khỏi Firebase ở đây.
+ *
+ * Bản trước gọi `signOut(auth)`. Hai thứ bị gộp làm một mà thực ra tách bạch:
+ *
+ *   token Google  → quyền ghi vào Calendar / Tasks
+ *   tài khoản Firebase → CHỦ SỞ HỮU của nhà, `members/{uid}`
+ *
+ * Đăng xuất là bỏ luôn cái thứ hai. Lần gọi tiếp theo `ensureUser()` sẽ dựng
+ * một tài khoản ẩn danh MỚI, uid mới đó không phải thành viên của nhà, và
+ * người dùng bị khoá ngoài đúng như lỗi nối Google ngày 16/08.
+ *
+ * Người bấm "Ngắt kết nối Google" đang muốn thôi đồng bộ lịch. Họ không hề
+ * yêu cầu bỏ nhà, và mất nhà không phải hậu quả họ đoán được từ cái nút đó.
+ *
+ * `isGoogleConnected()` chỉ đọc token đã lưu, không đọc phiên đăng nhập — nên
+ * bỏ `signOut` đi cũng không làm sai trạng thái hiển thị.
+ */
 export async function disconnectGoogle() {
   clearGoogleToken();
-  try {
-    await signOut(auth);
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, ...describeAuthError(err) };
-  }
+  return { ok: true };
 }
 
 export function subscribeAuthState(callback) {

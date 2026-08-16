@@ -15,6 +15,8 @@ import EmptyHouseholdView from './components/EmptyHouseholdView';
 import IdentityPickerView from './components/IdentityPickerView';
 import HouseholdManageModal from './components/HouseholdManageModal';
 import DemoLoginView from './components/DemoLoginView';
+import ManagerSidebar from './components/ManagerSidebar';
+import { runAllSafetyChecks } from './services/safetyChecks';
 import { useHousehold } from './hooks/useHousehold';
 import { INITIAL_FAMILY_MEMBERS, INITIAL_PRESCRIPTIONS, I18N_STRINGS } from './services/mockData';
 import { LayoutGrid, Smartphone, Eye, UserPlus, Users } from 'lucide-react';
@@ -86,6 +88,7 @@ function ManagerWeb({ language, setLanguage }) {
   const [isAddSubjectOpen, setAddSubject] = useState(false);
   const [isManageOpen, setManage] = useState(false);
   const [editingSubject, setEditingSubject] = useState(null);
+  const [section, setSection] = useState('overview');
 
   /**
    * Chốt luôn người đang xem, thay vì chỉ mượn `members[0]` lúc render.
@@ -149,6 +152,24 @@ function ManagerWeb({ language, setLanguage }) {
 
   const viewMember = state.selectedMember || state.members[0];
 
+  /**
+   * Số đỏ trên thanh điều hướng.
+   *
+   * Chỉ đếm thứ CẦN NGƯỜI XEM LÀM GÌ ĐÓ: cảnh báo an toàn mức nghiêm trọng, và
+   * cấp cứu / cần đi khám mà ba mẹ vừa báo. Đếm cả những thứ chỉ để đọc thì
+   * chấm đỏ lúc nào cũng sáng, và sáng mãi thì không còn nghĩa gì.
+   */
+  const viewMeds = state.prescriptions
+    .filter(p => p.member_id === viewMember.id)
+    .flatMap(p => p.medications || []);
+
+  const badges = {
+    overview:
+      runAllSafetyChecks({ newMedications: [], existingMedications: viewMeds, memberProfile: viewMember })
+        .warnings.filter(w => w.severity === 'CRITICAL').length
+      + state.feed.filter(f => f.type === 'EMERGENCY' || f.type === 'SAFETY_CRITICAL').length
+  };
+
   return (
     <div className="app-container">
       <Navbar
@@ -163,36 +184,60 @@ function ManagerWeb({ language, setLanguage }) {
         onLeaveHousehold={state.leave}
       />
 
-      <div style={{ marginBottom: 16 }}>
-        <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="manager" />
-      </div>
+      <div className="manager-layout">
+        <ManagerSidebar
+          section={section}
+          onSelect={setSection}
+          members={state.members}
+          selectedMember={viewMember}
+          onSelectMember={state.setSelectedMember}
+          badges={badges}
+        />
 
-      <div style={{ marginBottom: 24 }}>
-        <GoogleConnectPanel />
-      </div>
+        <main style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 }}>
+          {/* ── Mục "Nhà mình" ──
+              Ba thứ này trước đây nằm chồng lên đầu trang, trên mọi màn hình,
+              chiếm gần hết khung hình đầu tiên bằng những việc chỉ làm một lần:
+              nối Google, mời người nhà. Giờ chúng có chỗ riêng. */}
+          {section === 'household' && (
+            <>
+              <div className="manager-section-head">
+                <div>
+                  <h3 className="manager-section-title">Nhà mình</h3>
+                  <div className="manager-section-sub">Người nhà, mã mời, và kết nối Google</div>
+                </div>
+              </div>
+              <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="manager" />
+              <GoogleConnectPanel />
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button className="btn-secondary" onClick={() => setManage(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 13.5 }}>
+                  <Users size={15} /> Quản lý nhà
+                </button>
+                <button className="btn-secondary" onClick={() => setAddSubject(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 13.5 }}>
+                  <UserPlus size={15} /> Thêm người nhà
+                </button>
+              </div>
+            </>
+          )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12 }}>
-        <button className="btn-secondary" onClick={() => setManage(true)} style={{ padding: '9px 16px', borderRadius: 12, fontSize: 13.5 }}>
-          <Users size={15} /> Quản lý nhà
-        </button>
-        <button className="btn-secondary" onClick={() => setAddSubject(true)} style={{ padding: '9px 16px', borderRadius: 12, fontSize: 13.5 }}>
-          <UserPlus size={15} /> Thêm người nhà
-        </button>
+          {section !== 'household' && (
+            <FamilyDashboard
+              section={section}
+              members={state.members}
+              selectedMember={viewMember}
+              onSelectMember={state.setSelectedMember}
+              readings={state.readings}
+              onSaveReading={state.addReading}
+              prescriptions={state.prescriptions}
+              onAddPrescription={state.addPrescription}
+              appointments={state.appointments}
+              onAddAppointment={state.addAppointment}
+              feed={state.feed}
+              language={language}
+            />
+          )}
+        </main>
       </div>
-
-      <FamilyDashboard
-        members={state.members}
-        selectedMember={viewMember}
-        onSelectMember={state.setSelectedMember}
-        readings={state.readings}
-        onSaveReading={state.addReading}
-        prescriptions={state.prescriptions}
-        onAddPrescription={state.addPrescription}
-        appointments={state.appointments}
-        onAddAppointment={state.addAppointment}
-        feed={state.feed}
-        language={language}
-      />
 
 
       <AddSubjectModal

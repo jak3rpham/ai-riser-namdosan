@@ -12,9 +12,19 @@ import { runAllSafetyChecks } from '../services/safetyChecks';
 import { resolveGenerics, GENERIC_PLAIN_NAMES } from '../services/medicalKnowledge';
 import MedicalDisclaimer from './MedicalDisclaimer';
 import FamilyFeedCard from './FamilyFeedCard';
+import { MANAGER_SECTIONS } from './ManagerSidebar';
 import { I18N_STRINGS } from '../services/mockData';
 
+/**
+ * Bảng điều khiển của app Con.
+ *
+ * `section` = mục đang mở trên thanh điều hướng (xem ManagerSidebar.jsx).
+ * Truyền `null` — chế độ trình diễn ?demo=1 dùng cách này — thì hiện HẾT mọi
+ * khối trong một trang cuộn dài, đúng như bản trước, để quay video hai màn hình
+ * cạnh nhau không phải bấm qua lại giữa các mục.
+ */
 export default function FamilyDashboard({
+  section = null,
   members = [],
   selectedMember,
   onSelectMember,
@@ -27,6 +37,7 @@ export default function FamilyDashboard({
   feed = [],
   language = 'vi'
 }) {
+  const shows = id => section === null || section === id;
   const [isPharmacyOpen, setIsPharmacyOpen] = useState(false);
   const [isMapsOpen, setIsMapsOpen] = useState(false);
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
@@ -85,17 +96,26 @@ export default function FamilyDashboard({
     memberProfile: selectedMember
   });
 
+  const sectionMeta = MANAGER_SECTIONS.find(s => s.id === section) || null;
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       
-      {/* Top Bar: Member Selector & Status */}
-      <div className="liquid-card" style={{ padding: '20px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+      {/* ── Đầu trang ──
+          Có thanh điều hướng rồi thì việc chọn người đã chuyển lên đó, và tên
+          mục đang mở mới là thứ cần nói ở đây. Chế độ ?demo=1 không có thanh
+          nào nên vẫn giữ nguyên hàng chip chọn người như cũ. */}
+      <div className="manager-section-head">
         <div>
-          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>{t.family_profile}</h3>
-          <span style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>{t.family_profile_sub}</span>
+          <h3 className="manager-section-title">{sectionMeta?.label || t.family_profile}</h3>
+          <div className="manager-section-sub">
+            {section
+              ? `${sectionMeta?.hint || ''} — hồ sơ của ${selectedMember.display_name}`
+              : t.family_profile_sub}
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <button
             onClick={() => setIsMapsOpen(true)}
             className="btn-secondary"
@@ -112,34 +132,39 @@ export default function FamilyDashboard({
             <UserCheck size={16} /> {t.pharmacy_mode_btn}
           </button>
 
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            {members.map(m => (
-              <div
-                key={m.id}
-                onClick={() => onSelectMember(m)}
-                className={`member-chip ${selectedMember.id === m.id ? 'active' : ''}`}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 99,
-                  background: selectedMember.id === m.id ? '#FFF' : 'rgba(255,255,255,0.6)',
-                  border: selectedMember.id === m.id ? '1.5px solid var(--coral-main)' : '1px solid var(--glass-border)',
-                  fontWeight: 700, fontSize: 14, color: selectedMember.id === m.id ? 'var(--coral-main)' : 'var(--text-sub)',
-                  cursor: 'pointer', boxShadow: selectedMember.id === m.id ? '0 4px 14px rgba(255,107,75,0.15)' : 'none'
-                }}
-              >
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: m.avatar_color || 'var(--coral-grad)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 11, fontWeight: 800 }}>
-                  {m.display_name.charAt(0)}
+          {!section && (
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              {members.map(m => (
+                <div
+                  key={m.id}
+                  onClick={() => onSelectMember(m)}
+                  className={`member-chip ${selectedMember.id === m.id ? 'active' : ''}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '8px 18px', borderRadius: 99,
+                    background: selectedMember.id === m.id ? '#FFF' : 'rgba(255,255,255,0.6)',
+                    border: selectedMember.id === m.id ? '1.5px solid var(--coral-main)' : '1px solid var(--glass-border)',
+                    fontWeight: 700, fontSize: 14, color: selectedMember.id === m.id ? 'var(--coral-main)' : 'var(--text-sub)',
+                    cursor: 'pointer', boxShadow: selectedMember.id === m.id ? '0 4px 14px rgba(255,107,75,0.15)' : 'none'
+                  }}
+                >
+                  <div style={{ width: 24, height: 24, borderRadius: '50%', background: m.avatar_color || 'var(--coral-grad)', display: 'grid', placeItems: 'center', color: '#fff', fontSize: 11, fontWeight: 800 }}>
+                    {m.display_name.charAt(0)}
+                  </div>
+                  {m.display_name} ({m.relation})
                 </div>
-                {m.display_name} ({m.relation})
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Prescription Upload & Scanning Wizard */}
-      <PrescriptionUploadWizard onAddPrescription={onAddPrescription} selectedMember={selectedMember} prescriptions={prescriptions} language={language} />
+      {shows('prescriptions') && (
+        <PrescriptionUploadWizard onAddPrescription={onAddPrescription} selectedMember={selectedMember} prescriptions={prescriptions} language={language} />
+      )}
 
       {/* Overview Stat Boxes */}
+      {shows('overview') && (
       <div className="stat-grid">
         <div className="liquid-card" style={{ padding: 22 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>{t.compliance_rate}</span>
@@ -191,30 +216,36 @@ export default function FamilyDashboard({
           })()}
         </div>
       </div>
+      )}
 
       {/* Signature Safety Alerts (T15 & M12) */}
+      {shows('overview') && (
       <div>
         <h4 style={{ fontSize: 17, fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <ShieldCheck color="var(--amber-warm)" /> Kiểm tra an toàn thuốc
         </h4>
         <SignatureAlertCard warnings={safety.warnings} coverage={safety.coverage} />
       </div>
+      )}
 
       {/* Dòng sự kiện realtime từ phía ba mẹ */}
-      <FamilyFeedCard feed={feed} />
+      {shows('overview') && <FamilyFeedCard feed={feed} />}
 
       {/* Food-Drug Interactions (M12) */}
-      <FoodInteractionCard selectedMember={selectedMember} prescriptions={prescriptions} language={language} />
+      {shows('food') && <FoodInteractionCard selectedMember={selectedMember} prescriptions={prescriptions} language={language} />}
 
       {/* Hospital Appointment & Consultation Sync (M20) */}
-      <AppointmentTrackerCard selectedMember={selectedMember} appointments={appointments} onSaveAppointment={onAddAppointment} language={language} />
-
+      {shows('appointments') && (
+        <AppointmentTrackerCard selectedMember={selectedMember} appointments={appointments} onSaveAppointment={onAddAppointment} language={language} />
+      )}
 
       {/* Health Metrics (M17) */}
-      <HealthTrackerCard selectedMember={selectedMember} readings={readings} onSaveReading={onSaveReading} language={language} />
+      {shows('vitals') && (
+        <HealthTrackerCard selectedMember={selectedMember} readings={readings} onSaveReading={onSaveReading} language={language} />
+      )}
 
       {/* Medicine Cabinet */}
-      <MedicineCabinet medications={activeMeds} language={language} />
+      {shows('prescriptions') && <MedicineCabinet medications={activeMeds} language={language} />}
 
       <MedicalDisclaimer variant="bar" language={language} />
 

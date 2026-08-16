@@ -18,7 +18,29 @@ export default defineConfig({
     port: 3000,
     // host: true → lắng nghe trên mọi card mạng, để iPhone cùng Wi-Fi vào được
     host: true,
-    open: !process.env.CI
+    open: !process.env.CI,
+
+    /**
+     * Chuyển tiếp /api sang backend đã deploy.
+     *
+     * Không có khối này thì `npm run dev` KHÔNG gọi được backend: apiClient
+     * gọi đường dẫn tương đối `/api/*`, mà máy chủ dev chỉ phục vụ file tĩnh
+     * nên mọi lời gọi trả về trang index rồi vỡ ở bước đọc JSON. Hậu quả là
+     * không thể bấm thử tại máy các luồng cần backend — tạo nhà, mã mời, quét
+     * đơn, giọng đọc — đúng những luồng doc 48 mục 5 ghi là chưa ai thử.
+     *
+     * Trỏ vào Hosting chứ không trỏ thẳng Cloud Run: route mount dưới `/api/*`
+     * qua rewrite của Hosting, gọi thẳng Cloud Run ra 404 (doc 48 mục 7).
+     *
+     * Đặt VITE_API_BASE nếu muốn trỏ đi chỗ khác — biến đó thắng khối này.
+     */
+    proxy: {
+      '/api': {
+        target: 'https://ai-riser-namdosan-fa737.web.app',
+        changeOrigin: true,
+        secure: true
+      }
+    }
   },
   preview: {
     port: 4173,

@@ -243,6 +243,147 @@ body {
   box-shadow: 0 6px 16px var(--coral-glow);
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Thanh điều hướng app Con
+
+   Xem ghi chú vì sao cần ở src/components/ManagerSidebar.jsx.
+   Trên laptop là thanh dọc dính bên trái; dưới 900px nó xẹp thành một dải
+   chip cuộn ngang, vì thanh dọc trên điện thoại ăn mất nửa bề ngang.
+   ══════════════════════════════════════════════════════════════ */
+
+.manager-layout {
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.manager-nav {
+  position: sticky;
+  top: 92px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px;
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-inset-highlight);
+}
+
+.manager-nav-eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+.manager-nav-chips { display: flex; flex-direction: column; gap: 6px; }
+
+.manager-person {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 8px 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background: transparent;
+  font-family: inherit; cursor: pointer; text-align: left;
+  transition: background 0.2s, border-color 0.2s;
+}
+.manager-person:hover { background: rgba(255, 255, 255, 0.75); }
+.manager-person.active {
+  background: #FFF;
+  border-color: var(--coral-border);
+  box-shadow: 0 4px 14px rgba(255, 107, 75, 0.12);
+}
+
+.manager-person-avatar {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+  display: grid; place-items: center;
+  color: #FFF; font-size: 12.5px; font-weight: 800;
+}
+.manager-person-name {
+  min-width: 0; font-size: 14px; font-weight: 700; color: var(--text-dark);
+  display: flex; flex-direction: column; line-height: 1.25;
+}
+.manager-person.active .manager-person-name { color: var(--coral-main); }
+.manager-person-rel { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+
+.manager-nav-list {
+  list-style: none; display: flex; flex-direction: column; gap: 3px;
+  border-top: 1px solid var(--glass-border); padding-top: 12px;
+}
+
+.manager-nav-item {
+  display: flex; align-items: center; gap: 11px;
+  width: 100%; padding: 10px 11px;
+  border-radius: var(--radius-md);
+  border: none; background: transparent;
+  font-family: inherit; cursor: pointer; text-align: left;
+  color: var(--text-sub);
+  transition: background 0.2s, color 0.2s;
+}
+.manager-nav-item:hover { background: rgba(255, 255, 255, 0.75); color: var(--text-dark); }
+.manager-nav-item.active {
+  background: var(--coral-soft);
+  color: var(--coral-main);
+  box-shadow: inset 3px 0 0 var(--coral-main);
+}
+
+.manager-nav-icon { flex-shrink: 0; }
+.manager-nav-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
+.manager-nav-label { font-size: 14.5px; font-weight: 700; }
+.manager-nav-hint { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+.manager-nav-item.active .manager-nav-hint { color: var(--coral-main); opacity: 0.75; }
+
+.manager-nav-badge {
+  margin-left: auto; flex-shrink: 0;
+  min-width: 20px; padding: 1px 6px; border-radius: 99px;
+  background: #DC2626; color: #FFF;
+  font-size: 11px; font-weight: 800; text-align: center;
+}
+
+/* Tiêu đề của phần nội dung — cho biết đang ở mục nào */
+.manager-section-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 14px; flex-wrap: wrap; margin-bottom: 4px;
+}
+.manager-section-title { font-size: 22px; font-weight: 800; color: var(--text-dark); }
+.manager-section-sub { font-size: 13.5px; font-weight: 600; color: var(--text-sub); margin-top: 2px; }
+
+@media (max-width: 900px) {
+  .manager-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+
+  .manager-nav {
+    position: sticky; top: 8px; z-index: 90;
+    flex-direction: column; gap: 10px; padding: 10px;
+  }
+
+  /* Người nhà: xếp ngang, cuộn được */
+  .manager-nav-chips { flex-direction: row; overflow-x: auto; gap: 8px; padding-bottom: 2px; }
+  .manager-person { width: auto; flex-shrink: 0; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.7); }
+
+  /* Mục: dải chip cuộn ngang, bỏ dòng mô tả cho đỡ chật */
+  .manager-nav-list {
+    flex-direction: row; overflow-x: auto; gap: 8px;
+    border-top: 1px solid var(--glass-border); padding-top: 10px;
+  }
+  .manager-nav-item {
+    width: auto; flex-shrink: 0; padding: 9px 14px; border-radius: 99px;
+    border: 1px solid var(--glass-border); background: rgba(255,255,255,0.7);
+  }
+  .manager-nav-item.active { box-shadow: none; border-color: var(--coral-border); background: #FFF; }
+  .manager-nav-hint { display: none; }
+  .manager-nav-label { white-space: nowrap; }
+
+  .manager-section-title { font-size: 19px; }
+}
+
 /* Chốt chặn cuối: không cho trang trượt ngang trên điện thoại.
    Bảng rộng / thẻ rộng phải tự cuộn trong khung của nó. */
 html, body { max-width: 100%; overflow-x: hidden; }

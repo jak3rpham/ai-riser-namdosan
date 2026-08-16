@@ -22,6 +22,18 @@
  * từ đó.
  */
 
+
+/**
+ * Ngày kê đơn, tính LÙI từ hôm nay.
+ *
+ * ⚠️ Trước đây ghi cứng "2026-08-01". Dữ liệu mẫu thì đứng yên còn ngày thì
+ * chạy, nên càng để lâu đơn càng hết hạn: giám khảo mở app ngày 16/08 đã thấy
+ * thẻ tủ thuốc ghi "Hết thuốc rồi" cho cả ba loại. Đó không phải app tính sai
+ * — nó tính đúng trên một dữ liệu mẫu đã cũ — nhưng người chấm không phân biệt
+ * được hai chuyện đó, họ chỉ thấy một app đang báo hỏng.
+ */
+const daysAgo = n => new Date(Date.now() - n * 86400000).toISOString().split('T')[0];
+
 export const INITIAL_FAMILY_MEMBERS = [
   {
     id: "mem_01",
@@ -53,7 +65,7 @@ export const INITIAL_PRESCRIPTIONS = [
     member_id: "mem_01",
     document_title: "Đơn khám tim mạch — Bệnh viện Đại học Y Dược",
     doctor_name: "TS.BS Nguyễn Văn An",
-    created_at: "2026-08-01",
+    created_at: daysAgo(12),
     start_date: "2026-08-01",
     duration_days: 30,
     end_date: "2026-08-30",
@@ -127,7 +139,7 @@ export const DEMO_PRESCRIPTION_MOM = {
   member_id: "mem_02",
   document_title: "Đơn khám cơ xương khớp — Bệnh viện Nhân dân Gia Định",
   doctor_name: "BS.CKI Trần Thị Bình",
-  created_at: "2026-08-05",
+  created_at: daysAgo(10),
   start_date: "2026-08-05",
   duration_days: 21,
   end_date: "2026-08-26",

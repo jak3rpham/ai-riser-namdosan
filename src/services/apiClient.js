@@ -18,12 +18,38 @@ const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 /** Chờ Firebase xác định xong trạng thái đăng nhập ở lần tải trang đầu */
 let readyPromise = null;
 
+/**
+ * Người dùng hiện tại. Chưa đăng nhập thì tự đăng nhập ẩn danh.
+ *
+ * ⚠️ LUÔN ưu tiên `auth.currentUser`, và KHÔNG ghim kết quả vào promise.
+ *
+ * Bản trước ghim: lần gọi đầu tạo `readyPromise` rồi trả lại đúng nó mãi mãi.
+ * Chuyện đó phá hỏng đường của giám khảo, và phá theo kiểu tệ nhất:
+ *
+ *   1. Mở `/demo` → apiClient tự đăng nhập ẩn danh để gọi được `/demo/login`.
+ *      `readyPromise` ghim tài khoản ẩn danh đó.
+ *   2. Đăng nhập thành công → `signInWithCustomToken` đổi sang tài khoản demo.
+ *      Lưu id nhà vào máy. Chuyển sang `/app` (không tải lại trang, nên biến
+ *      trong module còn nguyên).
+ *   3. `checkMembership` gọi `ensureUser()` → nhận lại tài khoản ẨN DANH cũ →
+ *      đọc `members/{uidẨnDanh}` → không có → kết luận "không phải thành viên"
+ *      → `forgetHousehold()` xoá id nhà → màn hình onboarding.
+ *
+ * Nghĩa là giám khảo đăng nhập bằng đúng tài khoản được phát, rồi thấy app
+ * trống trơn hỏi "Tạo nhà mới hay có mã mời?" — như thể chưa ai làm gì cả.
+ *
+ * Đã kiểm trên bản live 16/08: `localStorage.airiser_household` bị xoá sạch
+ * ngay sau khi đăng nhập.
+ */
 function ensureUser() {
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
   if (readyPromise) return readyPromise;
 
   readyPromise = new Promise(resolve => {
     const stop = onAuthStateChanged(auth, async user => {
       stop();
+      // Nhả promise ra ngay: lần sau hỏi lại từ đầu thay vì đọc kết quả cũ.
+      readyPromise = null;
       if (user) return resolve(user);
       try {
         const cred = await signInAnonymously(auth);

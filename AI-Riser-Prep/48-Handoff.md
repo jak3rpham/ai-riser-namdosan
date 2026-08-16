@@ -1,5 +1,11 @@
 # 48 — Handoff (16/08/2026, cuối phiên chiều)
 
+> ⚠️ **ĐÃ LỖI THỜI — dùng [50](50-Handoff.md).**
+>
+> Mục 1 (audit bốn trục) đã làm xong. Mục 5 ("chưa ai bấm thử") giờ phần lớn
+> đã thử — xem doc 50 mục 4. Đừng lấy trạng thái từ đây.
+
+
 > ⚠️ Tài liệu này **thay thế** [47](47-Handoff.md), vốn đã lệch thực tế khá xa
 > sau một phiên dài. Doc 47 vẫn đúng về *lý do* các quyết định kiến trúc —
 > đọc mục 6 của nó — nhưng danh sách việc và trạng thái thì dùng doc này.

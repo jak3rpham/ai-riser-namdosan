@@ -10,8 +10,12 @@ Bộ tài liệu này là "nền tảng" để tham gia **AI Riser Vietnam 2026*
 > Doc [47](47-Handoff.md) và [43](43-Handoff-Submission-Checklist.md) là bản cũ,
 > có tuyên bố đã lỗi thời — đừng lấy số liệu từ đó.
 >
-> Các doc 44–46 là vật liệu nộp bài: [44](44-AI-Studio-Instructions.md) AI Studio ·
-> [45](45-Video-Script.md) kịch bản video · [46](46-Demo-Materials.md) vật liệu quay.
+> Vật liệu nộp bài: [44](44-AI-Studio-Instructions.md) AI Studio ·
+> [45](45-Video-Script.md) lời thoại & cảnh 3D · [46](46-Demo-Materials.md) vật liệu quay ·
+> [**49**](49-Kich-Ban-Quay-Man-Hinh.md) kịch bản quay màn hình theo app mới.
+>
+> Asset dựng sẵn cho video nằm ở `demo-assets/video-assets/` (prompt + ảnh kèm,
+> 16:9) và `demo-assets/app-screens/` (12 ảnh giao diện thật, 2x DPI).
 
 ---
 

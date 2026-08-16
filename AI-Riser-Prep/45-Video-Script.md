@@ -143,7 +143,16 @@ Còn dư chỗ thở. Nếu quay xong thấy chật, cắt câu *"Chỉ số huy
 
 ---
 
-## Danh sách cảnh phải quay màn hình *(chuẩn bị trước khi bấm quay)*
+## Danh sách cảnh phải quay màn hình
+
+> ⚠️ **Mục này đã lỗi thời — dùng [49](49-Kich-Ban-Quay-Man-Hinh.md).**
+>
+> Nó soạn khi app Con còn là một trang cuộn dài. App giờ có thanh điều hướng
+> sáu mục, có màn "trong nhà mình bác là ai", và luồng triệu chứng đã khép
+> vòng sang máy con cái. Quay theo bảng dưới sẽ ra những thao tác không còn
+> tồn tại. Doc 49 còn ghi cảnh nào đã kiểm chạy được, cảnh nào chưa.
+
+### (bản cũ, giữ để đối chiếu)
 
 Dùng **tài khoản Google thật của m**, không dùng `/demo` — vì cần Calendar và Tasks.
 

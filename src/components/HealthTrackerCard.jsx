@@ -155,7 +155,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Activity color="var(--coral-main)" /> Nhật Ký Chỉ Số Sức Khỏe (M17)
+            <Activity color="var(--coral-main)" /> Nhật ký chỉ số sức khoẻ
           </h3>
           <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
             Ghi lại chỉ số từ máy đo tại nhà (nhập tay hoặc chụp ảnh màn hình máy đo). App đối chiếu với ngưỡng tham chiếu y tế cố định.
@@ -170,7 +170,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
             style={{ padding: '8px 16px', borderRadius: 99, fontSize: 13, cursor: 'pointer', border: '1px solid var(--sky-blue)', color: 'var(--sky-blue)' }}
           >
             {ocrLoading ? <Loader2 className="animate-spin" size={16} /> : <Camera size={16} />}
-            {ocrLoading ? 'Đang đọc số từ ảnh...' : '📷 Quét ảnh máy đo'}
+            {ocrLoading ? 'Đang đọc số từ ảnh...' : 'Quét ảnh máy đo'}
           </button>
 
           <button

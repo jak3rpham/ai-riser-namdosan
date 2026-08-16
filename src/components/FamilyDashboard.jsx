@@ -121,7 +121,7 @@ export default function FamilyDashboard({
             className="btn-secondary"
             style={{ padding: '8px 16px', borderRadius: 99, fontSize: 13, border: '1px solid var(--glass-border)', color: 'var(--sky-blue)' }}
           >
-            <MapPin size={16} /> 📍 Tìm Nhà thuốc (M16)
+            <MapPin size={16} /> Tìm nhà thuốc gần đây
           </button>
 
           <button

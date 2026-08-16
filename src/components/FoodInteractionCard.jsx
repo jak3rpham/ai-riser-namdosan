@@ -29,7 +29,7 @@ export default function FoodInteractionCard({ selectedMember, prescriptions = []
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, gap: 12, flexWrap: 'wrap' }}>
         <div>
           <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Utensils color="var(--coral-main)" /> Kiêng Ăn Theo Đơn Thuốc (M12)
+            <Utensils color="var(--coral-main)" /> Kiêng ăn theo đơn thuốc
           </h3>
           <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
             Đối chiếu {meds.length} thuốc trong đơn của {selectedMember?.display_name || 'thành viên'} với bảng tương tác thuốc–thức ăn.

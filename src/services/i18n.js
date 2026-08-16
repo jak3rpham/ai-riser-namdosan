@@ -8,6 +8,17 @@
  * đọc kỹ.
  */
 
+/**
+ * ⚠️ KHÔNG nhét emoji vào nhãn nút.
+ *
+ * Mấy nhãn này được render CẠNH một icon vector (lucide) trong JSX, nên emoji
+ * trong chuỗi làm nút hiện hai biểu tượng liền nhau: một cái micro vector rồi
+ * một cái micro emoji. Nhìn trên máy thì lướt qua, nhưng phóng to trong ảnh
+ * chụp và trong video thì thành lỗi trình bày rõ rệt.
+ *
+ * Emoji dùng ở tiêu đề mục và câu chữ thì vẫn tốt — chỉ tránh ở nhãn nút đã
+ * có icon riêng.
+ */
 export const I18N_STRINGS = {
   vi: {
     app_title: "Nhà Mình",
@@ -24,9 +35,9 @@ export const I18N_STRINGS = {
     compliance_rate: "Tỷ lệ tuân thủ",
     meds_count: "Thuốc đang uống",
     medicine_cabinet: "Tủ thuốc nhà",
-    pharmacy_mode_btn: "🏥 Đưa nhà thuốc xem",
-    ask_bi_btn: "🎙️ Hỏi Cháu Bi",
-    send_status_btn: "❤️ Báo con: ổn",
+    pharmacy_mode_btn: "Đưa nhà thuốc xem",
+    ask_bi_btn: "Hỏi Cháu Bi",
+    send_status_btn: "Báo con: ổn",
     taken_btn: "✓ ĐÃ UỐNG RỒI",
     taken_done: "✓ Đã uống đúng giờ!",
     morning: "Sáng",
@@ -57,9 +68,9 @@ export const I18N_STRINGS = {
     compliance_rate: "Adherence Rate",
     meds_count: "Active Medications",
     medicine_cabinet: "Home Pill Cabinet",
-    pharmacy_mode_btn: "🏥 Show Pharmacist",
-    ask_bi_btn: "🎙️ Ask AI Bi",
-    send_status_btn: "❤️ Status: All Good",
+    pharmacy_mode_btn: "Show Pharmacist",
+    ask_bi_btn: "Ask AI Bi",
+    send_status_btn: "Status: All Good",
     taken_btn: "✓ CONFIRM TAKEN",
     taken_done: "✓ Taken on schedule!",
     morning: "Morning",

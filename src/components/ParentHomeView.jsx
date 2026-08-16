@@ -497,7 +497,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
             </div>
           )}
 
-          {/* BOTTOM TAB BAR (P1 Spec) */}
+          {/* Thanh tab dưới đáy */}
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-around',
             background: '#FFFFFF', borderTop: '1px solid var(--glass-border)',

@@ -10,7 +10,7 @@ export default function MedicineCabinet({ medications = [], language = 'vi' }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>
-            📦 {t.medicine_cabinet} (M18 — Vòng đời đợt dùng)
+            📦 {t.medicine_cabinet}
           </h3>
           <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
             Theo dõi tiến trình đợt dùng thuốc & dự đoán thời điểm kết thúc đợt để gia hạn kịp thời.

@@ -82,9 +82,13 @@ export default function HouseholdBar({ householdId, status, error, onJoin, varia
             {variant === 'manager' ? 'Dữ liệu nhà mình đã kết nối' : 'Đang dùng chung dữ liệu với gia đình'}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
+            {/* Chỉ dẫn phải khớp với nút THẬT SỰ hiện ra. Bản trước luôn bảo
+                bấm "Tạo mã mời" kể cả ở app Ba Mẹ — nơi nút đó không tồn tại. */}
             {invite
               ? 'Đọc mã dưới đây cho người nhà nhập vào máy của họ'
-              : 'Muốn thêm người nhà thì bấm "Tạo mã mời"'}
+              : variant === 'manager'
+                ? 'Muốn thêm người nhà thì bấm "Tạo mã mời"'
+                : 'Người nhà cho mã thì bấm "Nhập mã mời" để dùng chung dữ liệu'}
           </div>
         </div>
       </div>

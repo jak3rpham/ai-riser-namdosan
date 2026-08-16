@@ -195,6 +195,7 @@ function DemoEntry() {
 /* ── APP cho ba mẹ — toàn màn hình, không khung giả ── */
 function ParentApp({ language }) {
   const state = useHousehold();
+  const [isAddSubjectOpen, setAddSubject] = useState(false);
 
   if (state.status === 'onboarding') {
     return (
@@ -207,12 +208,45 @@ function ParentApp({ language }) {
     );
   }
 
-  if (state.status !== 'ready' || !state.selectedMember) {
+  // Đang kết nối / lỗi kết nối — chưa biết trong nhà có ai
+  if (state.status !== 'ready') {
     return (
       <div style={{ padding: 20, minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 460 }}>
           <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="parent" />
         </div>
+      </div>
+    );
+  }
+
+  // Nhà đã tạo xong nhưng chưa khai ai.
+  //
+  // ⚠️ Trước đây nhánh này gộp chung với nhánh trên, nên bác bấm "tạo nhà mới"
+  // xong là rơi vào một màn hình chỉ có mỗi thanh trạng thái: không nút thêm
+  // người, không lối đi tiếp, mà dòng chữ lại bảo bấm "Tạo mã mời" — nút đó
+  // chỉ có ở app Con. Ngõ cụt hoàn toàn, phải xoá app cài lại mới thoát.
+  //
+  // App Con đã xử đúng ca này từ đầu (EmptyHouseholdView). App Ba Mẹ thì không.
+  if (!state.selectedMember) {
+    return (
+      <div style={{ padding: 20, minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
+        <div style={{ width: '100%', maxWidth: 460 }}>
+          <EmptyHouseholdView
+            variant="parent"
+            onAdd={() => setAddSubject(true)}
+            onLeave={state.leave}
+          />
+          <div style={{ marginTop: 18 }}>
+            <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="parent" />
+          </div>
+        </div>
+        <AddSubjectModal
+          isOpen={isAddSubjectOpen}
+          onClose={() => setAddSubject(false)}
+          onSave={state.addSubject}
+          existingCount={state.members.length}
+          variant="parent"
+        />
       </div>
     );
   }

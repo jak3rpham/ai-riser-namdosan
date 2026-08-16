@@ -45,9 +45,11 @@ const AVATAR_COLORS = [
   'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)'
 ];
 
-export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount = 0 }) {
+export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount = 0, variant = 'manager' }) {
+  // App Ba Mẹ: người đầu tiên bác khai là chính bác, nên mặc định "Chính tôi".
+  // App Con: mặc định "Ba" như cũ.
   const [name, setName] = useState('');
-  const [relation, setRelation] = useState('Ba');
+  const [relation, setRelation] = useState(variant === 'parent' ? 'Chính tôi' : 'Ba');
   const [birthYear, setBirthYear] = useState('');
   // null = chưa ai đụng tới, cứ suy theo năm sinh. Người dùng bấm một lần thì
   // lựa chọn của họ thắng, kể cả khi sau đó sửa năm sinh.
@@ -111,7 +113,9 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
     <div style={overlayStyle} onClick={onClose}>
       <div style={sheetStyle} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h3 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-dark)' }}>Thêm người nhà</h3>
+          <h3 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-dark)' }}>
+            {variant === 'parent' ? 'Hồ sơ của bác' : 'Thêm người nhà'}
+          </h3>
           <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 10 }}>
             <X size={18} />
           </button>

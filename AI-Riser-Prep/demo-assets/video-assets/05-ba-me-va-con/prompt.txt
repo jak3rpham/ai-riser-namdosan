@@ -1,0 +1,30 @@
+═══════════════════════════════════════════════════════════════
+ASSET 05 — BA MẸ VÀ CON (tuỳ chọn, nếu cần cảnh người)
+Dùng ở: chèn vào 0:34 – 0:50 hoặc cảnh đóng · Tỉ lệ 16:9
+Ảnh kèm khi hỏi AI: bang-mau.png + ref-man-hinh-app.png
+═══════════════════════════════════════════════════════════════
+
+── PROMPT ──
+
+A warm 3D character render: an elderly Vietnamese man in his early 70s
+sitting at a table in a bright living room, holding a smartphone comfortably
+in both hands, looking at it with a calm, slightly pleased expression.
+He wears a simple button shirt. Natural morning light from a window.
+
+Style: soft 3D character render, rounded friendly shapes, matte skin
+shading, not photorealistic, not cartoonish-childish. Dignified, warm.
+
+Background very light blue-grey (#F5F7FB) with soft blurred peach and sky
+blue colour blobs. The phone screen is BLANK white — the real app screen
+will be composited in afterwards.
+
+No text, no logos.
+
+Aspect ratio 16:9, 1920x1080.
+
+── DẶN THÊM ──
+· MÀN HÌNH ĐIỆN THOẠI PHẢI TRẮNG TRƠN. Ảnh app thật ghép vào sau —
+  xem ref-man-hinh-app.png để biết sẽ ghép cái gì vào.
+· Người Việt, 65–75 tuổi. Không blouse trắng, không ống nghe, không bệnh
+  viện — app này là chuyện gia đình, không phải chuyện y tế lâm sàng.
+· Cần cảnh con cái: đổi thành nữ 30–35 tuổi, đang nhìn laptop, cùng tông.

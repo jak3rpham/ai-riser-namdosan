@@ -1,0 +1,25 @@
+═══════════════════════════════════════════════════════════════
+ASSET 04 — CẢNH ĐÓNG
+Dùng ở: 1:24 – 1:30 · Tỉ lệ 16:9
+Ảnh kèm khi hỏi AI: icon-app.png
+═══════════════════════════════════════════════════════════════
+
+── PROMPT ──
+
+A clean, bright 3D scene on a very light blue-grey background (#F5F7FB).
+The same coral-gradient rounded-square app icon with a white heart, placed
+in the upper third, small. Below it, wide empty space reserved for a title
+and a link.
+
+Three soft blurred colour blobs far in the background — peach, sky blue,
+pale yellow — very low opacity, heavily blurred, like frosted glass.
+
+Calm, warm, spacious, optimistic. No text, no letters.
+
+Aspect ratio 16:9, 1920x1080.
+
+── DẶN THÊM ──
+· Chừa chỗ trống rộng ở giữa và dưới: tên app, link, và dòng miễn trừ
+  "App không chẩn đoán bệnh, không kê đơn" đều chèn sau.
+· Ba khối mờ chính là nền thật của app — giữ chúng thì cảnh đóng nối liền
+  mạch với các cảnh quay màn hình.

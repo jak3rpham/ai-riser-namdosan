@@ -1,0 +1,25 @@
+═══════════════════════════════════════════════════════════════
+ASSET 01 — HOOK, PHÒNG ĐÊM
+Dùng ở: 0:00 – 0:05 · Tỉ lệ 16:9 · Không có chữ trong ảnh
+Ảnh kèm khi hỏi AI: bang-mau.png
+═══════════════════════════════════════════════════════════════
+
+── PROMPT (dán nguyên khối, tiếng Anh cho model bám sát hơn) ──
+
+A quiet Vietnamese living room at night, seen in soft 3D render style.
+On a wooden table: a half-used blister pack of pills and a full glass of
+water, untouched. Warm lamp light from the left, deep blue shadows filling
+the rest of the room. Shallow depth of field, the blister pack in sharp
+focus, background gently blurred.
+
+Style: soft 3D render, rounded edges, matte surfaces, gentle global
+illumination. Calm and intimate, NOT clinical, NOT a hospital.
+Colour grade: warm amber highlights (#FF8E53 range) against deep navy
+shadows (#0F172A). No text, no logos, no people, no faces.
+
+Aspect ratio 16:9, cinematic, 1920x1080.
+
+── DẶN THÊM ──
+· Ly nước còn ĐẦY là chi tiết quan trọng: thuốc chưa được uống.
+· Đừng để lọt tuýp thuốc phương Tây, hộp thuốc có chữ tiếng Anh.
+· Đừng thêm người. Cảnh này phải thấy vắng.

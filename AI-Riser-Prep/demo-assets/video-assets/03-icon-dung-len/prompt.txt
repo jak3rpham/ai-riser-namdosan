@@ -1,0 +1,26 @@
+═══════════════════════════════════════════════════════════════
+ASSET 03 — ICON NHÀ MÌNH DỰNG LÊN
+Dùng ở: 0:09 – 0:16 · Tỉ lệ 16:9
+Ảnh kèm khi hỏi AI: icon-app.png (BẮT BUỘC) + bang-mau.png
+═══════════════════════════════════════════════════════════════
+
+── PROMPT ──
+
+A 3D render of a rounded-square app icon floating slightly above a very
+light blue-grey background (#F5F7FB). The icon has a smooth coral-to-orange
+gradient (135°, #FF6B4B to #FF8E53) and a soft white heart shape centred on
+it. Generous corner radius, roughly one third of the icon's width.
+
+Soft studio lighting, a wide diffused shadow beneath, subtle glossy
+highlight along the top edge. Clean, warm, friendly. Plenty of empty space
+around the icon for text to be added later.
+
+No text, no letters, no other objects.
+
+Aspect ratio 16:9, 1920x1080.
+
+── DẶN THÊM ──
+· ĐÍNH KÈM icon-app.png và yêu cầu bám đúng hình khối và màu trong đó.
+· Tên "Nhà Mình" KHÔNG sinh bằng AI — chèn sau bằng font Be Vietnam Pro 800.
+· Muốn làm motion: yêu cầu thêm bản icon vẽ bằng NÉT (wireframe/outline) để
+  dựng cảnh nét chạy rồi tô đầy.

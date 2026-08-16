@@ -1,0 +1,25 @@
+═══════════════════════════════════════════════════════════════
+ASSET 02 — HOOK, ĐIỆN THOẠI SÁNG TRONG TỐI
+Dùng ở: 0:05 – 0:09 · Tỉ lệ 16:9
+Ảnh kèm khi hỏi AI: bang-mau.png
+═══════════════════════════════════════════════════════════════
+
+── PROMPT ──
+
+A smartphone lying face-up on a dark bedside table, screen glowing in an
+otherwise dark room. The glow lights up the surface around it and a little
+of the wall behind. Seen from a low three-quarter angle, soft 3D render
+style, rounded matte surfaces, shallow depth of field.
+
+The screen shows an empty chat bubble UI — a single light message bubble
+with NO readable text inside, just the shape of a message.
+
+Colour grade: cool blue-grey darkness (#0F172A to #1E293B), screen glow in
+soft white-blue. No visible text, no logos, no people.
+
+Aspect ratio 16:9, cinematic, 1920x1080.
+
+── DẶN THÊM ──
+· ĐỂ BONG BÓNG CHAT TRỐNG. Câu "Ba uống thuốc chưa ạ?" chèn sau bằng phần
+  mềm dựng — AI sinh ảnh gần như luôn sai dấu tiếng Việt.
+· Cảnh này nối tiếp asset 01, phải cùng tông tối và cùng độ ấm đèn.

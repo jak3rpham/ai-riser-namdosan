@@ -2,6 +2,19 @@
 
 Bộ tài liệu này là "nền tảng" để tham gia **AI Riser Vietnam 2026** — gồm cả thông tin cuộc thi lẫn hướng dẫn thực chiến để build, deploy và ăn điểm tối đa.
 
+---
+
+> ### 👉 Bắt đầu phiên làm việc mới: đọc [**48-Handoff.md**](48-Handoff.md)
+>
+> Đó là trạng thái mới nhất đã kiểm chứng, việc đang tồn, và những bẫy đã gặp.
+> Doc [47](47-Handoff.md) và [43](43-Handoff-Submission-Checklist.md) là bản cũ,
+> có tuyên bố đã lỗi thời — đừng lấy số liệu từ đó.
+>
+> Các doc 44–46 là vật liệu nộp bài: [44](44-AI-Studio-Instructions.md) AI Studio ·
+> [45](45-Video-Script.md) kịch bản video · [46](46-Demo-Materials.md) vật liệu quay.
+
+---
+
 ## 📁 Mục lục các file
 
 | File | Nội dung |

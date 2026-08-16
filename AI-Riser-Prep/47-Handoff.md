@@ -1,4 +1,12 @@
-# 47 — Handoff (bản mới nhất, 16/08/2026)
+# 47 — Handoff (16/08/2026, phiên sáng) — ĐÃ CÓ BẢN MỚI HƠN
+
+> ⛔ **Tài liệu này đã bị [48](48-Handoff.md) thay thế** vào cuối chiều
+> 16/08. Mục 1 (trạng thái), 2 (hạng mục nộp bài) và 5 (việc còn tồn) đều đã
+> lệch: các việc code liệt kê ở mục 5 đã làm xong, và một loạt lỗi an toàn
+> chưa biết lúc viết doc này đã lộ ra sau đó.
+>
+> Phần **vẫn đáng đọc: mục 6** — lý do các quyết định kiến trúc, đặc biệt là
+> vì sao không cho LLM ra quyết định an toàn.
 
 > ⚠️ Tài liệu này **thay thế** [43](43-Handoff-Submission-Checklist.md).
 > Doc 43 có nhiều tuyên bố sai: nói app "hoàn thành 100%", nói có fallback

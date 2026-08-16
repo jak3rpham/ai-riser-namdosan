@@ -55,7 +55,7 @@ export default function HouseholdBar({ householdId, status, error, onJoin, varia
 
   if (status === 'connecting') {
     return (
-      <div style={{ padding: '10px 16px', borderRadius: 14, background: 'rgba(241,245,249,0.9)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-sub)', fontWeight: 600 }}>
+      <div style={{ padding: '10px 16px', borderRadius: 16, background: 'rgba(241,245,249,0.9)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-sub)', fontWeight: 600 }}>
         <Loader2 className="animate-spin" size={15} /> Đang kết nối dữ liệu nhà mình...
       </div>
     );
@@ -63,18 +63,18 @@ export default function HouseholdBar({ householdId, status, error, onJoin, varia
 
   if (status === 'error') {
     return (
-      <div style={{ padding: '12px 16px', borderRadius: 14, background: '#FEF2F2', border: '1px solid #FCA5A5', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+      <div style={{ padding: '12px 16px', borderRadius: 16, background: '#FEF2F2', border: '1px solid #FCA5A5', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
         <AlertTriangle size={16} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
         <div>
-          <div style={{ fontSize: 13.5, fontWeight: 800, color: '#991B1B' }}>Chưa kết nối được dữ liệu</div>
-          <div style={{ fontSize: 12.5, color: '#B91C1C', fontWeight: 600, marginTop: 2 }}>{error}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#991B1B' }}>Chưa kết nối được dữ liệu</div>
+          <div style={{ fontSize: 13, color: '#B91C1C', fontWeight: 600, marginTop: 2 }}>{error}</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '12px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.75)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+    <div style={{ padding: '12px 16px', borderRadius: 16, background: 'rgba(255,255,255,0.75)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
         <Cloud size={17} color="var(--emerald-ok)" style={{ flexShrink: 0 }} />
         <div style={{ minWidth: 0 }}>
@@ -95,11 +95,11 @@ export default function HouseholdBar({ householdId, status, error, onJoin, varia
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {variant === 'manager' && (
-          <button onClick={makeInvite} disabled={creatingInvite} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 12.5 }}>
+          <button onClick={makeInvite} disabled={creatingInvite} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 13 }}>
             {creatingInvite ? <Loader2 className="animate-spin" size={14} /> : <KeyRound size={14} />} Tạo mã mời
           </button>
         )}
-        <button onClick={() => setShowJoin(v => !v)} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 12.5 }}>
+        <button onClick={() => setShowJoin(v => !v)} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 13 }}>
           <LogIn size={14} /> Nhập mã mời
         </button>
       </div>
@@ -116,14 +116,14 @@ export default function HouseholdBar({ householdId, status, error, onJoin, varia
               Dùng được {invite.max_uses} lần, trong 7 ngày
             </div>
           </div>
-          <button onClick={copy} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 12.5 }}>
+          <button onClick={copy} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 13 }}>
             {copied ? <><Check size={14} color="var(--emerald-ok)" /> Đã copy</> : <><Copy size={14} /> Copy mã</>}
           </button>
         </div>
       )}
 
       {inviteError && (
-        <div style={{ width: '100%', fontSize: 12.5, color: '#B91C1C', fontWeight: 700 }}>{inviteError}</div>
+        <div style={{ width: '100%', fontSize: 13, color: '#B91C1C', fontWeight: 700 }}>{inviteError}</div>
       )}
 
       {showJoin && (
@@ -145,7 +145,7 @@ export default function HouseholdBar({ householdId, status, error, onJoin, varia
       )}
 
       {joinError && (
-        <div style={{ width: '100%', fontSize: 12.5, color: '#B91C1C', fontWeight: 700 }}>{joinError}</div>
+        <div style={{ width: '100%', fontSize: 13, color: '#B91C1C', fontWeight: 700 }}>{joinError}</div>
       )}
     </div>
   );

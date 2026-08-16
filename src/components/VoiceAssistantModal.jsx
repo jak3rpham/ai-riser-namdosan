@@ -148,8 +148,8 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
               <Mic size={24} />
             </div>
             <div>
-              <h3 style={{ fontSize: 19, fontWeight: 800 }}>Trợ lý "Cháu Bi" 🎙️</h3>
-              <span style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 600 }}>
+              <h3 style={{ fontSize: 20, fontWeight: 800 }}>Trợ lý "Cháu Bi" 🎙️</h3>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
                 Trả lời theo đúng hồ sơ thuốc của {memberProfile.display_name}
               </span>
             </div>
@@ -162,12 +162,12 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
         {/* Cấp cứu — chỉ nói đúng những gì app thật sự làm */}
         {emergency && (
           <div style={{ padding: 16, borderRadius: 16, background: '#FEF2F2', border: '2px solid #EF4444', marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontSize: 14.5, fontWeight: 800, color: '#DC2626', display: 'flex', alignItems: 'flex-start', gap: 8, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#DC2626', display: 'flex', alignItems: 'flex-start', gap: 8, lineHeight: 1.5 }}>
               <AlertTriangle size={20} style={{ flexShrink: 0 }} /> {emergency.text}
             </div>
 
             <a href="tel:115" style={{ textDecoration: 'none' }}>
-              <button style={{ width: '100%', padding: 16, borderRadius: 14, background: '#DC2626', color: '#FFF', border: 'none', fontWeight: 800, fontSize: 17, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <button style={{ width: '100%', padding: 16, borderRadius: 16, background: '#DC2626', color: '#FFF', border: 'none', fontWeight: 800, fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 <PhoneCall size={20} /> GỌI 115 NGAY
               </button>
             </a>
@@ -193,7 +193,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
             </button>
 
             {emergency.reason && (
-              <div style={{ fontSize: 11.5, color: '#991B1B', fontWeight: 600 }}>
+              <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600 }}>
                 Lý do: {emergency.reason} (luật {emergency.rule_id})
               </div>
             )}
@@ -225,11 +225,11 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
           <div style={{ minHeight: 200, maxHeight: 280, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12, paddingRight: 4, marginBottom: 16 }}>
             {messages.map((msg, idx) => (
               <div key={idx} style={{ alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
-                <div style={{ padding: '12px 16px', borderRadius: msg.sender === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px', background: msg.sender === 'user' ? 'var(--coral-grad)' : 'rgba(241,245,249,0.9)', color: msg.sender === 'user' ? '#FFF' : 'var(--text-dark)', fontWeight: 600, fontSize: 14.5, lineHeight: 1.55 }}>
+                <div style={{ padding: '12px 16px', borderRadius: msg.sender === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px', background: msg.sender === 'user' ? 'var(--coral-grad)' : 'rgba(241,245,249,0.9)', color: msg.sender === 'user' ? '#FFF' : 'var(--text-dark)', fontWeight: 600, fontSize: 14, lineHeight: 1.55 }}>
                   {msg.text}
                 </div>
                 {msg.source && msg.source !== 'AI' && (
-                  <div style={{ fontSize: 10.5, color: 'var(--text-muted)', fontWeight: 600, marginTop: 3, paddingLeft: 4 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginTop: 3, paddingLeft: 4 }}>
                     câu trả lời cố định · {msg.source}
                   </div>
                 )}

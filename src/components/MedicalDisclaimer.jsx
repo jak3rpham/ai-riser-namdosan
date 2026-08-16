@@ -17,7 +17,7 @@ export default function MedicalDisclaimer({ variant = 'inline', language = 'vi' 
 
   if (variant === 'compact') {
     return (
-      <div style={{ fontSize: 11.5, color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.5, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+      <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.5, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
         <Info size={13} style={{ flexShrink: 0, marginTop: 2 }} />
         <span>{text}</span>
       </div>
@@ -28,7 +28,7 @@ export default function MedicalDisclaimer({ variant = 'inline', language = 'vi' 
     return (
       <div style={{ marginTop: 32, padding: '14px 20px', borderRadius: 16, background: 'rgba(241,245,249,0.85)', border: '1px solid var(--glass-border)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
         <Info size={16} color="var(--text-muted)" style={{ flexShrink: 0, marginTop: 1 }} />
-        <span style={{ fontSize: 12.5, color: 'var(--text-sub)', fontWeight: 600, lineHeight: 1.6 }}>{text}</span>
+        <span style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600, lineHeight: 1.6 }}>{text}</span>
       </div>
     );
   }

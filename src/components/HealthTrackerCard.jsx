@@ -124,10 +124,10 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Activity color="var(--coral-main)" /> Nhật Ký Chỉ Số Sức Khỏe (M17)
           </h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
             Ghi lại chỉ số từ máy đo tại nhà (nhập tay hoặc chụp ảnh màn hình máy đo). App đối chiếu với ngưỡng tham chiếu y tế cố định.
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
 
       {/* Form nhập tay & kết quả OCR */}
       {showForm && (
-        <div style={{ padding: 18, borderRadius: 18, background: 'rgba(241,245,249,0.7)', border: '1px solid var(--glass-border)', marginBottom: 18 }}>
+        <div style={{ padding: 18, borderRadius: 20, background: 'rgba(241,245,249,0.7)', border: '1px solid var(--glass-border)', marginBottom: 18 }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
             {[
               ['BLOOD_PRESSURE', 'Huyết áp'],
@@ -206,7 +206,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
           )}
 
           {formError && (
-            <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 10, background: '#FEF2F2', color: '#B91C1C', fontSize: 13, fontWeight: 700 }}>
+            <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 13, fontWeight: 700 }}>
               {formError}
             </div>
           )}
@@ -214,15 +214,15 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
       )}
 
       {saveError && (
-        <div style={{ padding: '11px 14px', borderRadius: 12, background: '#FEF2F2', border: '1px solid #FCA5A5', marginBottom: 12, fontSize: 13.5, color: '#B91C1C', fontWeight: 700 }}>
+        <div style={{ padding: '11px 14px', borderRadius: 12, background: '#FEF2F2', border: '1px solid #FCA5A5', marginBottom: 12, fontSize: 14, color: '#B91C1C', fontWeight: 700 }}>
           {saveError}
         </div>
       )}
 
       {/* Chưa đo lần nào — nói thẳng là chưa có, không đoán hộ một con số nào */}
       {metrics.length === 0 && !showForm && (
-        <div style={{ padding: '18px 16px', borderRadius: 14, background: 'rgba(241,245,249,0.7)', textAlign: 'center', marginBottom: 12 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 4 }}>
+        <div style={{ padding: '18px 16px', borderRadius: 16, background: 'rgba(241,245,249,0.7)', textAlign: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 4 }}>
             Chưa có số đo nào
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.5 }}>
@@ -236,13 +236,13 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
       {alerts.map((a, idx) => {
         const tone = TONE_STYLE[a.evalResult.tone];
         return (
-          <div key={idx} style={{ padding: 14, borderRadius: 14, background: tone.bg, border: `1.5px solid ${tone.chipBg}`, marginBottom: 12, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <div key={idx} style={{ padding: 14, borderRadius: 16, background: tone.bg, border: `1.5px solid ${tone.chipBg}`, marginBottom: 12, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <AlertTriangle size={18} color={tone.fg} style={{ flexShrink: 0, marginTop: 2 }} />
             <div>
               <div style={{ fontSize: 14, fontWeight: 800, color: tone.fg }}>
                 {a.metric.label}: {a.evalResult.label}
               </div>
-              <div style={{ fontSize: 13.5, color: 'var(--text-sub)', fontWeight: 600, marginTop: 2, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, marginTop: 2, lineHeight: 1.5 }}>
                 {a.evalResult.message}
               </div>
               {a.evalResult.pulse_flag && (
@@ -265,7 +265,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
             <div key={idx} style={{ padding: 18, borderRadius: 20, background: tone.bg, border: `1px solid ${ev.tone === 'ok' || ev.tone === 'neutral' ? 'var(--glass-border)' : tone.chipBg}`, boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{item.label}</span>
-                <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: tone.chipBg, color: tone.chipFg, whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: tone.chipBg, color: tone.chipFg, whiteSpace: 'nowrap' }}>
                   {ev.label}
                 </span>
               </div>

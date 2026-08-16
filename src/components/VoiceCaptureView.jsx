@@ -150,13 +150,13 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
       {/* Chữ hiện dần để bác biết máy nghe đúng hay sai */}
       <div style={{ minHeight: 84, marginTop: 18, maxWidth: 460 }}>
         {transcript
-          ? <p style={{ fontSize: 21, lineHeight: 1.5, color: '#FFF', fontWeight: 600 }}>“{transcript}”</p>
-          : !message && <p style={{ fontSize: 16.5, color: 'rgba(255,255,255,0.62)', fontWeight: 600, lineHeight: 1.6 }}>
+          ? <p style={{ fontSize: 20, lineHeight: 1.5, color: '#FFF', fontWeight: 600 }}>“{transcript}”</p>
+          : !message && <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.62)', fontWeight: 600, lineHeight: 1.6 }}>
               {say('{{You}} cứ nói bình thường, ví dụ "hôm nay {{me}} thấy mệt" hay "thuốc này uống trước ăn hay sau ăn"')}
             </p>}
 
         {message && (
-          <p style={{ fontSize: 17, color: '#FCA5A5', fontWeight: 700, lineHeight: 1.55 }}>{message}</p>
+          <p style={{ fontSize: 18, color: '#FCA5A5', fontWeight: 700, lineHeight: 1.55 }}>{message}</p>
         )}
       </div>
 
@@ -165,7 +165,7 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
         style={{
           marginTop: 26, padding: '15px 26px', borderRadius: 16,
           background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)',
-          color: '#FFF', fontSize: 16.5, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
+          color: '#FFF', fontSize: 16, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 9
         }}
       >

@@ -33,7 +33,7 @@ export default function SyncStatusBadge() {
   const pill = (bg, border, color, icon, text, title) => (
     <div
       title={title}
-      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, background: bg, border: `1px solid ${border}`, fontSize: 11.5, fontWeight: 800, color }}
+      style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 10px', borderRadius: 99, background: bg, border: `1px solid ${border}`, fontSize: 12, fontWeight: 800, color }}
     >
       {icon} <span>{text}</span>
     </div>

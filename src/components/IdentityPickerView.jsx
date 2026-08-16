@@ -39,13 +39,13 @@ export default function IdentityPickerView({
   return (
     <div style={{ maxWidth: 460, margin: '0 auto', padding: '20px 4px' }}>
       <div style={{ textAlign: 'center', marginBottom: 22 }}>
-        <div style={{ width: 60, height: 60, borderRadius: 19, background: 'var(--coral-grad)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
+        <div style={{ width: 60, height: 60, borderRadius: 20, background: 'var(--coral-grad)', display: 'grid', placeItems: 'center', margin: '0 auto 16px' }}>
           <Users size={28} color="#FFF" />
         </div>
         <h2 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 23, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
           Trong nhà mình, bác là ai ạ?
         </h2>
-        <p style={{ fontSize: 15, color: 'var(--text-sub)', lineHeight: 1.6 }}>
+        <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.6 }}>
           Con cần biết để nhắc đúng thuốc của bác, và ghi đúng vào hồ sơ của bác.
           Chọn nhầm thì đổi lại được.
         </p>
@@ -71,13 +71,13 @@ export default function IdentityPickerView({
                 width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
                 background: s.avatar_color || 'var(--coral-grad)',
                 display: 'grid', placeItems: 'center', color: '#FFF',
-                fontWeight: 800, fontSize: 17
+                fontWeight: 800, fontSize: 18
               }}>
                 {(s.display_name || '?').trim().charAt(0).toUpperCase()}
               </div>
 
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)' }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)' }}>
                   {s.display_name}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
@@ -93,20 +93,20 @@ export default function IdentityPickerView({
         })}
 
         {subjects.length === 0 && (
-          <div style={{ padding: 16, borderRadius: 14, background: 'rgba(241,245,249,0.8)', fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, textAlign: 'center', lineHeight: 1.6 }}>
+          <div style={{ padding: 16, borderRadius: 16, background: 'rgba(241,245,249,0.8)', fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, textAlign: 'center', lineHeight: 1.6 }}>
             Nhà này chưa có hồ sơ nào. Bác khai hồ sơ của bác trước nha.
           </div>
         )}
       </div>
 
       {error && (
-        <div style={{ fontSize: 13.5, color: '#B91C1C', fontWeight: 700, marginBottom: 12 }}>{error}</div>
+        <div style={{ fontSize: 14, color: '#B91C1C', fontWeight: 700, marginBottom: 12 }}>{error}</div>
       )}
 
       <button
         className="btn-primary"
         onClick={onCreateNew}
-        style={{ width: '100%', padding: 15, borderRadius: 15, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}
+        style={{ width: '100%', padding: 15, borderRadius: 16, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}
       >
         <UserPlus size={18} /> Chưa có tôi — khai hồ sơ mới
       </button>
@@ -114,7 +114,7 @@ export default function IdentityPickerView({
       <button
         className="btn-secondary"
         onClick={onLeave}
-        style={{ width: '100%', marginTop: 12, padding: '11px 18px', borderRadius: 12, fontSize: 13.5, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
+        style={{ width: '100%', marginTop: 12, padding: '11px 18px', borderRadius: 12, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
       >
         <LogOut size={15} /> Vào nhà khác
       </button>

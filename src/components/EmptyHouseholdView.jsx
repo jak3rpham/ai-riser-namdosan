@@ -35,17 +35,17 @@ export default function EmptyHouseholdView({ onAdd, onLeave, variant = 'manager'
         <Heart size={30} color="#FFF" fill="#FFF" />
       </div>
 
-      <h2 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 24, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 10 }}>
+      <h2 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 26, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 10 }}>
         {copy.title}
       </h2>
-      <p style={{ fontSize: 15.5, color: 'var(--text-sub)', lineHeight: 1.6, marginBottom: 24 }}>
+      <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.6, marginBottom: 24 }}>
         {copy.body}
       </p>
 
       <button
         className="btn-primary"
         onClick={onAdd}
-        style={{ width: '100%', padding: '16px', borderRadius: 15, fontSize: 17, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}
+        style={{ width: '100%', padding: '16px', borderRadius: 16, fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}
       >
         <UserPlus size={19} /> {copy.cta}
       </button>
@@ -53,7 +53,7 @@ export default function EmptyHouseholdView({ onAdd, onLeave, variant = 'manager'
       <button
         className="btn-secondary"
         onClick={onLeave}
-        style={{ marginTop: 14, padding: '11px 18px', borderRadius: 12, fontSize: 13.5 }}
+        style={{ marginTop: 14, padding: '11px 18px', borderRadius: 12, fontSize: 14 }}
       >
         <LogOut size={15} /> Dùng nhà khác
       </button>

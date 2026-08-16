@@ -61,14 +61,14 @@ export default function SignatureAlertCard({ warnings = [], coverage = null }) {
     return (
       <div className="liquid-card" style={{ padding: 22, background: 'linear-gradient(135deg, rgba(236,253,245,0.7) 0%, rgba(255,255,255,0.85) 100%)', border: '1px solid rgba(5,150,105,0.25)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 14, background: 'var(--emerald-grad)', display: 'grid', placeItems: 'center', color: '#FFF', flexShrink: 0 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 16, background: 'var(--emerald-grad)', display: 'grid', placeItems: 'center', color: '#FFF', flexShrink: 0 }}>
             <ShieldCheck size={22} />
           </div>
           <div style={{ flex: 1 }}>
             <h4 style={{ fontSize: 16, fontWeight: 800, color: 'var(--emerald-ok)' }}>
               Chưa phát hiện xung đột nào trong phạm vi đã kiểm
             </h4>
-            <p style={{ fontSize: 13.5, color: 'var(--text-sub)', marginTop: 2, lineHeight: 1.55 }}>
+            <p style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 2, lineHeight: 1.55 }}>
               App đã đối chiếu dị ứng, trùng hoạt chất, tương tác thuốc–thuốc và kiêng ăn.
               Kho kiến thức còn hạn chế nên đây <b>không phải lời khẳng định là an toàn tuyệt đối</b>.
             </p>
@@ -89,13 +89,13 @@ export default function SignatureAlertCard({ warnings = [], coverage = null }) {
         return (
           <div key={idx} className="liquid-card" style={{ padding: 22, background: style.bg, border: `1.5px solid ${style.border}` }}>
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-              <div style={{ width: 42, height: 42, borderRadius: 14, background: style.border, display: 'grid', placeItems: 'center', color: '#FFF', flexShrink: 0 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 16, background: style.border, display: 'grid', placeItems: 'center', color: '#FFF', flexShrink: 0 }}>
                 <Icon size={22} />
               </div>
 
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <h4 style={{ fontSize: 16.5, fontWeight: 800, color: style.fg }}>{warn.title}</h4>
+                  <h4 style={{ fontSize: 16, fontWeight: 800, color: style.fg }}>{warn.title}</h4>
                   <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 99, background: style.border, color: '#FFF' }}>
                     {SEVERITY_LABEL[warn.severity] || warn.severity}
                   </span>
@@ -106,13 +106,13 @@ export default function SignatureAlertCard({ warnings = [], coverage = null }) {
                 </p>
 
                 {warn.action_recommended && (
-                  <div style={{ marginTop: 10, fontSize: 13.5, fontWeight: 700, color: style.fg, background: 'rgba(255,255,255,0.75)', padding: '8px 14px', borderRadius: 10 }}>
+                  <div style={{ marginTop: 10, fontSize: 14, fontWeight: 700, color: style.fg, background: 'rgba(255,255,255,0.75)', padding: '8px 14px', borderRadius: 12 }}>
                     👉 {warn.action_recommended}
                   </div>
                 )}
 
                 {warn.alternative && (
-                  <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: 'var(--emerald-ok)', background: 'rgba(255,255,255,0.75)', padding: '8px 14px', borderRadius: 10 }}>
+                  <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: 'var(--emerald-ok)', background: 'rgba(255,255,255,0.75)', padding: '8px 14px', borderRadius: 12 }}>
                     Thay bằng: {warn.alternative}
                   </div>
                 )}

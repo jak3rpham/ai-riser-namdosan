@@ -43,10 +43,10 @@ export default function OnboardingView({ onCreate, onJoin, busy, error }) {
       <div style={{ width: '100%', maxWidth: 480 }}>
 
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 28, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
+          <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 32, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
             {mode ? 'Sắp xong rồi' : 'Bắt đầu với Nhà Mình'}
           </h1>
-          <p style={{ fontSize: 15.5, color: 'var(--text-sub)', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.5 }}>
             {mode === 'create' && 'Đặt tên cho nhà mình, xong là dùng được ngay.'}
             {mode === 'join' && 'Nhập mã người nhà đã đưa cho bạn.'}
             {!mode && 'Bạn chọn một trong hai cách dưới đây nhé.'}
@@ -101,7 +101,7 @@ export default function OnboardingView({ onCreate, onJoin, busy, error }) {
                 autoCorrect="off"
                 spellCheck={false}
                 maxLength={12}
-                style={{ ...inputStyle, fontSize: 24, letterSpacing: 4, textAlign: 'center', fontWeight: 800 }}
+                style={{ ...inputStyle, fontSize: 26, letterSpacing: 4, textAlign: 'center', fontWeight: 800 }}
               />
             </label>
             <button className="btn-primary" onClick={submitJoin} disabled={busy} style={bigButtonStyle}>
@@ -126,7 +126,7 @@ export default function OnboardingView({ onCreate, onJoin, busy, error }) {
           </button>
         )}
 
-        <p style={{ marginTop: 26, fontSize: 12.5, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
+        <p style={{ marginTop: 26, fontSize: 13, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
           App giúp sắp xếp và hiểu thông tin thuốc. App không chẩn đoán bệnh,
           không kê đơn, và không thay thế bác sĩ hay dược sĩ.
         </p>
@@ -143,7 +143,7 @@ function ChoiceCard({ icon: Icon, title, detail, onClick, primary, disabled }) {
       style={{
         textAlign: 'left',
         padding: '18px 20px',
-        borderRadius: 18,
+        borderRadius: 20,
         border: primary ? '1px solid var(--coral-border)' : '1px solid var(--glass-border)',
         background: primary ? 'var(--coral-soft)' : 'rgba(255,255,255,0.8)',
         cursor: disabled ? 'wait' : 'pointer',
@@ -154,12 +154,12 @@ function ChoiceCard({ icon: Icon, title, detail, onClick, primary, disabled }) {
         opacity: disabled ? 0.6 : 1
       }}
     >
-      <div style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 13, display: 'grid', placeItems: 'center', background: primary ? 'var(--coral-grad)' : 'rgba(241,245,249,0.9)' }}>
+      <div style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 12, display: 'grid', placeItems: 'center', background: primary ? 'var(--coral-grad)' : 'rgba(241,245,249,0.9)' }}>
         <Icon size={21} color={primary ? '#FFF' : 'var(--text-sub)'} />
       </div>
       <div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 3 }}>{title}</div>
-        <div style={{ fontSize: 13.5, color: 'var(--text-sub)', lineHeight: 1.5 }}>{detail}</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 3 }}>{title}</div>
+        <div style={{ fontSize: 14, color: 'var(--text-sub)', lineHeight: 1.5 }}>{detail}</div>
       </div>
     </button>
   );
@@ -170,17 +170,17 @@ const inputStyle = {
   width: '100%',
   marginTop: 8,
   padding: '14px 16px',
-  borderRadius: 14,
+  borderRadius: 16,
   border: '1px solid var(--glass-border)',
-  fontSize: 17,
+  fontSize: 18,
   fontFamily: 'inherit',
   outline: 'none'
 };
 
 const bigButtonStyle = {
   padding: '15px 22px',
-  borderRadius: 14,
-  fontSize: 16.5,
+  borderRadius: 16,
+  fontSize: 16,
   fontWeight: 800,
   display: 'flex',
   alignItems: 'center',

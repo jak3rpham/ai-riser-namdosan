@@ -31,7 +31,7 @@ function ServiceRow({ icon: Icon, name, state, detail, onTest, testing }) {
   }[state] || 'Chưa rõ';
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 14px', borderRadius: 14, background: '#FFF', border: '1px solid var(--glass-border)', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 14px', borderRadius: 16, background: '#FFF', border: '1px solid var(--glass-border)', flexWrap: 'wrap' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
         <Icon size={18} color="var(--text-muted)" style={{ flexShrink: 0 }} />
         <div style={{ minWidth: 0 }}>
@@ -49,7 +49,7 @@ function ServiceRow({ icon: Icon, name, state, detail, onTest, testing }) {
           onClick={onTest}
           disabled={testing}
           className="btn-secondary"
-          style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12, flexShrink: 0 }}
+          style={{ padding: '6px 12px', borderRadius: 12, fontSize: 12, flexShrink: 0 }}
         >
           {testing ? <Loader2 className="animate-spin" size={13} /> : <RefreshCw size={13} />}
           Kiểm tra
@@ -132,7 +132,7 @@ export default function GoogleConnectPanel({ onConnected }) {
           <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Link2 color="var(--coral-main)" size={20} /> Kết nối tài khoản Google
           </h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-sub)', marginTop: 4, maxWidth: 520, lineHeight: 1.55 }}>
+          <p style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 4, maxWidth: 520, lineHeight: 1.55 }}>
             Cho phép app tạo lịch nhắc uống thuốc trong Google Calendar và việc mua thêm thuốc
             trong Google Tasks. App chỉ tạo và sửa những mục do chính nó tạo ra.
           </p>
@@ -144,15 +144,15 @@ export default function GoogleConnectPanel({ onConnected }) {
               <img src={user.photoURL} alt="" style={{ width: 36, height: 36, borderRadius: '50%' }} />
             )}
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--text-dark)' }}>{user.displayName}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>{user.displayName}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>{user.email}</div>
             </div>
-            <button onClick={handleDisconnect} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: 12, fontSize: 12.5 }}>
+            <button onClick={handleDisconnect} className="btn-secondary" style={{ padding: '8px 12px', borderRadius: 12, fontSize: 13 }}>
               <LogOut size={14} /> Ngắt
             </button>
           </div>
         ) : (
-          <button className="btn-primary" onClick={handleConnect} disabled={connecting} style={{ padding: '12px 20px', borderRadius: 14 }}>
+          <button className="btn-primary" onClick={handleConnect} disabled={connecting} style={{ padding: '12px 20px', borderRadius: 16 }}>
             {connecting ? <Loader2 className="animate-spin" size={17} /> : <Link2 size={17} />}
             {connecting ? 'Đang mở Google...' : 'Kết nối Google'}
           </button>

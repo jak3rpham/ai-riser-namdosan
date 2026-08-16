@@ -166,7 +166,7 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
               <div style={{ fontSize: 16, fontWeight: 800, color: '#DC2626', marginBottom: 4 }}>
                 {speak('Cái này {{me}} không dám chờ{{a}}', memberProfile)}
               </div>
-              <div style={{ fontSize: 14.5, color: '#7F1D1D', fontWeight: 600, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 14, color: '#7F1D1D', fontWeight: 600, lineHeight: 1.5 }}>
                 {speak(decision.advice, memberProfile)}
               </div>
             </div>
@@ -194,10 +194,10 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 12 }}>
             <CalendarClock size={22} color="#B45309" style={{ flexShrink: 0 }} />
             <div>
-              <div style={{ fontSize: 15.5, fontWeight: 800, color: '#B45309', marginBottom: 4 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#B45309', marginBottom: 4 }}>
                 {speak('{{Da}} {{me}} ghi lại rồi{{a}} — cái này nên đi khám hôm nay', memberProfile)}
               </div>
-              <div style={{ fontSize: 14.5, color: '#78350F', fontWeight: 600, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 14, color: '#78350F', fontWeight: 600, lineHeight: 1.5 }}>
                 {speak(decision.advice, memberProfile)}
               </div>
             </div>
@@ -230,7 +230,7 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
       <div style={{ padding: 18, borderRadius: 20, background: '#F0FDF4', border: '1.5px solid #86EFAC' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <CheckCircle2 size={22} color="var(--emerald-ok)" style={{ flexShrink: 0 }} />
-          <div style={{ fontSize: 14.5, color: '#166534', fontWeight: 600, lineHeight: 1.6 }}>
+          <div style={{ fontSize: 14, color: '#166534', fontWeight: 600, lineHeight: 1.6 }}>
             {loading
               ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Loader2 className="animate-spin" size={16} /> Cháu Bi đang ghi lại...</span>
               : mildText}
@@ -250,24 +250,24 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
   return (
     <div style={{ padding: 18, borderRadius: 20, background: 'rgba(241,245,249,0.7)', border: '1px solid var(--glass-border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: 11.5, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+        <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
           Câu {INTAKE_STEPS.slice(0, stepIndex + 1).filter(st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null || showAuto).length} / {INTAKE_STEPS.filter(st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null || showAuto).length}
         </span>
-        <button onClick={onCancel} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}>
+        <button onClick={onCancel} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
           Thôi để lúc khác
         </button>
       </div>
 
-      <h4 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 12, lineHeight: 1.4 }}>
+      <h4 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 12, lineHeight: 1.4 }}>
         {speak(step.question, memberProfile)}
       </h4>
 
       {autoFilled.length > 0 && !showAuto && (
         <button
           onClick={() => { setShowAuto(true); setStepIndex(0); }}
-          style={{ width: '100%', textAlign: 'left', marginBottom: 10, padding: '10px 12px', borderRadius: 11, background: 'rgba(255,255,255,0.75)', border: '1px dashed var(--glass-border)', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ width: '100%', textAlign: 'left', marginBottom: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.75)', border: '1px dashed var(--glass-border)', cursor: 'pointer', fontFamily: 'inherit' }}
         >
-          <span style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 700 }}>
+          <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
             Con hiểu từ lời {speak('{{you}}', memberProfile)} vừa nói: {autoFilled.map(a => a.label).join(' · ')}
           </span>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--coral-main)', fontWeight: 800, marginTop: 3 }}>
@@ -277,7 +277,7 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
       )}
 
       {selected != null && (Array.isArray(selected) ? selected.length > 0 : true) && (
-        <div style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 8 }}>
+        <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 8 }}>
           Con chọn sẵn theo lời {speak('{{you}}', memberProfile)} vừa nói — không đúng thì bấm chọn lại
         </div>
       )}
@@ -290,16 +290,16 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
               key={opt.id}
               onClick={() => (step.multi ? toggleMulti(opt.id) : pickSingle(opt.id))}
               style={{
-                textAlign: 'left', padding: '14px 16px', borderRadius: 14, cursor: 'pointer',
+                textAlign: 'left', padding: '14px 16px', borderRadius: 16, cursor: 'pointer',
                 background: isOn ? 'var(--coral-soft)' : '#FFF',
                 border: isOn ? '2px solid var(--coral-main)' : '1px solid var(--glass-border)',
-                color: 'var(--text-dark)', fontWeight: 700, fontSize: 15.5,
+                color: 'var(--text-dark)', fontWeight: 700, fontSize: 16,
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10
               }}
             >
               <span>
                 {opt.label}
-                {opt.hint && <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>{opt.hint}</span>}
+                {opt.hint && <span style={{ display: 'block', fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>{opt.hint}</span>}
               </span>
               {!step.multi && <ChevronRight size={18} color="var(--text-muted)" />}
               {step.multi && isOn && <CheckCircle2 size={18} color="var(--coral-main)" />}
@@ -309,7 +309,7 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
       </div>
 
       {step.multi && (
-        <button className="btn-primary" onClick={submitMulti} style={{ width: '100%', marginTop: 12, padding: 14, borderRadius: 14, fontSize: 16 }}>
+        <button className="btn-primary" onClick={submitMulti} style={{ width: '100%', marginTop: 12, padding: 14, borderRadius: 16, fontSize: 16 }}>
           {speak('Xong, {{me}} xem giúp {{you}}', memberProfile)}
         </button>
       )}

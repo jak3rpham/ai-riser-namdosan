@@ -113,10 +113,10 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
     <div style={overlayStyle} onClick={onClose}>
       <div style={sheetStyle} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h3 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-dark)' }}>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>
             {variant === 'parent' ? 'Hồ sơ của bác' : 'Thêm người nhà'}
           </h3>
-          <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 10 }}>
+          <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 12 }}>
             <X size={18} />
           </button>
         </div>
@@ -149,7 +149,7 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
               {ADDRESS_STYLES.map(a => (
                 <Chip key={a.value} active={effectiveStyle === a.value} onClick={() => setAddressStyle(a.value)} block>
                   <span style={{ fontWeight: 800 }}>{a.label}</span>
-                  <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, opacity: 0.75, marginTop: 2 }}>
+                  <span style={{ display: 'block', fontSize: 13, fontWeight: 600, opacity: 0.75, marginTop: 2 }}>
                     {a.hint}
                   </span>
                 </Chip>
@@ -181,10 +181,10 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
         </div>
 
         {error && (
-          <div style={{ marginTop: 14, fontSize: 13.5, color: '#B91C1C', fontWeight: 700 }}>{error}</div>
+          <div style={{ marginTop: 14, fontSize: 14, color: '#B91C1C', fontWeight: 700 }}>{error}</div>
         )}
 
-        <button className="btn-primary" onClick={submit} disabled={saving} style={{ marginTop: 20, width: '100%', padding: '15px', borderRadius: 14, fontSize: 16.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        <button className="btn-primary" onClick={submit} disabled={saving} style={{ marginTop: 20, width: '100%', padding: '15px', borderRadius: 16, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           {saving ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />} Lưu
         </button>
       </div>
@@ -213,7 +213,7 @@ function Chip({ active, onClick, children, block }) {
         background: active ? 'var(--coral-soft)' : 'rgba(255,255,255,0.85)',
         color: active ? 'var(--coral-main)' : 'var(--text-sub)',
         fontWeight: 700,
-        fontSize: 14.5,
+        fontSize: 14,
         fontFamily: 'inherit',
         cursor: 'pointer',
         textAlign: block ? 'left' : 'center',
@@ -233,13 +233,13 @@ const overlayStyle = {
 
 const sheetStyle = {
   width: '100%', maxWidth: 460, maxHeight: '90dvh', overflowY: 'auto',
-  background: '#FFF', borderRadius: 22, padding: '22px 20px',
+  background: '#FFF', borderRadius: 20, padding: '22px 20px',
   boxShadow: '0 24px 60px rgba(15,23,42,0.18)'
 };
 
 const inputStyle = {
   display: 'block', width: '100%', marginTop: 8,
-  padding: '13px 15px', borderRadius: 13,
+  padding: '13px 15px', borderRadius: 12,
   border: '1px solid var(--glass-border)',
   fontSize: 16, fontFamily: 'inherit', outline: 'none'
 };

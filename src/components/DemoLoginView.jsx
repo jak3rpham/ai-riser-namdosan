@@ -48,13 +48,13 @@ export default function DemoLoginView({ onSuccess, onBack }) {
           <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 26, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
             Tài khoản dùng thử
           </h1>
-          <p style={{ fontSize: 15, color: 'var(--text-sub)', lineHeight: 1.55 }}>
+          <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.55 }}>
             Đăng nhập để xem app với dữ liệu mẫu, không cần tài khoản Google.
           </p>
         </div>
 
         {!enabled && (
-          <div style={{ padding: '14px 16px', borderRadius: 14, background: '#FEF3C7', border: '1px solid #FCD34D', fontSize: 14, color: '#92400E', fontWeight: 700, marginBottom: 18 }}>
+          <div style={{ padding: '14px 16px', borderRadius: 16, background: '#FEF3C7', border: '1px solid #FCD34D', fontSize: 14, color: '#92400E', fontWeight: 700, marginBottom: 18 }}>
             Chế độ dùng thử đang tắt trên máy chủ.
           </div>
         )}
@@ -83,7 +83,7 @@ export default function DemoLoginView({ onSuccess, onBack }) {
             />
           </label>
 
-          <button className="btn-primary" onClick={submit} disabled={busy || !enabled} style={{ padding: '15px', borderRadius: 14, fontSize: 16.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <button className="btn-primary" onClick={submit} disabled={busy || !enabled} style={{ padding: '15px', borderRadius: 16, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             {busy ? <Loader2 className="animate-spin" size={18} /> : <LogIn size={18} />} Vào xem app
           </button>
         </div>
@@ -94,9 +94,9 @@ export default function DemoLoginView({ onSuccess, onBack }) {
           </div>
         )}
 
-        <div style={{ marginTop: 22, padding: '13px 15px', borderRadius: 13, background: 'rgba(241,245,249,0.8)', display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+        <div style={{ marginTop: 22, padding: '13px 15px', borderRadius: 12, background: 'rgba(241,245,249,0.8)', display: 'flex', gap: 9, alignItems: 'flex-start' }}>
           <Info size={16} color="var(--text-sub)" style={{ flexShrink: 0, marginTop: 2 }} />
-          <div style={{ fontSize: 12.5, color: 'var(--text-sub)', lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.55 }}>
             Hồ sơ bệnh nhân trong tài khoản này là <strong>hư cấu</strong>, dựng riêng để xem thử.
             Đồng bộ Google Calendar và Google Tasks cần tài khoản Google thật nên
             không dùng được ở đây — phần đó xem trong video demo.
@@ -118,9 +118,9 @@ const inputStyle = {
   width: '100%',
   marginTop: 8,
   padding: '14px 16px',
-  borderRadius: 14,
+  borderRadius: 16,
   border: '1px solid var(--glass-border)',
-  fontSize: 16.5,
+  fontSize: 16,
   fontFamily: 'inherit',
   background: '#FFF',
   outline: 'none'

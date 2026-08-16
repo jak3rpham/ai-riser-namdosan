@@ -68,8 +68,8 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'var(--sky-soft, #E0F2FE)', color: 'var(--sky-blue, #0284C7)', fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
               <Navigation size={14} /> Dữ liệu OpenStreetMap
             </div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-dark)' }}>📍 Tìm Nhà thuốc & Cơ sở Y tế gần đây</h3>
-            <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
+            <h3 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text-dark)' }}>📍 Tìm Nhà thuốc & Cơ sở Y tế gần đây</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
               Định vị vị trí hiện tại để liệt kê nhà thuốc và bệnh viện thực tế quanh bạn (khoảng cách đường chim bay).
             </p>
           </div>
@@ -79,7 +79,7 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
         </div>
 
         {/* Filter Controls & Refresh */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 20, padding: '12px 16px', background: '#F8FAFC', borderRadius: 18, border: '1px solid var(--glass-border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 20, padding: '12px 16px', background: '#F8FAFC', borderRadius: 20, border: '1px solid var(--glass-border)' }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {[
               { label: "Tất cả", val: "ALL" },
@@ -107,7 +107,7 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
               🟢 Chỉ nơi đang mở cửa
             </label>
 
-            <button className="btn-secondary" onClick={fetchNearbyPlaces} disabled={loading} style={{ padding: '6px 12px', borderRadius: 10, fontSize: 12 }}>
+            <button className="btn-secondary" onClick={fetchNearbyPlaces} disabled={loading} style={{ padding: '6px 12px', borderRadius: 12, fontSize: 12 }}>
               {loading ? <Loader2 className="animate-spin" size={14} /> : <RefreshCw size={14} />}
               Tải lại
             </button>
@@ -149,7 +149,7 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
               <div key={place.id} style={{ padding: 18, borderRadius: 20, background: '#FFF', border: '1px solid var(--glass-border)', boxShadow: '0 4px 16px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                    <h4 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)' }}>{place.name}</h4>
+                    <h4 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)' }}>{place.name}</h4>
                     {/* Ba trạng thái. `null` = không rõ giờ mở cửa — phần lớn điểm
                         trên OpenStreetMap rơi vào đây. Không được hiển thị thành
                         "đang mở" hay "đóng cửa": đoán sai kiểu nào cũng làm bác đi
@@ -171,12 +171,12 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
                     )}
                   </div>
 
-                  <div style={{ fontSize: 13.5, color: 'var(--text-sub)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <MapPin size={15} color="var(--coral-main)" /> {place.address} {place.distance_km != null ? `(${place.distance_km} km chim bay)` : ''}
                   </div>
 
                   {place.phone && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 12.5, fontWeight: 700, color: 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>
                       <Phone size={14} /> {place.phone}
                     </div>
                   )}
@@ -188,7 +188,7 @@ export default function NearbyHealthcareModal({ isOpen, onClose, language = 'vi'
                   rel="noreferrer"
                   style={{ textDecoration: 'none' }}
                 >
-                  <button className="btn-primary" style={{ padding: '10px 18px', borderRadius: 14, fontSize: 13, whitespace: 'nowrap' }}>
+                  <button className="btn-primary" style={{ padding: '10px 18px', borderRadius: 16, fontSize: 13, whitespace: 'nowrap' }}>
                     <Navigation size={15} /> Chỉ đường
                   </button>
                 </a>

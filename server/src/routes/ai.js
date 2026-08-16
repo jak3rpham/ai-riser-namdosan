@@ -67,6 +67,25 @@ async function callGemini({ prompt, imageBase64, jsonMode, temperature, maxToken
     if (msg.includes('404')) {
       return { ok: false, code: 'MODEL_NOT_FOUND', message: 'Model AI không còn khả dụng. Cần cập nhật cấu hình máy chủ.' };
     }
+    /**
+     * Khoá sai / hết hạn / bị thu hồi.
+     *
+     * Tách riêng vì nó là lỗi CẤU HÌNH, không phải lỗi tạm thời — người dùng
+     * thử lại bao nhiêu lần cũng vậy, và chỉ chủ dự án sửa được. Gộp chung vào
+     * GEMINI_ERROR ("thử lại nhé") thì mã lỗi trên màn hình nói sai việc cần
+     * làm, mà log thì phải đào mới ra.
+     *
+     * Gặp thật ngày 16/08: khoá trong Secret Manager bị trả 401
+     * ACCESS_TOKEN_TYPE_UNSUPPORTED, toàn bộ /ai/* trả 502 suốt mà nhìn từ
+     * ngoài không phân biệt được với mạng chập.
+     */
+    if (msg.includes('401') || msg.includes('403') || msg.includes('API_KEY_INVALID')) {
+      return {
+        ok: false,
+        code: 'GEMINI_KEY_REJECTED',
+        message: 'Máy chủ chưa có khoá AI hợp lệ. Đây là lỗi cấu hình, không phải do máy bạn.'
+      };
+    }
     return { ok: false, code: 'GEMINI_ERROR', message: 'Không gọi được AI lúc này. Bạn thử lại hoặc nhập tay nhé.' };
   }
 }

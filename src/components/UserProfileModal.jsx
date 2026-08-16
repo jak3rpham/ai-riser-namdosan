@@ -58,8 +58,8 @@ function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'var(--coral-soft)', color: 'var(--coral-main)', fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
               <User size={14} /> Profile & Accessibility Settings
             </div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-dark)' }}>👤 Hồ sơ Người thân & Cấu hình Khả năng (C1–C4)</h3>
-            <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
+            <h3 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text-dark)' }}>👤 Hồ sơ Người thân & Cấu hình Khả năng (C1–C4)</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
               Tùy chỉnh giao diện theo khả năng tương tác công nghệ của {memberProfile?.display_name}.
             </p>
           </div>
@@ -69,7 +69,7 @@ function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language
         </div>
 
         {saved && (
-          <div style={{ padding: 12, borderRadius: 14, background: 'var(--emerald-soft)', color: 'var(--emerald-ok)', fontWeight: 800, fontSize: 13.5, marginBottom: 16 }}>
+          <div style={{ padding: 12, borderRadius: 16, background: 'var(--emerald-soft)', color: 'var(--emerald-ok)', fontWeight: 800, fontSize: 14, marginBottom: 16 }}>
             ✓ Đã lưu hồ sơ & tự động tối ưu giao diện app!
           </div>
         )}
@@ -84,7 +84,7 @@ function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 16, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
               />
             </div>
 
@@ -94,7 +94,7 @@ function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language
                 type="text"
                 value={relation}
                 onChange={(e) => setRelation(e.target.value)}
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 16, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
               />
             </div>
           </div>
@@ -113,8 +113,8 @@ function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language
                   }}
                 >
                   <div>
-                    <h5 style={{ fontSize: 14.5, fontWeight: 800, color: capability === cap.code ? 'var(--coral-main)' : 'var(--text-dark)' }}>{cap.label}</h5>
-                    <span style={{ fontSize: 12.5, color: 'var(--text-sub)' }}>{cap.desc}</span>
+                    <h5 style={{ fontSize: 14, fontWeight: 800, color: capability === cap.code ? 'var(--coral-main)' : 'var(--text-dark)' }}>{cap.label}</h5>
+                    <span style={{ fontSize: 13, color: 'var(--text-sub)' }}>{cap.desc}</span>
                   </div>
                   {capability === cap.code && <Check size={18} color="var(--coral-main)" />}
                 </div>
@@ -131,7 +131,7 @@ function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language
                 value={allergiesText}
                 onChange={(e) => setAllergiesText(e.target.value)}
                 placeholder="Penicillin, Aspirin..."
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 16, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
               />
             </div>
 
@@ -142,7 +142,7 @@ function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language
                 value={phone}
                 placeholder="Chưa khai — nhập số người nhà gọi khi khẩn cấp"
                 onChange={(e) => setPhone(e.target.value)}
-                style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
+                style={{ width: '100%', padding: '12px 16px', borderRadius: 16, border: '1px solid var(--glass-border)', fontSize: 14, fontFamily: 'inherit', background: '#F8FAFC' }}
               />
             </div>
           </div>
@@ -152,7 +152,7 @@ function ProfileForm({ isOpen, onClose, memberProfile, onUpdateProfile, language
         {/* Action Button */}
         <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
           <button className="btn-secondary" onClick={onClose}>Hủy</button>
-          <button className="btn-primary" onClick={handleSave} style={{ padding: '12px 24px', borderRadius: 14 }}>
+          <button className="btn-primary" onClick={handleSave} style={{ padding: '12px 24px', borderRadius: 16 }}>
             <Save size={16} /> Lưu Thay Đổi
           </button>
         </div>

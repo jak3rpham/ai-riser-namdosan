@@ -210,10 +210,10 @@ function ManagerWeb({ language, setLanguage }) {
               <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} variant="manager" />
               <GoogleConnectPanel />
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button className="btn-secondary" onClick={() => setManage(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 13.5 }}>
+                <button className="btn-secondary" onClick={() => setManage(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 14 }}>
                   <Users size={15} /> Quản lý nhà
                 </button>
-                <button className="btn-secondary" onClick={() => setAddSubject(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 13.5 }}>
+                <button className="btn-secondary" onClick={() => setAddSubject(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 14 }}>
                   <UserPlus size={15} /> Thêm người nhà
                 </button>
               </div>
@@ -438,7 +438,7 @@ function DemoSplit() {
         onOpenProfile={() => {}}
       />
 
-      <div style={{ padding: '8px 16px', borderRadius: 12, background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.25)', color: '#B45309', fontSize: 12.5, fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>
+      <div style={{ padding: '8px 16px', borderRadius: 12, background: 'rgba(217,119,6,0.1)', border: '1px solid rgba(217,119,6,0.25)', color: '#B45309', fontSize: 13, fontWeight: 700, marginBottom: 16, textAlign: 'center' }}>
         Chế độ trình diễn — hai giao diện cạnh nhau để quay video. Người dùng thật chỉ thấy một bên.
         {' '}<a href="/" style={{ color: '#B45309' }}>Về trang chính</a>
       </div>

@@ -52,10 +52,10 @@ export default function LandingView({ onChoose }) {
         <div style={{ width: 60, height: 60, borderRadius: 20, background: 'var(--coral-grad)', display: 'grid', placeItems: 'center', color: '#FFF', margin: '0 auto 14px', boxShadow: '0 10px 26px var(--coral-glow)' }}>
           <Heart size={30} fill="#FFF" />
         </div>
-        <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 30, fontWeight: 800, letterSpacing: '-0.6px', color: 'var(--text-dark)' }}>
+        <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 32, fontWeight: 800, letterSpacing: '-0.6px', color: 'var(--text-dark)' }}>
           Nhà Mình
         </h1>
-        <p style={{ fontSize: 15.5, color: 'var(--text-sub)', marginTop: 6, maxWidth: 460, lineHeight: 1.6 }}>
+        <p style={{ fontSize: 16, color: 'var(--text-sub)', marginTop: 6, maxWidth: 460, lineHeight: 1.6 }}>
           Giúp cả nhà uống thuốc đúng giờ, đúng liều — và biết khi nào cần đi khám.
         </p>
       </div>
@@ -74,7 +74,7 @@ export default function LandingView({ onChoose }) {
                 fontFamily: 'inherit'
               }}
             >
-              <div style={{ width: 46, height: 46, borderRadius: 15, background: c.soft, color: c.accent, display: 'grid', placeItems: 'center' }}>
+              <div style={{ width: 46, height: 46, borderRadius: 16, background: c.soft, color: c.accent, display: 'grid', placeItems: 'center' }}>
                 <Icon size={24} />
               </div>
 
@@ -82,7 +82,7 @@ export default function LandingView({ onChoose }) {
                 <div style={{ fontSize: 12, fontWeight: 800, color: c.accent, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
                   {c.subtitle}
                 </div>
-                <h2 style={{ fontSize: 21, fontWeight: 800, color: 'var(--text-dark)', marginTop: 2 }}>{c.title}</h2>
+                <h2 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', marginTop: 2 }}>{c.title}</h2>
               </div>
 
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7, margin: 0, padding: 0 }}>
@@ -93,7 +93,7 @@ export default function LandingView({ onChoose }) {
                 ))}
               </ul>
 
-              <div style={{ marginTop: 'auto', paddingTop: 8, display: 'flex', alignItems: 'center', gap: 6, color: c.accent, fontWeight: 800, fontSize: 14.5 }}>
+              <div style={{ marginTop: 'auto', paddingTop: 8, display: 'flex', alignItems: 'center', gap: 6, color: c.accent, fontWeight: 800, fontSize: 14 }}>
                 Vào đây <ArrowRight size={17} />
               </div>
             </button>
@@ -107,7 +107,7 @@ export default function LandingView({ onChoose }) {
 
       <a
         href="/?demo=1"
-        style={{ marginTop: 18, fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}
+        style={{ marginTop: 18, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}
       >
         Chế độ xem 2 màn hình →
       </a>

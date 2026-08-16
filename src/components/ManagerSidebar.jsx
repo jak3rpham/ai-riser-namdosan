@@ -29,7 +29,7 @@ import { LayoutGrid, Pill, Activity, CalendarClock, Utensils, Users } from 'luci
  */
 
 export const MANAGER_SECTIONS = [
-  { id: 'overview', label: 'Tổng quan', icon: LayoutGrid, hint: 'Tuân thủ, cảnh báo, hoạt động' },
+  { id: 'overview', label: 'Tổng quan', icon: LayoutGrid, hint: 'Tuân thủ và cảnh báo' },
   { id: 'prescriptions', label: 'Đơn thuốc', icon: Pill, hint: 'Quét đơn, tủ thuốc' },
   { id: 'vitals', label: 'Chỉ số sức khoẻ', icon: Activity, hint: 'Huyết áp, đường huyết' },
   { id: 'appointments', label: 'Lịch tái khám', icon: CalendarClock, hint: 'Hẹn khám, xét nghiệm' },

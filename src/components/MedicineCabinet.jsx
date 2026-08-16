@@ -9,10 +9,10 @@ export default function MedicineCabinet({ medications = [], language = 'vi' }) {
     <div className="liquid-card" style={{ padding: 26 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h3 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-dark)' }}>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>
             📦 {t.medicine_cabinet} (M18 — Vòng đời đợt dùng)
           </h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
             Theo dõi tiến trình đợt dùng thuốc & dự đoán thời điểm kết thúc đợt để gia hạn kịp thời.
           </p>
         </div>
@@ -29,13 +29,13 @@ export default function MedicineCabinet({ medications = [], language = 'vi' }) {
           const percent = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
 
           return (
-            <div key={idx} style={{ padding: 18, borderRadius: 18, background: '#FFF', border: isLow ? '1.5px solid rgba(217,119,6,0.3)' : '1px solid var(--glass-border)', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
+            <div key={idx} style={{ padding: 18, borderRadius: 20, background: '#FFF', border: isLow ? '1.5px solid rgba(217,119,6,0.3)' : '1px solid var(--glass-border)', boxShadow: '0 4px 16px rgba(0,0,0,0.03)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div>
                   <h4 style={{ fontSize: 16, fontWeight: 800 }}>{med.name}</h4>
-                  <span style={{ fontSize: 12.5, color: 'var(--coral-main)', fontWeight: 700 }}>{med.nick_name || med.generic}</span>
+                  <span style={{ fontSize: 13, color: 'var(--coral-main)', fontWeight: 700 }}>{med.nick_name || med.generic}</span>
                 </div>
-                <span style={{ fontSize: 11.5, fontWeight: 800, padding: '3px 10px', borderRadius: 99, background: isLow ? 'var(--amber-soft)' : 'var(--emerald-soft)', color: isLow ? 'var(--amber-warm)' : 'var(--emerald-ok)' }}>
+                <span style={{ fontSize: 12, fontWeight: 800, padding: '3px 10px', borderRadius: 99, background: isLow ? 'var(--amber-soft)' : 'var(--emerald-soft)', color: isLow ? 'var(--amber-warm)' : 'var(--emerald-ok)' }}>
                   {isLow ? '⚠️ Sắp hết đợt' : 'Đang dùng'}
                 </span>
               </div>
@@ -51,7 +51,7 @@ export default function MedicineCabinet({ medications = [], language = 'vi' }) {
                 </div>
               </div>
 
-              <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--text-sub)' }}>
+              <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text-sub)' }}>
                 <span>Còn lại: <strong style={{ color: isLow ? 'var(--amber-warm)' : 'var(--text-dark)' }}>{med.est_remaining} ngày</strong></span>
                 <span>Cữ: <strong>{med.time_slot}</strong></span>
               </div>

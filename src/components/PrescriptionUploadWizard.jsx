@@ -224,7 +224,7 @@ export default function PrescriptionUploadWizard({
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn-secondary" onClick={startManualEntry} style={{ padding: '12px 20px', borderRadius: 14 }}>
+            <button className="btn-secondary" onClick={startManualEntry} style={{ padding: '12px 20px', borderRadius: 16 }}>
               <Pencil size={16} /> Nhập tay
             </button>
             <label className="btn-primary" style={{ cursor: 'pointer' }}>
@@ -239,10 +239,10 @@ export default function PrescriptionUploadWizard({
       {/* ── Bước lỗi: KHÔNG bịa dữ liệu ── */}
       {step === 'error' && (
         <div>
-          <div style={{ padding: 20, borderRadius: 18, background: '#FFFBEB', border: '1.5px solid #FDE68A', display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
+          <div style={{ padding: 20, borderRadius: 20, background: '#FFFBEB', border: '1.5px solid #FDE68A', display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
             <AlertTriangle size={24} color="#B45309" style={{ flexShrink: 0 }} />
             <div>
-              <h4 style={{ fontSize: 16.5, fontWeight: 800, color: '#B45309' }}>Chưa đọc được đơn này</h4>
+              <h4 style={{ fontSize: 16, fontWeight: 800, color: '#B45309' }}>Chưa đọc được đơn này</h4>
               <p style={{ fontSize: 14, color: '#78350F', fontWeight: 600, marginTop: 4, lineHeight: 1.55 }}>
                 {extractionError?.error_message}
               </p>
@@ -251,7 +251,7 @@ export default function PrescriptionUploadWizard({
                   Phần không đọc được: {extractionError.unreadable_parts.join('; ')}
                 </p>
               )}
-              <p style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 8, fontWeight: 600 }}>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8, fontWeight: 600 }}>
                 Mã lỗi: {extractionError?.error_code}. App không tự đoán nội dung đơn thuốc — nhập tay sẽ chắc chắn hơn.
               </p>
             </div>
@@ -273,8 +273,8 @@ export default function PrescriptionUploadWizard({
         <div>
           <div style={{ marginBottom: 18 }}>
             <h3 style={{ fontSize: 20, fontWeight: 800 }}>Kiểm lại trước khi lưu</h3>
-            <p style={{ fontSize: 13.5, color: 'var(--text-sub)', marginTop: 2 }}>
-              Sửa trực tiếp vào ô bên dưới. Ô <span style={{ background: '#FEF3C7', padding: '1px 6px', borderRadius: 6, fontWeight: 700 }}>viền vàng</span> là chỗ AI đọc không chắc — kiểm kỹ giúp nhé.
+            <p style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 2 }}>
+              Sửa trực tiếp vào ô bên dưới. Ô <span style={{ background: '#FEF3C7', padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>viền vàng</span> là chỗ AI đọc không chắc — kiểm kỹ giúp nhé.
             </p>
           </div>
 
@@ -297,7 +297,7 @@ export default function PrescriptionUploadWizard({
               {meds.map((med, idx) => {
                 const lowConf = !med._manual && med.confidence < LOW_CONFIDENCE;
                 const inputStyle = (filled) => ({
-                  padding: '9px 12px', borderRadius: 10, fontSize: 14, fontFamily: 'inherit', width: '100%',
+                  padding: '9px 12px', borderRadius: 12, fontSize: 14, fontFamily: 'inherit', width: '100%',
                   border: filled ? '1px solid var(--glass-border)' : '1.5px solid #FCA5A5',
                   background: filled ? '#FFF' : '#FFF5F5', outline: 'none'
                 });
@@ -314,7 +314,7 @@ export default function PrescriptionUploadWizard({
                         )}
                         {med._manual && <span style={{ marginLeft: 8, color: 'var(--sky-blue)' }}>· nhập tay</span>}
                       </span>
-                      <button onClick={() => removeMed(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12.5, fontWeight: 700 }}>
+                      <button onClick={() => removeMed(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 700 }}>
                         <Trash2 size={14} /> Xoá
                       </button>
                     </div>
@@ -354,13 +354,13 @@ export default function PrescriptionUploadWizard({
           </div>
 
           {validationError && (
-            <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 13.5, fontWeight: 700 }}>
+            <div style={{ marginTop: 14, padding: '10px 14px', borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 14, fontWeight: 700 }}>
               {validationError}
             </div>
           )}
 
           {criticalCount > 0 && (
-            <div style={{ marginTop: 14, padding: '12px 16px', borderRadius: 12, background: '#FEF2F2', border: '1.5px solid #DC2626', color: '#991B1B', fontSize: 13.5, fontWeight: 700 }}>
+            <div style={{ marginTop: 14, padding: '12px 16px', borderRadius: 12, background: '#FEF2F2', border: '1.5px solid #DC2626', color: '#991B1B', fontSize: 14, fontWeight: 700 }}>
               Có {criticalCount} cảnh báo nghiêm trọng ở trên. Bạn xác nhận lại với dược sĩ trước khi cho uống nhé — app vẫn cho lưu để bạn có sổ mang đi hỏi.
             </div>
           )}

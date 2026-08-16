@@ -38,9 +38,41 @@
   --text-sub: #475569;
   --text-muted: #64748B;
   
-  --radius-xl: 26px;
-  --radius-lg: 18px;
-  --radius-md: 12px;
+  /* ═══════════════════════════════════════════════════════════
+     THANG KÍCH THƯỚC — nguồn duy nhất
+
+     Toàn bộ app viết bằng inline style, nên phần lớn số nằm thẳng trong
+     JSX chứ không đọc mấy biến dưới đây. Chúng vẫn là NGUỒN CHUẨN: thêm
+     màn hình mới thì lấy số từ đây, đừng nghĩ ra số mới.
+
+     Trước đợt rà 16/08, app có 19 giá trị bo góc (10→48) và 28 cỡ chữ
+     (10.5→40, đủ cả 12.5, 13.5, 14.5, 15.5, 16.5). Hai thẻ cạnh nhau lệch
+     nhau nửa pixel chữ — không ai gọi tên được lỗi gì, nhưng nhìn vào thì
+     thấy rời rạc. Đã gom về thang dưới đây.
+     ═══════════════════════════════════════════════════════════ */
+
+  /* Bo góc. 99px = viên thuốc (chip, nút tròn). */
+  --radius-sm: 8px;    /* nhãn nhỏ, ô nhập phụ */
+  --radius-md: 12px;   /* nút, ô nhập, thẻ con */
+  --radius-lg: 16px;   /* thẻ nội dung */
+  --radius-xl: 20px;   /* khối lớn, panel */
+  --radius-2xl: 26px;  /* .liquid-card */
+  --radius-3xl: 32px;  /* modal */
+  --radius-pill: 99px;
+
+  /* Cỡ chữ. Bỏ hẳn các nấc .5 và các nấc cách nhau 1px ở vùng thân bài —
+     hai nấc liền nhau phải phân biệt được bằng mắt thì mới có tác dụng
+     phân cấp. */
+  --fs-micro: 11px;    /* nhãn viết hoa, chú thích luật */
+  --fs-caption: 12px;  /* chú thích */
+  --fs-sm: 13px;       /* phụ đề, mô tả */
+  --fs-body: 14px;     /* thân bài — cỡ dùng nhiều nhất */
+  --fs-lg: 16px;       /* thân bài app Ba Mẹ, ô nhập (iOS không phóng to) */
+  --fs-h4: 18px;
+  --fs-h3: 20px;
+  --fs-h2: 23px;
+  --fs-h1: 26px;
+  --fs-display: 32px;  /* con số thống kê */
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -93,7 +125,7 @@ body {
   -webkit-backdrop-filter: blur(24px) saturate(180%);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow), var(--glass-inset-highlight);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .liquid-card:hover {
@@ -104,9 +136,9 @@ body {
 
 /* Buttons */
 .btn-primary {
-  padding: 13px 26px; border-radius: 16px;
+  padding: 13px 26px; border-radius: var(--radius-lg);
   background: var(--coral-grad); color: #FFF; border: none;
-  font-weight: 800; font-size: 14.5px; font-family: inherit;
+  font-weight: 800; font-size: var(--fs-body); font-family: inherit;
   cursor: pointer; box-shadow: 0 8px 20px var(--coral-glow);
   display: flex; align-items: center; gap: 8px; justify-content: center;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -116,10 +148,10 @@ body {
   box-shadow: 0 12px 25px var(--coral-glow);
 }
 .btn-secondary {
-  padding: 12px 22px; border-radius: 16px;
+  padding: 12px 22px; border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.8); color: var(--text-dark);
   border: 1px solid var(--glass-border);
-  font-weight: 700; font-size: 14px; font-family: inherit;
+  font-weight: 700; font-size: var(--fs-body); font-family: inherit;
   cursor: pointer; backdrop-filter: blur(10px);
   display: flex; align-items: center; gap: 8px; justify-content: center;
   transition: background 0.2s;
@@ -135,11 +167,11 @@ body {
 .role-toggle {
   display: flex; background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px); border: 1px solid var(--glass-border);
-  padding: 5px; border-radius: 99px; box-shadow: var(--glass-shadow);
+  padding: 5px; border-radius: var(--radius-pill); box-shadow: var(--glass-shadow);
 }
 .role-btn {
-  padding: 10px 24px; border-radius: 99px; border: none;
-  background: transparent; font-size: 14px; font-weight: 800;
+  padding: 10px 24px; border-radius: var(--radius-pill); border: none;
+  background: transparent; font-size: var(--fs-body); font-weight: 800;
   color: var(--text-sub); cursor: pointer; transition: all 0.25s;
   display: flex; align-items: center; gap: 8px; font-family: inherit;
 }
@@ -179,8 +211,8 @@ body {
 @media (max-width: 900px) {
   .split-view { grid-template-columns: minmax(0, 1fr); gap: 24px; }
   .stat-grid { grid-template-columns: minmax(0, 1fr); }
-  .role-btn { padding: 10px 14px; font-size: 13px; }
-  .role-toggle { flex-wrap: wrap; justify-content: center; border-radius: 24px; }
+  .role-btn { padding: 10px 14px; font-size: var(--fs-sm); }
+  .role-toggle { flex-wrap: wrap; justify-content: center; border-radius: var(--radius-2xl); }
   .app-container { padding-left: 14px; padding-right: 14px; }
 
   /* Chừa chỗ cho tai thỏ / thanh home khi thêm vào màn hình chính */
@@ -210,7 +242,7 @@ body {
 
   /* iOS Safari tự phóng to trang khi focus vào ô nhập có cỡ chữ < 16px.
      Ép 16px để không bị giật màn hình khi bấm vào ô. */
-  input, select, textarea { font-size: 16px !important; }
+  input, select, textarea { font-size: var(--fs-lg) !important; }
 
   /* Vùng chạm tối thiểu — người lớn tuổi ngón tay không chính xác */
   button { min-height: 44px; }
@@ -226,11 +258,11 @@ body {
   width: 100%;
   padding: 16px;
   border: none;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--coral-grad);
   color: #FFF;
   font-family: inherit;
-  font-size: 17px;
+  font-size: var(--fs-h4);
   font-weight: 800;
   letter-spacing: 0.3px;
   cursor: pointer;
@@ -265,7 +297,7 @@ body {
   flex-direction: column;
   gap: 16px;
   padding: 14px;
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-2xl);
   background: var(--glass-bg);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -275,7 +307,7 @@ body {
 
 .manager-nav-eyebrow {
   display: block;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   font-weight: 800;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -305,14 +337,14 @@ body {
 .manager-person-avatar {
   width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
   display: grid; place-items: center;
-  color: #FFF; font-size: 12.5px; font-weight: 800;
+  color: #FFF; font-size: var(--fs-sm); font-weight: 800;
 }
 .manager-person-name {
-  min-width: 0; font-size: 14px; font-weight: 700; color: var(--text-dark);
+  min-width: 0; font-size: var(--fs-body); font-weight: 700; color: var(--text-dark);
   display: flex; flex-direction: column; line-height: 1.25;
 }
 .manager-person.active .manager-person-name { color: var(--coral-main); }
-.manager-person-rel { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+.manager-person-rel { font-size: var(--fs-caption); font-weight: 600; color: var(--text-muted); }
 
 .manager-nav-list {
   list-style: none; display: flex; flex-direction: column; gap: 3px;
@@ -337,15 +369,15 @@ body {
 
 .manager-nav-icon { flex-shrink: 0; }
 .manager-nav-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.3; }
-.manager-nav-label { font-size: 14.5px; font-weight: 700; }
-.manager-nav-hint { font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+.manager-nav-label { font-size: var(--fs-body); font-weight: 700; }
+.manager-nav-hint { font-size: var(--fs-caption); font-weight: 600; color: var(--text-muted); }
 .manager-nav-item.active .manager-nav-hint { color: var(--coral-main); opacity: 0.75; }
 
 .manager-nav-badge {
   margin-left: auto; flex-shrink: 0;
-  min-width: 20px; padding: 1px 6px; border-radius: 99px;
+  min-width: 20px; padding: 1px 6px; border-radius: var(--radius-pill);
   background: #DC2626; color: #FFF;
-  font-size: 11px; font-weight: 800; text-align: center;
+  font-size: var(--fs-micro); font-weight: 800; text-align: center;
 }
 
 /* Tiêu đề của phần nội dung — cho biết đang ở mục nào */
@@ -353,8 +385,8 @@ body {
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: 14px; flex-wrap: wrap; margin-bottom: 4px;
 }
-.manager-section-title { font-size: 22px; font-weight: 800; color: var(--text-dark); }
-.manager-section-sub { font-size: 13.5px; font-weight: 600; color: var(--text-sub); margin-top: 2px; }
+.manager-section-title { font-size: var(--fs-h2); font-weight: 800; color: var(--text-dark); }
+.manager-section-sub { font-size: var(--fs-sm); font-weight: 600; color: var(--text-sub); margin-top: 2px; }
 
 @media (max-width: 900px) {
   .manager-layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
@@ -374,14 +406,14 @@ body {
     border-top: 1px solid var(--glass-border); padding-top: 10px;
   }
   .manager-nav-item {
-    width: auto; flex-shrink: 0; padding: 9px 14px; border-radius: 99px;
+    width: auto; flex-shrink: 0; padding: 9px 14px; border-radius: var(--radius-pill);
     border: 1px solid var(--glass-border); background: rgba(255,255,255,0.7);
   }
   .manager-nav-item.active { box-shadow: none; border-color: var(--coral-border); background: #FFF; }
   .manager-nav-hint { display: none; }
   .manager-nav-label { white-space: nowrap; }
 
-  .manager-section-title { font-size: 19px; }
+  .manager-section-title { font-size: var(--fs-h3); }
 }
 
 /* Chốt chặn cuối: không cho trang trượt ngang trên điện thoại.
@@ -398,12 +430,12 @@ html, body { max-width: 100%; overflow-x: hidden; }
    ────────────────────────────────────────────────────────────── */
 .app-header-bar {
   padding: 12px 18px;
-  border-radius: 24px;
+  border-radius: var(--radius-2xl);
 }
 
 @media (min-width: 768px) {
   .app-header-bar {
     padding: 12px 24px;
-    border-radius: 99px;
+    border-radius: var(--radius-pill);
   }
 }

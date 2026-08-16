@@ -71,10 +71,10 @@ export default function AppointmentTrackerCard({
     <div className="liquid-card" style={{ padding: 26 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Calendar color="var(--coral-main)" /> Lịch Tái Khám & Xét Nghiệm
           </h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
             Tự động nhắc lịch khám bác sĩ & hướng dẫn chuẩn bị trước ngày khám.
           </p>
         </div>
@@ -89,8 +89,8 @@ export default function AppointmentTrackerCard({
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {memberAppointments.length === 0 && (
-          <div style={{ padding: '20px 16px', borderRadius: 14, background: 'rgba(241,245,249,0.7)', textAlign: 'center' }}>
-            <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 4 }}>
+          <div style={{ padding: '20px 16px', borderRadius: 16, background: 'rgba(241,245,249,0.7)', textAlign: 'center' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 4 }}>
               Chưa có lịch tái khám nào
             </div>
             <div style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.5 }}>
@@ -114,7 +114,7 @@ export default function AppointmentTrackerCard({
                     </span>
                     <h4 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-dark)' }}>{app.doctor}</h4>
                   </div>
-                  <div style={{ fontSize: 13.5, color: 'var(--text-sub)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <MapPin size={15} color="var(--coral-main)" /> {app.hospital}
                   </div>
                 </div>
@@ -126,7 +126,7 @@ export default function AppointmentTrackerCard({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="btn-secondary"
-                      style={{ padding: '8px 14px', borderRadius: 99, fontSize: 12.5, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: 'var(--emerald-ok)', fontWeight: 700 }}
+                      style={{ padding: '8px 14px', borderRadius: 99, fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: 'var(--emerald-ok)', fontWeight: 700 }}
                     >
                       <CheckCircle2 size={15} /> Xem trên Google Calendar <ExternalLink size={13} />
                     </a>
@@ -145,13 +145,13 @@ export default function AppointmentTrackerCard({
               </div>
 
               {syncState?.ok === false && (
-                <div style={{ marginTop: 10, fontSize: 12.5, color: '#DC2626', fontWeight: 600, background: '#FEF2F2', padding: '6px 12px', borderRadius: 8 }}>
+                <div style={{ marginTop: 10, fontSize: 13, color: '#DC2626', fontWeight: 600, background: '#FEF2F2', padding: '6px 12px', borderRadius: 8 }}>
                   ❌ Đồng bộ thất bại: {syncState.error}
                 </div>
               )}
 
               {app.prep_instructions && (
-                <div style={{ marginTop: 12, padding: 12, borderRadius: 14, background: '#F8FAFC', border: '1px dashed var(--glass-border)', fontSize: 13, color: 'var(--text-dark)' }}>
+                <div style={{ marginTop: 12, padding: 12, borderRadius: 16, background: '#F8FAFC', border: '1px dashed var(--glass-border)', fontSize: 13, color: 'var(--text-dark)' }}>
                   <strong style={{ color: 'var(--amber-warm)' }}>⚠️ Hướng dẫn trước khi khám:</strong> {app.prep_instructions}
                 </div>
               )}

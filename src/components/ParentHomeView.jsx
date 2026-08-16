@@ -185,17 +185,17 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
           {/* Header */}
           <div style={{ padding: '38px 20px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <span style={{ fontSize: 12.5, color: 'var(--text-muted)', fontWeight: 600 }}>
+              <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
                 {language === 'vi' ? 'Chào buổi sáng,' : 'Good morning,'}
               </span>
-              <h4 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-dark)' }}>{selectedMember.display_name} ❤️</h4>
+              <h4 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>{selectedMember.display_name} ❤️</h4>
             </div>
 
             <button
               onClick={() => setIsPharmacyOpen(true)}
               style={{
                 background: 'var(--coral-soft)', color: 'var(--coral-main)', border: '1px solid var(--coral-border)',
-                borderRadius: 14, padding: '6px 10px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer',
+                borderRadius: 16, padding: '6px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 4
               }}
             >
@@ -227,14 +227,14 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                         boxShadow: done ? '0 0 10px rgba(5, 150, 105, 0.3)'
                           : isNow && hasMed ? '0 0 12px var(--coral-glow)' : 'none'
                       }}></div>
-                      <span style={{ fontSize: 10.5, fontWeight: 700, color }}>{t[slot.key]}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color }}>{t[slot.key]}</span>
                     </div>
                   );
                 })}
               </div>
 
               {/* Action Card */}
-              <div style={{ flex: 1, margin: '0 18px 12px', background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(20px)', border: '1.5px solid rgba(255, 107, 75, 0.3)', borderRadius: 18, padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', boxShadow: '0 12px 30px rgba(31, 38, 135, 0.08)' }}>
+              <div style={{ flex: 1, margin: '0 18px 12px', background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(20px)', border: '1.5px solid rgba(255, 107, 75, 0.3)', borderRadius: 20, padding: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', boxShadow: '0 12px 30px rgba(31, 38, 135, 0.08)' }}>
 
                 {/* Uống hết rồi KHÁC hẳn chưa có thuốc nào. Bản trước gộp làm
                     một, nên bấm xong hết là app quay ra nói "chưa có thuốc nào
@@ -244,36 +244,36 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                     <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'var(--emerald-soft)', color: 'var(--emerald-ok)', display: 'grid', placeItems: 'center', margin: '0 auto 12px' }}>
                       <CheckCircle2 size={42} />
                     </div>
-                    <h3 style={{ fontSize: 18.5, fontWeight: 800, color: 'var(--emerald-ok)', lineHeight: 1.35 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--emerald-ok)', lineHeight: 1.35 }}>
                       {say('Hôm nay {{you}} uống đủ thuốc rồi{{a}}')}
                     </h3>
-                    <p style={{ fontSize: 13.5, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
                       {say('{{Me}} đã báo cho người nhà biết. Tới cữ sau {{me}} nhắc tiếp {{nha}}.')}
                     </p>
                   </div>
                 ) : !currentMed ? (
                   <div style={{ margin: 'auto', textAlign: 'center', padding: '0 8px' }}>
                     <div style={{ fontSize: 40, marginBottom: 10 }}>💊</div>
-                    <h3 style={{ fontSize: 17.5, fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.35 }}>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.35 }}>
                       Hôm nay chưa có thuốc nào trong hồ sơ của {selectedMember.display_name}
                     </h3>
-                    <p style={{ fontSize: 13.5, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
+                    <p style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, marginTop: 8, lineHeight: 1.5 }}>
                       {say('Nhờ người nhà chụp đơn thuốc hoặc vỏ thuốc lên giúp {{you}} {{nha}}.')}
                     </p>
                   </div>
                 ) : (
                 <>
-                <div style={{ background: 'var(--coral-soft)', color: 'var(--coral-main)', fontSize: 12.5, fontWeight: 800, padding: '5px 14px', borderRadius: 99, border: '1px solid var(--coral-border)', marginBottom: 10 }}>
+                <div style={{ background: 'var(--coral-soft)', color: 'var(--coral-main)', fontSize: 13, fontWeight: 800, padding: '5px 14px', borderRadius: 99, border: '1px solid var(--coral-border)', marginBottom: 10 }}>
                   ⏰ {currentMed.timing || 'Chưa rõ giờ'}
                 </div>
 
-                <div style={{ width: 90, height: 90, borderRadius: 28, background: 'linear-gradient(145deg, #FFFFFF, #F1F5F9)', border: '1px solid var(--glass-border)', display: 'grid', placeItems: 'center', boxShadow: '0 12px 24px rgba(31, 38, 135, 0.08)', marginBottom: 12 }}>
-                  <div style={{ width: 48, height: 26, borderRadius: 13, background: 'linear-gradient(90deg, #FF6B4B 50%, #E2E8F0 50%)', transform: 'rotate(-35deg)', boxShadow: '0 6px 14px rgba(0,0,0,0.12)' }}></div>
+                <div style={{ width: 90, height: 90, borderRadius: 26, background: 'linear-gradient(145deg, #FFFFFF, #F1F5F9)', border: '1px solid var(--glass-border)', display: 'grid', placeItems: 'center', boxShadow: '0 12px 24px rgba(31, 38, 135, 0.08)', marginBottom: 12 }}>
+                  <div style={{ width: 48, height: 26, borderRadius: 12, background: 'linear-gradient(90deg, #FF6B4B 50%, #E2E8F0 50%)', transform: 'rotate(-35deg)', boxShadow: '0 6px 14px rgba(0,0,0,0.12)' }}></div>
                 </div>
 
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', lineHeight: 1.2 }}>{currentMed.name}</h3>
                 <span style={{ fontSize: 13, color: 'var(--coral-main)', fontWeight: 700, marginTop: 2 }}>{currentMed.nick_name || currentMed.generic}</span>
-                <p style={{ fontSize: 13.5, color: 'var(--text-sub)', fontWeight: 500, marginTop: 4 }}>{currentMed.dosage}</p>
+                <p style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 500, marginTop: 4 }}>{currentMed.dosage}</p>
 
                 {saveError && (
                   <div style={{ width: '100%', padding: 10, borderRadius: 12, background: '#FEF2F2', color: '#B91C1C', fontSize: 13, fontWeight: 700, textAlign: 'center', marginTop: 'auto', marginBottom: 8 }}>
@@ -283,7 +283,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
 
                 {/* Nhánh này chỉ chạy khi CÒN thuốc chưa uống — trạng thái "đã
                     uống xong" đã xử ở khối trên, theo dữ liệu thật. */}
-                <button onClick={handleTakePill} className="btn-parent-action" style={{ padding: 15, fontSize: 16.5, marginTop: 'auto' }}>
+                <button onClick={handleTakePill} className="btn-parent-action" style={{ padding: 15, fontSize: 16, marginTop: 'auto' }}>
                   {t.taken_btn}
                 </button>
                 </>
@@ -292,10 +292,10 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
 
               {/* Quick Controls */}
               <div style={{ padding: '0 18px 12px', display: 'flex', gap: 10 }}>
-                <button onClick={() => setIsVoiceOpen(true)} className="btn-secondary" style={{ flex: 1, padding: 11, borderRadius: 16, fontSize: 12.5 }}>
+                <button onClick={() => setIsVoiceOpen(true)} className="btn-secondary" style={{ flex: 1, padding: 11, borderRadius: 16, fontSize: 13 }}>
                   <Mic size={16} color="var(--coral-main)" /> {t.ask_bi_btn}
                 </button>
-                <button onClick={handleSendStatus} className="btn-secondary" style={{ flex: 1, padding: 11, borderRadius: 16, fontSize: 12.5 }}>
+                <button onClick={handleSendStatus} className="btn-secondary" style={{ flex: 1, padding: 11, borderRadius: 16, fontSize: 13 }}>
                   <Heart size={16} color="#EF4444" fill="#EF4444" /> {t.send_status_btn}
                 </button>
               </div>
@@ -307,7 +307,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
             <div style={{ flex: 1, padding: '0 18px 12px', overflowY: 'auto' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)' }}>📦 Tủ thuốc gia đình</h3>
-                <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--coral-main)' }}>{activeMeds.length} loại</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--coral-main)' }}>{activeMeds.length} loại</span>
               </div>
 
               {activeMeds.length === 0 ? (
@@ -317,10 +317,10 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {activeMeds.map((med, i) => (
-                    <div key={i} style={{ padding: 16, borderRadius: 18, background: '#FFF', border: '1px solid var(--glass-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-                      <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--text-dark)' }}>{med.name}</div>
+                    <div key={i} style={{ padding: 16, borderRadius: 20, background: '#FFF', border: '1px solid var(--glass-border)', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)' }}>{med.name}</div>
                       <div style={{ fontSize: 13, color: 'var(--coral-main)', fontWeight: 700, marginTop: 2 }}>{med.nick_name || med.generic}</div>
-                      <div style={{ fontSize: 13.5, color: 'var(--text-sub)', marginTop: 6, fontWeight: 600 }}>Liều: {med.dosage} · {med.timing || med.time_slot}</div>
+                      <div style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 6, fontWeight: 600 }}>Liều: {med.dosage} · {med.timing || med.time_slot}</div>
                     </div>
                   ))}
                 </div>
@@ -334,12 +334,12 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
               <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 10 }}>🎙️ Trợ lý Cháu Bi</h3>
 
               <div style={{ flex: 1, padding: 16, borderRadius: 20, background: '#FFF', border: '1px solid var(--glass-border)', marginBottom: 12, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div style={{ fontSize: 14, color: 'var(--text-dark)', background: '#F8FAFC', padding: 12, borderRadius: 14, fontWeight: 600 }}>
+                <div style={{ fontSize: 14, color: 'var(--text-dark)', background: '#F8FAFC', padding: 12, borderRadius: 16, fontWeight: 600 }}>
                   {say(`{{Da}} {{me}} chào ${selectedMember.display_name}! {{You}} cần hỏi gì về cách dùng thuốc hay kiêng kỵ gì không{{a}}?`)}
                 </div>
 
                 {askResponse && (
-                  <div style={{ fontSize: 14.5, color: 'var(--text-dark)', background: 'var(--coral-soft)', padding: 14, borderRadius: 14, fontWeight: 600, border: '1px solid var(--coral-border)' }}>
+                  <div style={{ fontSize: 14, color: 'var(--text-dark)', background: 'var(--coral-soft)', padding: 14, borderRadius: 16, fontWeight: 600, border: '1px solid var(--coral-border)' }}>
                     {askResponse}
                   </div>
                 )}
@@ -348,7 +348,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
               <button
                 onClick={() => setCaptureOpen(true)}
                 style={{
-                  width: '100%', padding: '18px 20px', marginBottom: 10, borderRadius: 18,
+                  width: '100%', padding: '18px 20px', marginBottom: 10, borderRadius: 20,
                   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                   background: 'linear-gradient(135deg, #38BDF8 0%, #0284C7 100%)', color: '#FFF',
                   fontSize: 18, fontWeight: 800,
@@ -366,9 +366,9 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                   value={askQuery}
                   onChange={e => setAskQuery(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && handleTabAsk(askQuery)}
-                  style={{ flex: 1, padding: '12px 16px', borderRadius: 14, border: '1px solid var(--glass-border)', fontSize: 15, fontFamily: 'inherit' }}
+                  style={{ flex: 1, padding: '12px 16px', borderRadius: 16, border: '1px solid var(--glass-border)', fontSize: 16, fontFamily: 'inherit' }}
                 />
-                <button className="btn-primary" onClick={() => handleTabAsk(askQuery)} disabled={askLoading} style={{ padding: '0 18px', borderRadius: 14 }}>
+                <button className="btn-primary" onClick={() => handleTabAsk(askQuery)} disabled={askLoading} style={{ padding: '0 18px', borderRadius: 16 }}>
                   {askLoading ? '...' : 'Gửi'}
                 </button>
               </div>
@@ -388,14 +388,14 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
 
                 <div>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Tiền sử Dị ứng:</span>
-                  <div style={{ fontSize: 14.5, fontWeight: 700, color: selectedMember.allergies?.length ? '#DC2626' : 'var(--emerald-ok)' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: selectedMember.allergies?.length ? '#DC2626' : 'var(--emerald-ok)' }}>
                     {selectedMember.allergies?.length ? selectedMember.allergies.join(', ') : 'Không có dị ứng'}
                   </div>
                 </div>
 
                 <div>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>Bệnh nền:</span>
-                  <div style={{ fontSize: 14.5, fontWeight: 700, color: 'var(--text-dark)' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)' }}>
                     {selectedMember.conditions?.length ? selectedMember.conditions.join(', ') : 'Bình thường'}
                   </div>
                 </div>
@@ -405,7 +405,7 @@ export default function ParentHomeView({ selectedMember, prescriptions = [], fee
                     <button
                       className="btn-secondary"
                       onClick={onOpenHousehold}
-                      style={{ width: '100%', padding: 13, borderRadius: 13, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                      style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                     >
                       <Users size={17} /> Nhà mình có những ai
                     </button>

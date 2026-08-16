@@ -41,10 +41,10 @@ export default function FamilyFeedCard({ feed = [] }) {
     <div className="liquid-card" style={{ padding: 26 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h3 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Activity color="var(--coral-main)" /> Ba mẹ đang thế nào
           </h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
             Cập nhật ngay khi ba mẹ thao tác trên điện thoại — không cần tải lại trang.
           </p>
         </div>
@@ -56,7 +56,7 @@ export default function FamilyFeedCard({ feed = [] }) {
       </div>
 
       {feed.length === 0 ? (
-        <div style={{ padding: 18, borderRadius: 16, background: 'rgba(241,245,249,0.7)', fontSize: 13.5, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'center' }}>
+        <div style={{ padding: 18, borderRadius: 16, background: 'rgba(241,245,249,0.7)', fontSize: 14, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'center' }}>
           Chưa có hoạt động nào. Khi ba mẹ bấm "đã uống thuốc" hoặc báo triệu chứng, nó sẽ hiện ở đây ngay.
         </div>
       ) : (
@@ -65,11 +65,11 @@ export default function FamilyFeedCard({ feed = [] }) {
             const s = STYLES[item.type] || STYLES.DOSE_TAKEN;
             const Icon = s.icon;
             return (
-              <div key={item.id} style={{ padding: 14, borderRadius: 14, background: s.bg, border: `1px solid ${s.border}`, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div key={item.id} style={{ padding: 14, borderRadius: 16, background: s.bg, border: `1px solid ${s.border}`, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                 <Icon size={18} color={s.fg} style={{ flexShrink: 0, marginTop: 2 }} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: s.border, color: s.chipFg || '#FFF' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: s.border, color: s.chipFg || '#FFF' }}>
                       {s.label}
                     </span>
                     <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>
@@ -78,14 +78,14 @@ export default function FamilyFeedCard({ feed = [] }) {
                     <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>{when(item.at)}</span>
                   </div>
 
-                  <div style={{ fontSize: 13.5, color: s.fg, fontWeight: 600, marginTop: 3, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 14, color: s.fg, fontWeight: 600, marginTop: 3, lineHeight: 1.5 }}>
                     {item.type === 'DOSE_TAKEN'
                       ? `Đã uống ${item.med_name || 'thuốc'}${item.time_slot ? ` — cữ ${item.time_slot}` : ''}`
                       : item.title}
                   </div>
 
                   {item.detail && (
-                    <div style={{ fontSize: 12.5, color: 'var(--text-sub)', fontWeight: 500, marginTop: 3, lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 500, marginTop: 3, lineHeight: 1.5 }}>
                       {item.detail}
                     </div>
                   )}

@@ -13,7 +13,7 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
       <div className="liquid-card app-header-bar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: 40, height: 40, borderRadius: 14, background: 'var(--coral-grad)', display: 'grid', placeItems: 'center', color: '#FFF', fontWeight: 800, fontSize: 20, boxShadow: '0 6px 16px var(--coral-glow)' }}>
+          <div style={{ width: 40, height: 40, borderRadius: 16, background: 'var(--coral-grad)', display: 'grid', placeItems: 'center', color: '#FFF', fontWeight: 800, fontSize: 20, boxShadow: '0 6px 16px var(--coral-glow)' }}>
             <Heart size={22} fill="#FFF" />
           </div>
           <div>
@@ -31,17 +31,17 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
           {showDevTools && (
             <>
             {/* User Profile & Capability Trigger */}
-            <button onClick={onOpenProfile} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 12.5, color: 'var(--text-dark)' }}>
+            <button onClick={onOpenProfile} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 13, color: 'var(--text-dark)' }}>
               👤 Hồ sơ C1–C4
             </button>
 
             {/* Golden Set Benchmark Trigger */}
-            <button onClick={onOpenBenchmark} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 12.5, color: 'var(--coral-main)', border: '1px solid var(--coral-border)', background: 'var(--coral-soft)' }}>
+            <button onClick={onOpenBenchmark} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 13, color: 'var(--coral-main)', border: '1px solid var(--coral-border)', background: 'var(--coral-soft)' }}>
               <Award size={15} /> Golden Set AI Metric
             </button>
 
             {/* Notification Simulator Trigger */}
-            <button onClick={onOpenNotifs} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 12.5, color: 'var(--text-dark)' }}>
+            <button onClick={onOpenNotifs} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 13, color: 'var(--text-dark)' }}>
               <Bell size={15} /> Giả lập Thông báo
             </button>
             </>
@@ -52,7 +52,7 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
             <button
               onClick={() => onToggleLanguage && onToggleLanguage('vi')}
               style={{
-                border: 'none', padding: '4px 12px', borderRadius: 99, fontSize: 12.5, fontWeight: 800,
+                border: 'none', padding: '4px 12px', borderRadius: 99, fontSize: 13, fontWeight: 800,
                 background: language === 'vi' ? 'var(--coral-main)' : 'transparent',
                 color: language === 'vi' ? '#FFF' : 'var(--text-sub)', cursor: 'pointer', transition: 'all 0.2s'
               }}
@@ -62,7 +62,7 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
             <button
               onClick={() => onToggleLanguage && onToggleLanguage('en')}
               style={{
-                border: 'none', padding: '4px 12px', borderRadius: 99, fontSize: 12.5, fontWeight: 800,
+                border: 'none', padding: '4px 12px', borderRadius: 99, fontSize: 13, fontWeight: 800,
                 background: language === 'en' ? 'var(--coral-main)' : 'transparent',
                 color: language === 'en' ? '#FFF' : 'var(--text-sub)', cursor: 'pointer', transition: 'all 0.2s'
               }}
@@ -75,7 +75,7 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
             onClick={() => setMenuOpen(true)}
             className="btn-secondary"
             aria-label="Cài đặt"
-            style={{ padding: '8px 14px', borderRadius: 12, fontSize: 12.5 }}
+            style={{ padding: '8px 14px', borderRadius: 12, fontSize: 13 }}
           >
             <Settings size={15} /> Cài đặt
           </button>
@@ -119,10 +119,10 @@ function SettingsSheet({ onClose, onGoHome, onGoParent, onLeaveHousehold }) {
       onClick={onClose}
       style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(15,23,42,0.35)', display: 'grid', placeItems: 'center', padding: 16 }}
     >
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, background: '#FFF', borderRadius: 22, padding: '20px 18px', boxShadow: '0 24px 60px rgba(15,23,42,0.18)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, background: '#FFF', borderRadius: 20, padding: '20px 18px', boxShadow: '0 24px 60px rgba(15,23,42,0.18)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
           <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>Cài đặt</h3>
-          <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 10 }}>
+          <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 12 }}>
             <X size={18} />
           </button>
         </div>
@@ -134,14 +134,14 @@ function SettingsSheet({ onClose, onGoHome, onGoParent, onLeaveHousehold }) {
               onClick={() => { onClose(); onClick(); }}
               style={{
                 display: 'flex', gap: 12, alignItems: 'flex-start', textAlign: 'left',
-                padding: '14px 16px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
+                padding: '14px 16px', borderRadius: 16, cursor: 'pointer', fontFamily: 'inherit',
                 border: '1px solid var(--glass-border)', background: 'rgba(255,255,255,0.85)'
               }}
             >
               <Icon size={19} color={danger ? '#B91C1C' : 'var(--text-sub)'} style={{ flexShrink: 0, marginTop: 1 }} />
               <div>
-                <div style={{ fontSize: 15.5, fontWeight: 800, color: danger ? '#B91C1C' : 'var(--text-dark)' }}>{label}</div>
-                <div style={{ fontSize: 12.5, color: 'var(--text-sub)', marginTop: 2, lineHeight: 1.45 }}>{hint}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: danger ? '#B91C1C' : 'var(--text-dark)' }}>{label}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-sub)', marginTop: 2, lineHeight: 1.45 }}>{hint}</div>
               </div>
             </button>
           ))}

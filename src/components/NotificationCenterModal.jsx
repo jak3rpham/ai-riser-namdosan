@@ -72,8 +72,8 @@ export default function NotificationCenterModal({ isOpen, onClose, selectedMembe
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 99, background: 'var(--coral-soft)', color: 'var(--coral-main)', fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
               <Bell size={14} /> Trung tâm Thông báo Live
             </div>
-            <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-dark)' }}>🔔 Nhật ký & Giả lập Thông báo</h3>
-            <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
+            <h3 style={{ fontSize: 23, fontWeight: 800, color: 'var(--text-dark)' }}>🔔 Nhật ký & Giả lập Thông báo</h3>
+            <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
               Theo dõi dòng thông báo thời gian thực từ Firestore và kiểm thử các kịch bản nhắc nhở.
             </p>
           </div>
@@ -83,7 +83,7 @@ export default function NotificationCenterModal({ isOpen, onClose, selectedMembe
         </div>
 
         {/* Quick Test Triggers */}
-        <div style={{ padding: 16, borderRadius: 18, background: '#F8FAFC', border: '1px solid var(--glass-border)', marginBottom: 20, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ padding: 16, borderRadius: 20, background: '#F8FAFC', border: '1px solid var(--glass-border)', marginBottom: 20, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="btn-primary" onClick={() => handleTestNotification('N1_REMINDER')} style={{ padding: '8px 16px', fontSize: 13, borderRadius: 12 }}>
             <Send size={15} /> Bắn thử N1 (Nhắc thuốc)
           </button>
@@ -93,7 +93,7 @@ export default function NotificationCenterModal({ isOpen, onClose, selectedMembe
         </div>
 
         {sentMessage && (
-          <div style={{ padding: 12, borderRadius: 14, background: 'var(--emerald-soft)', color: 'var(--emerald-ok)', fontWeight: 800, fontSize: 13, marginBottom: 16 }}>
+          <div style={{ padding: 12, borderRadius: 16, background: 'var(--emerald-soft)', color: 'var(--emerald-ok)', fontWeight: 800, fontSize: 13, marginBottom: 16 }}>
             {sentMessage}
           </div>
         )}
@@ -112,8 +112,8 @@ export default function NotificationCenterModal({ isOpen, onClose, selectedMembe
                 boxShadow: '0 4px 12px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14
               }}>
                 <div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: n.type === 'EMERGENCY' ? '#991B1B' : 'var(--text-dark)' }}>{n.title}</div>
-                  <div style={{ fontSize: 13.5, color: n.type === 'EMERGENCY' ? '#B91C1C' : 'var(--text-sub)', marginTop: 4, fontWeight: 500 }}>{n.content}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: n.type === 'EMERGENCY' ? '#991B1B' : 'var(--text-dark)' }}>{n.title}</div>
+                  <div style={{ fontSize: 14, color: n.type === 'EMERGENCY' ? '#B91C1C' : 'var(--text-sub)', marginTop: 4, fontWeight: 500 }}>{n.content}</div>
                   <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, fontWeight: 600 }}>
                     Đối tượng: <strong>{n.recipient}</strong> · Lúc: {n.time}
                   </div>

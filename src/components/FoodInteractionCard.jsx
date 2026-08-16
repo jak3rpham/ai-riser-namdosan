@@ -28,10 +28,10 @@ export default function FoodInteractionCard({ selectedMember, prescriptions = []
     <div className="liquid-card" style={{ padding: 26 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18, gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <h3 style={{ fontSize: 19, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Utensils color="var(--coral-main)" /> Kiêng Ăn Theo Đơn Thuốc (M12)
           </h3>
-          <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
+          <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
             Đối chiếu {meds.length} thuốc trong đơn của {selectedMember?.display_name || 'thành viên'} với bảng tương tác thuốc–thức ăn.
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function FoodInteractionCard({ selectedMember, prescriptions = []
       {warnings.length === 0 ? (
         <div style={{ padding: 16, borderRadius: 16, background: '#F0FDF4', border: '1px solid #86EFAC', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
           <ShieldCheck size={20} color="var(--emerald-ok)" style={{ flexShrink: 0 }} />
-          <div style={{ fontSize: 13.5, color: '#166534', fontWeight: 600, lineHeight: 1.55 }}>
+          <div style={{ fontSize: 14, color: '#166534', fontWeight: 600, lineHeight: 1.55 }}>
             Không có món nào cần kiêng trong bảng hiện tại.
             {meds.length === 0 && ' Hồ sơ chưa có thuốc nào để đối chiếu.'}
           </div>
@@ -54,14 +54,14 @@ export default function FoodInteractionCard({ selectedMember, prescriptions = []
           {warnings.map((item, idx) => {
             const high = item.severity === 'HIGH';
             return (
-              <div key={idx} style={{ padding: 16, borderRadius: 18, background: high ? '#FFF1F2' : '#FFFBEB', border: high ? '1px solid #FECDD3' : '1px solid #FDE68A', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+              <div key={idx} style={{ padding: 16, borderRadius: 20, background: high ? '#FFF1F2' : '#FFFBEB', border: high ? '1px solid #FECDD3' : '1px solid #FDE68A', display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                 <div style={{ padding: 8, borderRadius: 12, background: high ? '#FFE4E6' : '#FEF3C7', color: high ? '#E11D48' : '#D97706', flexShrink: 0 }}>
                   <AlertTriangle size={20} />
                 </div>
 
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' }}>
-                    <h5 style={{ fontSize: 15, fontWeight: 800, color: 'var(--text-dark)' }}>{item.title}</h5>
+                    <h5 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-dark)' }}>{item.title}</h5>
                     <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 99, background: high ? '#E11D48' : '#D97706', color: '#FFF', whiteSpace: 'nowrap' }}>
                       {high ? 'NGUY CƠ CAO' : 'CHÚ Ý'}
                     </span>
@@ -72,7 +72,7 @@ export default function FoodInteractionCard({ selectedMember, prescriptions = []
                   </p>
 
                   {item.alternative && (
-                    <div style={{ fontSize: 12.5, color: 'var(--emerald-ok)', fontWeight: 700, marginTop: 6, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                    <div style={{ fontSize: 13, color: 'var(--emerald-ok)', fontWeight: 700, marginTop: 6, display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                       <ShieldCheck size={15} style={{ flexShrink: 0, marginTop: 1 }} /> {item.alternative}
                     </div>
                   )}

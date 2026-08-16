@@ -168,10 +168,10 @@ export default function FamilyDashboard({
       <div className="stat-grid">
         <div className="liquid-card" style={{ padding: 22 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>{t.compliance_rate}</span>
-          <div style={{ fontSize: 28, fontWeight: 800, color: complianceRate == null ? 'var(--text-muted)' : 'var(--emerald-ok)', margin: '6px 0 2px' }}>
+          <div style={{ fontSize: 32, fontWeight: 800, color: complianceRate == null ? 'var(--text-muted)' : 'var(--emerald-ok)', margin: '6px 0 2px' }}>
             {complianceRate == null ? '—' : `${complianceRate}%`}
           </div>
-          <span style={{ fontSize: 13.5, color: complianceRate == null ? 'var(--text-sub)' : 'var(--emerald-ok)', fontWeight: 700 }}>
+          <span style={{ fontSize: 14, color: complianceRate == null ? 'var(--text-sub)' : 'var(--emerald-ok)', fontWeight: 700 }}>
             {complianceRate == null
               ? 'Chưa có lần uống nào được ghi nhận'
               : `✓ ${selectedMember.display_name} đã ghi nhận ${dosesTakenCount} lần uống`}
@@ -180,8 +180,8 @@ export default function FamilyDashboard({
 
         <div className="liquid-card" style={{ padding: 22 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>{t.meds_count}</span>
-          <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--text-dark)', margin: '6px 0 2px' }}>{activeMeds.length} loại</div>
-          <span style={{ fontSize: 13.5, color: 'var(--text-sub)', fontWeight: 600 }}>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-dark)', margin: '6px 0 2px' }}>{activeMeds.length} loại</div>
+          <span style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600 }}>
             {activeMeds.length
               ? [...new Set(activeMeds.flatMap(m => resolveGenerics(m).map(g => GENERIC_PLAIN_NAMES[g]).filter(Boolean)))].join(' · ') || 'Chưa phân loại được'
               : 'Chưa có đơn thuốc nào'}
@@ -209,8 +209,8 @@ export default function FamilyDashboard({
 
             return (
               <>
-                <div style={{ fontSize: 28, fontWeight: 800, color: tone, margin: '6px 0 2px' }}>{headline}</div>
-                <span style={{ fontSize: 13.5, color: tone === 'var(--text-muted)' ? 'var(--text-sub)' : tone, fontWeight: 700 }}>{sub}</span>
+                <div style={{ fontSize: 32, fontWeight: 800, color: tone, margin: '6px 0 2px' }}>{headline}</div>
+                <span style={{ fontSize: 14, color: tone === 'var(--text-muted)' ? 'var(--text-sub)' : tone, fontWeight: 700 }}>{sub}</span>
               </>
             );
           })()}
@@ -221,7 +221,7 @@ export default function FamilyDashboard({
       {/* Signature Safety Alerts (T15 & M12) */}
       {shows('overview') && (
       <div>
-        <h4 style={{ fontSize: 17, fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h4 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
           <ShieldCheck color="var(--amber-warm)" /> Kiểm tra an toàn thuốc
         </h4>
         <SignatureAlertCard warnings={safety.warnings} coverage={safety.coverage} />

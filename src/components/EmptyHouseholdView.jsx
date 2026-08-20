@@ -10,23 +10,23 @@ import { UserPlus, LogOut, Heart } from 'lucide-react';
  *
  * Ở đây chỉ có một việc để làm, nên chỉ có một nút to.
  */
-export default function EmptyHouseholdView({ onAdd, onLeave, variant = 'manager' }) {
-  // App Con: người dùng khai báo NGƯỜI KHÁC mà mình đang chăm.
-  // App Ba Mẹ: bác tự tạo nhà thì người đầu tiên cần khai là CHÍNH BÁC.
-  // Dùng chung một câu cho cả hai thì một bên luôn đọc thấy sai vai.
+export default function EmptyHouseholdView({ onAdd, onLeave, variant = 'manager', language = 'vi' }) {
+  const isVi = language === 'vi';
   const parent = variant === 'parent';
   const copy = parent
     ? {
-        title: 'Chưa có hồ sơ nào',
-        body: 'Bác khai giúp con vài dòng về bác — tên, năm sinh, thuốc đang uống. '
-            + 'Xong rồi chụp đơn thuốc là con dựng lịch nhắc cho bác.',
-        cta: 'Khai hồ sơ của bác'
+        title: isVi ? 'Chưa có hồ sơ nào' : 'No profile found',
+        body: isVi
+          ? 'Bác khai giúp con vài dòng về bác — tên, năm sinh, thuốc đang uống. Xong rồi chụp đơn thuốc là con dựng lịch nhắc cho bác.'
+          : 'Please create your profile — name, birth year, current conditions. Then scan your prescription to set reminders.',
+        cta: isVi ? 'Khai hồ sơ của bác' : 'Create My Profile'
       }
     : {
-        title: 'Nhà mình còn trống',
-        body: 'Thêm người bạn đang chăm sóc — ba, mẹ, ông, hay bà. '
-            + 'Sau đó chụp đơn thuốc là app dựng lịch nhắc giúp.',
-        cta: 'Thêm người nhà'
+        title: isVi ? 'Nhà mình còn trống' : 'Household is empty',
+        body: isVi
+          ? 'Thêm người bạn đang chăm sóc — ba, mẹ, ông, hay bà. Sau đó chụp đơn thuốc là app dựng lịch nhắc giúp.'
+          : 'Add a family member you are caring for — parents, grandparents. Then scan prescriptions to automate schedule.',
+        cta: isVi ? 'Thêm người nhà' : 'Add Family Member'
       };
 
   return (
@@ -55,7 +55,7 @@ export default function EmptyHouseholdView({ onAdd, onLeave, variant = 'manager'
         onClick={onLeave}
         style={{ marginTop: 14, padding: '11px 18px', borderRadius: 12, fontSize: 14 }}
       >
-        <LogOut size={15} /> Dùng nhà khác
+        <LogOut size={15} /> {isVi ? 'Dùng nhà khác' : 'Switch Household'}
       </button>
     </div>
   );

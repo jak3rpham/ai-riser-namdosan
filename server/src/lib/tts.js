@@ -85,7 +85,16 @@ function rateFromMime(mime) {
  * Chỉ dẫn diễn đạt. Gemini TTS nhận hướng dẫn bằng lời ngay trong prompt —
  * đây là chỗ biến "máy đọc" thành "người nói".
  */
-function styleFor(register) {
+function styleFor(register, language = 'vi') {
+  if (language === 'en') {
+    return `Read the text below in natural, warm, conversational English.
+Speak clearly, with a gentle and supportive tone, pausing naturally at commas and periods.
+Tone is warm, caring, and reassuring — like a supportive family companion.
+If reading an emergency advisory, speak clearly and calmly without panic.
+
+Read the exact text below without adding or removing words:`;
+  }
+
   const who = register === 'peer'
     ? 'một người bạn cùng tuổi, thân mật và gần gũi'
     : 'một đứa cháu đang ngồi cạnh nói chuyện với ông bà mình';
@@ -103,18 +112,18 @@ người nghe đang lo rồi, giọng hoảng làm họ luống cuống thêm.
  * @returns {{ok:true, audio:string, mime:string, cached:boolean}}
  *        | {ok:false, code:string, message:string}
  */
-export async function synthesizeSpeech({ text, register = 'elder', voice, log }) {
+export async function synthesizeSpeech({ text, register = 'elder', language = 'vi', voice, log }) {
   const clean = String(text || '').trim();
   if (!clean) return { ok: false, code: 'EMPTY_TEXT', message: 'Không có nội dung để đọc.' };
 
   const voiceName = voice || config.ttsVoice;
-  const key = `${config.ttsModel}|${voiceName}|${register}|${clean}`;
+  const key = `${config.ttsModel}|${voiceName}|${language}|${register}|${clean}`;
 
   const hit = cacheGet(key);
   if (hit) return { ok: true, audio: hit, mime: 'audio/wav', cached: true };
 
   const body = {
-    contents: [{ parts: [{ text: `${styleFor(register)}\n\n${clean}` }] }],
+    contents: [{ parts: [{ text: `${styleFor(register, language)}\n\n${clean}` }] }],
     generationConfig: {
       responseModalities: ['AUDIO'],
       speechConfig: {

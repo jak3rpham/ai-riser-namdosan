@@ -1,7 +1,7 @@
 {
-  "short_name": "Nhà Mình",
-  "name": "Nhà Mình — Sức Khỏe Gia Đình",
-  "description": "Giúp cả nhà uống thuốc đúng giờ, đúng liều — và biết khi nào cần đi khám.",
+  "short_name": "Home Health Hub",
+  "name": "Home Health Hub — Family Health & Medication Safety",
+  "description": "Smart family medication management and health safety monitoring powered by Gemini AI.",
   "icons": [
     {
       "src": "/icon-192.png",

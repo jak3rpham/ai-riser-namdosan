@@ -19,7 +19,8 @@ import { speak } from '../services/honorifics';
  * Vẫn để đường thoát sang gõ chữ: nhận diện giọng nói tiếng Việt sai thường
  * xuyên, và Safari trên iOS nhiều bản không có API này.
  */
-export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInstead, memberProfile = {} }) {
+export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInstead, memberProfile = {}, language = 'vi' }) {
+  const isVi = language === 'vi';
   const [phase, setPhase] = useState('idle');   // idle | listening | thinking | error
   const [transcript, setTranscript] = useState('');
   const [message, setMessage] = useState(null);
@@ -27,7 +28,7 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
   // Người dùng tự bấm dừng, hay máy tự hết tiếng? Hai việc đó ra hai câu khác
   // nhau, mà cả hai đều đi qua `onend`.
   const stoppedByUser = useRef(false);
-  const say = s => speak(s, memberProfile);
+  const say = s => (isVi ? speak(s, memberProfile) : s);
 
   const stop = ({ byUser = false } = {}) => {
     stoppedByUser.current = byUser;
@@ -39,12 +40,12 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       setPhase('error');
-      setMessage(say('Máy này chưa nghe được giọng nói. {{You}} gõ chữ giúp {{me}} {{nha}}.'));
+      setMessage(isVi ? say('Máy này chưa nghe được giọng nói. {{You}} gõ chữ giúp {{me}} {{nha}}.') : 'Voice recognition is not supported on this browser. Please type your question.');
       return;
     }
 
     const rec = new SR();
-    rec.lang = 'vi-VN';
+    rec.lang = isVi ? 'vi-VN' : 'en-US';
     // Hiện chữ ngay khi đang nói, đừng đợi nói xong mới hiện — không có phản
     // hồi tức thì thì bác tưởng máy chưa nghe rồi nói lại từ đầu.
     rec.interimResults = true;
@@ -71,21 +72,15 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
     rec.onerror = ev => {
       setPhase('error');
       setMessage(ev.error === 'not-allowed'
-        ? say('Máy chưa cho phép dùng micro. {{You}} vào phần cài đặt bật giúp {{me}}, hoặc gõ chữ cũng được {{nha}}.')
-        : say('{{Me}} chưa nghe rõ. {{You}} thử nói lại, hoặc gõ chữ {{nha}}.'));
+        ? (isVi ? say('Máy chưa cho phép dùng micro. {{You}} vào phần cài đặt bật giúp {{me}}, hoặc gõ chữ cũng được {{nha}}.') : 'Microphone permission denied. Please allow microphone access or type instead.')
+        : (isVi ? say('{{Me}} chưa nghe rõ. {{You}} thử nói lại, hoặc gõ chữ {{nha}}.') : 'Could not hear clearly. Please try again or type instead.'));
     };
 
     rec.onend = () => {
-      // Hết tiếng mà chưa ra chữ nào → nói thẳng là chưa nghe được, đừng để
-      // màn hình đứng im ở trạng thái "đang nghe" mãi.
-      //
-      // ⚠️ Trừ khi chính người dùng vừa bấm vào vòng tròn để dừng. Bản trước
-      // không phân biệt, nên bác chủ động bấm dừng là lãnh ngay một dòng chữ đỏ
-      // "con chưa nghe thấy gì" — máy đổ lỗi cho bác về một việc bác cố ý làm.
       setPhase(p => {
         if (p !== 'listening') return p;
         if (stoppedByUser.current) return 'idle';
-        setMessage(say('{{Me}} chưa nghe thấy gì{{a}}. {{You}} bấm rồi nói lại giúp {{me}} {{nha}}.'));
+        setMessage(isVi ? say('{{Me}} chưa nghe thấy gì{{a}}. {{You}} bấm rồi nói lại giúp {{me}} {{nha}}.') : 'No speech detected. Please tap the circle and speak again.');
         return 'error';
       });
     };
@@ -105,9 +100,9 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
   const listening = phase === 'listening';
   const thinking = phase === 'thinking';
 
-  const headline = listening ? say('{{Me}} đang nghe{{a}}...')
-    : thinking ? say('{{Me}} đang nghĩ{{a}}...')
-    : say('{{You}} bấm vòng tròn rồi nói{{a}}');
+  const headline = listening ? (isVi ? say('{{Me}} đang nghe{{a}}...') : 'Listening...')
+    : thinking ? (isVi ? say('{{Me}} đang nghĩ{{a}}...') : 'Thinking...')
+    : (isVi ? say('{{You}} bấm vòng tròn rồi nói{{a}}') : 'Tap the circle and speak');
 
   return (
     <div style={{
@@ -135,24 +130,39 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
             ? 'linear-gradient(135deg, #FF6B4B 0%, #EF4444 100%)'
             : 'linear-gradient(135deg, #38BDF8 0%, #0284C7 100%)',
           display: 'grid', placeItems: 'center', color: '#FFF',
-          boxShadow: listening ? '0 0 0 18px rgba(239,68,68,0.18), 0 0 0 36px rgba(239,68,68,0.09)' : '0 18px 50px rgba(2,132,199,0.4)',
-          animation: listening ? 'pulse-glow 1.4s infinite' : 'none',
-          transition: 'box-shadow .25s ease'
+          boxShadow: listening ? '0 0 0 18px rgba(239,68,68,0.22), 0 0 0 36px rgba(239,68,68,0.11)' : '0 18px 50px rgba(2,132,199,0.4)',
+          animation: listening ? 'pulse-ring 1.4s infinite' : 'none',
+          transition: 'all .25s ease'
         }}
       >
         {thinking ? <Loader2 className="animate-spin" size={62} /> : <Mic size={72} />}
       </button>
 
-      <h2 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 26, fontWeight: 800, color: '#FFF', marginTop: 34 }}>
+      {/* Sóng âm thanh chuyển động (Waveform) khi đang lắng nghe */}
+      {listening && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 24, height: 36, color: '#38BDF8' }}>
+          <div className="wave-bar" style={{ height: 14 }} />
+          <div className="wave-bar" style={{ height: 26 }} />
+          <div className="wave-bar" style={{ height: 34 }} />
+          <div className="wave-bar" style={{ height: 20 }} />
+          <div className="wave-bar" style={{ height: 32 }} />
+          <div className="wave-bar" style={{ height: 18 }} />
+          <div className="wave-bar" style={{ height: 28 }} />
+        </div>
+      )}
+
+      <h2 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 26, fontWeight: 800, color: '#FFF', marginTop: listening ? 16 : 34 }}>
         {headline}
       </h2>
 
       {/* Chữ hiện dần để bác biết máy nghe đúng hay sai */}
       <div style={{ minHeight: 84, marginTop: 18, maxWidth: 460 }}>
         {transcript
-          ? <p style={{ fontSize: 20, lineHeight: 1.5, color: '#FFF', fontWeight: 600 }}>“{transcript}”</p>
+          ? <p style={{ fontSize: 22, lineHeight: 1.5, color: '#FFF', fontWeight: 700 }}>“{transcript}”</p>
           : !message && <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.62)', fontWeight: 600, lineHeight: 1.6 }}>
-              {say('{{You}} cứ nói bình thường, ví dụ "hôm nay {{me}} thấy mệt" hay "thuốc này uống trước ăn hay sau ăn"')}
+              {isVi
+                ? say('{{You}} cứ nói bình thường, ví dụ "hôm nay {{me}} thấy mệt" hay "thuốc này uống trước ăn hay sau ăn"')
+                : 'Speak naturally, e.g. "I am feeling tired today" or "Should I take this medicine before or after meals?"'}
             </p>}
 
         {message && (
@@ -169,7 +179,7 @@ export default function VoiceCaptureView({ isOpen, onClose, onResult, onTypeInst
           display: 'flex', alignItems: 'center', gap: 9
         }}
       >
-        <Keyboard size={19} /> {say('{{Me}} gõ chữ thì dễ hơn')}
+        <Keyboard size={19} /> {isVi ? say('{{Me}} gõ chữ thì dễ hơn') : 'Type instead'}
       </button>
     </div>
   );

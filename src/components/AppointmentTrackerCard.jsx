@@ -67,15 +67,17 @@ export default function AppointmentTrackerCard({
     }
   };
 
+  const isVi = language === 'vi';
+
   return (
     <div className="liquid-card" style={{ padding: 26 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Calendar color="var(--coral-main)" /> Lịch Tái Khám & Xét Nghiệm
+            <Calendar color="var(--coral-main)" /> {isVi ? 'Lịch Tái Khám & Xét Nghiệm' : 'Appointments & Lab Tests'}
           </h3>
           <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
-            Tự động nhắc lịch khám bác sĩ & hướng dẫn chuẩn bị trước ngày khám.
+            {isVi ? 'Tự động nhắc lịch khám bác sĩ & hướng dẫn chuẩn bị trước ngày khám.' : 'Automatic reminders for doctor appointments & pre-visit instructions.'}
           </p>
         </div>
       </div>
@@ -91,11 +93,12 @@ export default function AppointmentTrackerCard({
         {memberAppointments.length === 0 && (
           <div style={{ padding: '20px 16px', borderRadius: 16, background: 'rgba(241,245,249,0.7)', textAlign: 'center' }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 4 }}>
-              Chưa có lịch tái khám nào
+              {isVi ? 'Chưa có lịch tái khám nào' : 'No upcoming appointments'}
             </div>
             <div style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.5 }}>
-              Chụp giấy hẹn khám hoặc nhập tay, app sẽ nhắc trước ngày khám
-              và đồng bộ sang Google Calendar giúp bác.
+              {isVi
+                ? 'Chụp giấy hẹn khám hoặc nhập tay, app sẽ nhắc trước ngày khám và đồng bộ sang Google Calendar giúp bác.'
+                : 'Upload or add appointment details to sync reminders with Google Calendar.'}
             </div>
           </div>
         )}
@@ -128,7 +131,7 @@ export default function AppointmentTrackerCard({
                       className="btn-secondary"
                       style={{ padding: '8px 14px', borderRadius: 99, fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: 'var(--emerald-ok)', fontWeight: 700 }}
                     >
-                      <CheckCircle2 size={15} /> Xem trên Google Calendar <ExternalLink size={13} />
+                      <CheckCircle2 size={15} /> {isVi ? 'Xem trên Google Calendar' : 'View on Google Calendar'} <ExternalLink size={13} />
                     </a>
                   ) : (
                     <button
@@ -138,7 +141,9 @@ export default function AppointmentTrackerCard({
                       style={{ padding: '8px 16px', borderRadius: 99, fontSize: 13 }}
                     >
                       {isSyncing ? <Loader2 className="animate-spin" size={15} /> : <Bell size={15} />}
-                      {isSyncing ? "Đang đẩy sang Google..." : "Đồng bộ Google Calendar"}
+                      {isSyncing
+                        ? (isVi ? "Đang đẩy sang Google..." : "Syncing to Google...")
+                        : (isVi ? "Đồng bộ Google Calendar" : "Sync Google Calendar")}
                     </button>
                   )}
                 </div>
@@ -146,13 +151,13 @@ export default function AppointmentTrackerCard({
 
               {syncState?.ok === false && (
                 <div style={{ marginTop: 10, fontSize: 13, color: '#DC2626', fontWeight: 600, background: '#FEF2F2', padding: '6px 12px', borderRadius: 8 }}>
-                  ❌ Đồng bộ thất bại: {syncState.error}
+                  ❌ {isVi ? 'Đồng bộ thất bại:' : 'Sync failed:'} {syncState.error}
                 </div>
               )}
 
               {app.prep_instructions && (
                 <div style={{ marginTop: 12, padding: 12, borderRadius: 16, background: '#F8FAFC', border: '1px dashed var(--glass-border)', fontSize: 13, color: 'var(--text-dark)' }}>
-                  <strong style={{ color: 'var(--amber-warm)' }}>⚠️ Hướng dẫn trước khi khám:</strong> {app.prep_instructions}
+                  <strong style={{ color: 'var(--amber-warm)' }}>{isVi ? '⚠️ Hướng dẫn trước khi khám:' : '⚠️ Pre-visit instructions:'}</strong> {app.prep_instructions}
                 </div>
               )}
             </div>

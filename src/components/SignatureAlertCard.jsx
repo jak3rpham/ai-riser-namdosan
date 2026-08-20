@@ -24,15 +24,25 @@ const TYPE_STYLE = {
 };
 
 const SEVERITY_LABEL = {
-  CRITICAL: 'Nghiêm trọng',
-  SEVERE: 'Nghiêm trọng',
-  HIGH: 'Cần chú ý',
-  MODERATE: 'Vừa',
-  MEDIUM: 'Vừa',
-  LOW: 'Nhẹ'
+  vi: {
+    CRITICAL: 'Nghiêm trọng',
+    SEVERE: 'Nghiêm trọng',
+    HIGH: 'Cần chú ý',
+    MODERATE: 'Vừa',
+    MEDIUM: 'Vừa',
+    LOW: 'Nhẹ'
+  },
+  en: {
+    CRITICAL: 'Critical',
+    SEVERE: 'Severe',
+    HIGH: 'Warning',
+    MODERATE: 'Moderate',
+    MEDIUM: 'Medium',
+    LOW: 'Low'
+  }
 };
 
-function CoverageNote({ coverage }) {
+function CoverageNote({ coverage, isVi = true }) {
   if (!coverage) return null;
 
   return (
@@ -40,15 +50,32 @@ function CoverageNote({ coverage }) {
       <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start' }}>
         <HelpCircle size={13} style={{ flexShrink: 0, marginTop: 2 }} />
         <div>
-          Đã đối chiếu <b>{coverage.recognized}/{coverage.total_meds}</b> thuốc với kho kiến thức
-          (phiên bản {coverage.knowledge_version}
-          {coverage.reviewed_by_pharmacist ? ', đã được dược sĩ rà' : ', chưa được dược sĩ rà'}).
-          {coverage.unrecognized?.length > 0 && (
-            <> Chưa nhận dạng được: <b>{coverage.unrecognized.join(', ')}</b> — những thuốc này
-            <b> không được kiểm tra</b>, nhà mình hỏi dược sĩ giúp ạ.</>
-          )}
-          {coverage.allergies_on_file === 0 && (
-            <> Hồ sơ chưa ghi tiền sử dị ứng nào, nên app <b>chưa kiểm tra được phần dị ứng</b>.</>
+          {isVi ? (
+            <>
+              Đã đối chiếu <b>{coverage.recognized}/{coverage.total_meds}</b> thuốc với kho kiến thức
+              (phiên bản {coverage.knowledge_version}
+              {coverage.reviewed_by_pharmacist ? ', đã được dược sĩ rà' : ', chưa được dược sĩ rà'}).
+              {coverage.unrecognized?.length > 0 && (
+                <> Chưa nhận dạng được: <b>{coverage.unrecognized.join(', ')}</b> — những thuốc này
+                <b> không được kiểm tra</b>, nhà mình hỏi dược sĩ giúp ạ.</>
+              )}
+              {coverage.allergies_on_file === 0 && (
+                <> Hồ sơ chưa ghi tiền sử dị ứng nào, nên app <b>chưa kiểm tra được phần dị ứng</b>.</>
+              )}
+            </>
+          ) : (
+            <>
+              Cross-checked <b>{coverage.recognized}/{coverage.total_meds}</b> medications with knowledge base
+              (version {coverage.knowledge_version}
+              {coverage.reviewed_by_pharmacist ? ', reviewed by pharmacist' : ', unreviewed'}).
+              {coverage.unrecognized?.length > 0 && (
+                <> Unrecognized: <b>{coverage.unrecognized.join(', ')}</b> — these medications
+                <b> were not checked</b>. Please consult a pharmacist.</>
+              )}
+              {coverage.allergies_on_file === 0 && (
+                <> No recorded allergies on file, so <b>allergy screening was skipped</b>.</>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -56,7 +83,10 @@ function CoverageNote({ coverage }) {
   );
 }
 
-export default function SignatureAlertCard({ warnings = [], coverage = null }) {
+export default function SignatureAlertCard({ warnings = [], coverage = null, language = 'vi' }) {
+  const isVi = language === 'vi';
+  const severities = SEVERITY_LABEL[language] || SEVERITY_LABEL.vi;
+
   if (!warnings || warnings.length === 0) {
     return (
       <div className="liquid-card" style={{ padding: 22, background: 'linear-gradient(135deg, rgba(236,253,245,0.7) 0%, rgba(255,255,255,0.85) 100%)', border: '1px solid rgba(5,150,105,0.25)' }}>
@@ -66,16 +96,17 @@ export default function SignatureAlertCard({ warnings = [], coverage = null }) {
           </div>
           <div style={{ flex: 1 }}>
             <h4 style={{ fontSize: 16, fontWeight: 800, color: 'var(--emerald-ok)' }}>
-              Chưa phát hiện xung đột nào trong phạm vi đã kiểm
+              {isVi ? 'Chưa phát hiện xung đột nào trong phạm vi đã kiểm' : 'No conflicts detected within checked scope'}
             </h4>
             <p style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 2, lineHeight: 1.55 }}>
-              App đã đối chiếu dị ứng, trùng hoạt chất, tương tác thuốc–thuốc và kiêng ăn.
-              Kho kiến thức còn hạn chế nên đây <b>không phải lời khẳng định là an toàn tuyệt đối</b>.
+              {isVi
+                ? 'App đã đối chiếu dị ứng, trùng hoạt chất, tương tác thuốc–thuốc và kiêng ăn. Kho kiến thức còn hạn chế nên đây không phải lời khẳng định là an toàn tuyệt đối.'
+                : 'Checked for allergies, duplicate ingredients, drug-drug and food-drug interactions. Please consult healthcare professionals for definitive guidance.'}
             </p>
-            <CoverageNote coverage={coverage} />
+            <CoverageNote coverage={coverage} isVi={isVi} />
           </div>
         </div>
-        <MedicalDisclaimer variant="inline" />
+        <MedicalDisclaimer variant="inline" language={language} />
       </div>
     );
   }
@@ -97,7 +128,7 @@ export default function SignatureAlertCard({ warnings = [], coverage = null }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <h4 style={{ fontSize: 16, fontWeight: 800, color: style.fg }}>{warn.title}</h4>
                   <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 10px', borderRadius: 99, background: style.border, color: '#FFF' }}>
-                    {SEVERITY_LABEL[warn.severity] || warn.severity}
+                    {severities[warn.severity] || warn.severity}
                   </span>
                 </div>
 
@@ -113,13 +144,13 @@ export default function SignatureAlertCard({ warnings = [], coverage = null }) {
 
                 {warn.alternative && (
                   <div style={{ marginTop: 8, fontSize: 13, fontWeight: 700, color: 'var(--emerald-ok)', background: 'rgba(255,255,255,0.75)', padding: '8px 14px', borderRadius: 12 }}>
-                    Thay bằng: {warn.alternative}
+                    {isVi ? 'Thay bằng:' : 'Alternative:'} {warn.alternative}
                   </div>
                 )}
 
                 {warn.source && (
-                  <div style={{ marginTop: 10, fontSize: 11, color: 'var(--text-muted)', fontWeight: 600 }}>
-                    Nguồn: {warn.source}
+                  <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>
+                    {isVi ? 'Nguồn:' : 'Source:'} {warn.source}
                   </div>
                 )}
               </div>

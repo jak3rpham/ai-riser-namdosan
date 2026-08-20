@@ -101,7 +101,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
     setSavingReading(false);
     savingRef.current = false;
     if (res && !res.ok) {
-      setSaveError(res.error_message || 'Chưa lưu được số đo. Bạn thử lại nhé.');
+      setSaveError(res.error_message || (isVi ? 'Chưa lưu được số đo. Bạn thử lại nhé.' : 'Failed to save vital. Please retry.'));
       return false;
     }
     return true;
@@ -117,19 +117,23 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
       const d = parseInt(dia, 10);
       const p = pulse ? parseInt(pulse, 10) : null;
 
-      if (!Number.isFinite(s) || !Number.isFinite(d)) return setFormError('Bạn nhập cả hai số huyết áp giúp mình nhé.');
-      if (s < 50 || s > 300 || d < 30 || d > 200) return setFormError('Số này nằm ngoài khoảng máy đo thường cho ra. Bạn kiểm tra lại giúp nhé.');
-      if (d >= s) return setFormError('Số dưới phải nhỏ hơn số trên. Bạn xem lại giúp nhé.');
+      if (!Number.isFinite(s) || !Number.isFinite(d)) return setFormError(isVi ? 'Bạn nhập cả hai số huyết áp giúp mình nhé.' : 'Please enter both systolic and diastolic numbers.');
+      if (s < 50 || s > 300 || d < 30 || d > 200) return setFormError(isVi ? 'Số này nằm ngoài khoảng máy đo thường cho ra. Bạn kiểm tra lại giúp nhé.' : 'Values out of standard blood pressure range.');
+      if (d >= s) return setFormError(isVi ? 'Số dưới phải nhỏ hơn số trên. Bạn xem lại giúp nhé.' : 'Diastolic must be lower than systolic.');
 
-      if (!(await persist({ type: 'BLOOD_PRESSURE', label: 'Huyết áp', sys: s, dia: d, pulse: p, time: nowLabel() }))) return;
+      if (!(await persist({ type: 'BLOOD_PRESSURE', label: isVi ? 'Huyết áp' : 'Blood Pressure', sys: s, dia: d, pulse: p, time: nowLabel() }))) return;
     } else {
       const v = parseFloat(val);
-      if (!Number.isFinite(v)) return setFormError('Bạn nhập số đo giúp mình nhé.');
-      if (formType === 'BLOOD_SUGAR' && (v < 1 || v > 40)) return setFormError('Số đường huyết nằm ngoài khoảng thường gặp (mmol/L). Bạn kiểm tra lại đơn vị giúp nhé.');
-      if (formType === 'TEMPERATURE' && (v < 30 || v > 45)) return setFormError('Nhiệt độ nằm ngoài khoảng máy đo thường cho ra.');
-      if (formType === 'WEIGHT' && (v < 20 || v > 250)) return setFormError('Cân nặng nằm ngoài khoảng thường gặp.');
+      if (!Number.isFinite(v)) return setFormError(isVi ? 'Bạn nhập số đo giúp mình nhé.' : 'Please enter a valid reading.');
+      if (formType === 'BLOOD_SUGAR' && (v < 1 || v > 40)) return setFormError(isVi ? 'Số đường huyết nằm ngoài khoảng thường gặp (mmol/L). Bạn kiểm tra lại đơn vị giúp nhé.' : 'Glucose value out of normal range (mmol/L).');
+      if (formType === 'TEMPERATURE' && (v < 30 || v > 45)) return setFormError(isVi ? 'Nhiệt độ nằm ngoài khoảng máy đo thường cho ra.' : 'Temperature out of expected clinical range.');
+      if (formType === 'WEIGHT' && (v < 20 || v > 250)) return setFormError(isVi ? 'Cân nặng nằm ngoài khoảng thường gặp.' : 'Weight out of plausible range.');
 
-      const labels = { BLOOD_SUGAR: 'Đường huyết', TEMPERATURE: 'Nhiệt độ', WEIGHT: 'Cân nặng' };
+      const labels = {
+        BLOOD_SUGAR: isVi ? 'Đường huyết' : 'Blood Glucose',
+        TEMPERATURE: isVi ? 'Nhiệt độ' : 'Temperature',
+        WEIGHT: isVi ? 'Cân nặng' : 'Weight'
+      };
       if (!(await persist({ type: formType, label: labels[formType], val: v, time: nowLabel() }))) return;
     }
 
@@ -155,10 +159,12 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Activity color="var(--coral-main)" /> Nhật ký chỉ số sức khoẻ
+            <Activity color="var(--coral-main)" /> {isVi ? 'Nhật ký chỉ số sức khoẻ' : 'Health Vitals Log'}
           </h3>
           <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
-            Ghi lại chỉ số từ máy đo tại nhà (nhập tay hoặc chụp ảnh màn hình máy đo). App đối chiếu với ngưỡng tham chiếu y tế cố định.
+            {isVi
+              ? 'Ghi lại chỉ số từ máy đo tại nhà (nhập tay hoặc chụp ảnh màn hình máy đo). App đối chiếu với ngưỡng tham chiếu y tế cố định.'
+              : 'Log home measurements manually or by photographing device screen. Screened against clinical reference ranges.'}
           </p>
         </div>
 
@@ -170,7 +176,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
             style={{ padding: '8px 16px', borderRadius: 99, fontSize: 13, cursor: 'pointer', border: '1px solid var(--sky-blue)', color: 'var(--sky-blue)' }}
           >
             {ocrLoading ? <Loader2 className="animate-spin" size={16} /> : <Camera size={16} />}
-            {ocrLoading ? 'Đang đọc số từ ảnh...' : 'Quét ảnh máy đo'}
+            {ocrLoading ? (isVi ? 'Đang đọc số từ ảnh...' : 'Reading image...') : (isVi ? 'Quét ảnh máy đo' : 'Scan Device Screen')}
           </button>
 
           <button
@@ -178,7 +184,7 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
             onClick={() => { setShowForm(!showForm); resetForm(); }}
             style={{ padding: '8px 16px', borderRadius: 99, fontSize: 13, cursor: 'pointer', border: '1px solid var(--coral-border)', color: 'var(--coral-main)', background: 'var(--coral-soft)' }}
           >
-            {showForm ? <><X size={16} /> Đóng</> : <><Plus size={16} /> Nhập chỉ số mới</>}
+            {showForm ? <><X size={16} /> {isVi ? 'Đóng' : 'Close'}</> : <><Plus size={16} /> {isVi ? 'Nhập chỉ số mới' : 'Log New Reading'}</>}
           </button>
         </div>
       </div>
@@ -188,10 +194,10 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
         <div style={{ padding: 18, borderRadius: 20, background: 'rgba(241,245,249,0.7)', border: '1px solid var(--glass-border)', marginBottom: 18 }}>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
             {[
-              ['BLOOD_PRESSURE', 'Huyết áp'],
-              ['BLOOD_SUGAR', 'Đường huyết'],
-              ['TEMPERATURE', 'Nhiệt độ'],
-              ['WEIGHT', 'Cân nặng']
+              ['BLOOD_PRESSURE', isVi ? 'Huyết áp' : 'Blood Pressure'],
+              ['BLOOD_SUGAR', isVi ? 'Đường huyết' : 'Blood Glucose'],
+              ['TEMPERATURE', isVi ? 'Nhiệt độ' : 'Temperature'],
+              ['WEIGHT', isVi ? 'Cân nặng' : 'Weight']
             ].map(([key, label]) => (
               <button
                 key={key}
@@ -211,23 +217,23 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             {formType === 'BLOOD_PRESSURE' ? (
               <>
-                <input type="number" inputMode="numeric" placeholder="Số trên (Tâm thu)" value={sys} onChange={e => setSys(e.target.value)}
+                <input type="number" inputMode="numeric" placeholder={isVi ? "Số trên (Tâm thu)" : "Systolic"} value={sys} onChange={e => setSys(e.target.value)}
                   style={{ width: 140, padding: '12px 14px', borderRadius: 12, border: '1px solid var(--glass-border)', fontSize: 16, fontFamily: 'inherit' }} />
                 <span style={{ fontWeight: 800, color: 'var(--text-muted)' }}>/</span>
-                <input type="number" inputMode="numeric" placeholder="Số dưới (Tâm trương)" value={dia} onChange={e => setDia(e.target.value)}
+                <input type="number" inputMode="numeric" placeholder={isVi ? "Số dưới (Tâm trương)" : "Diastolic"} value={dia} onChange={e => setDia(e.target.value)}
                   style={{ width: 160, padding: '12px 14px', borderRadius: 12, border: '1px solid var(--glass-border)', fontSize: 16, fontFamily: 'inherit' }} />
-                <input type="number" inputMode="numeric" placeholder="Mạch (BPM)" value={pulse} onChange={e => setPulse(e.target.value)}
+                <input type="number" inputMode="numeric" placeholder={isVi ? "Mạch (BPM)" : "Pulse (BPM)"} value={pulse} onChange={e => setPulse(e.target.value)}
                   style={{ width: 150, padding: '12px 14px', borderRadius: 12, border: '1px solid var(--glass-border)', fontSize: 16, fontFamily: 'inherit' }} />
               </>
             ) : (
               <input type="number" inputMode="decimal" step="0.1"
-                placeholder={`Số đo (${VITAL_THRESHOLDS[formType]?.unit || ''})`}
+                placeholder={isVi ? `Số đo (${VITAL_THRESHOLDS[formType]?.unit || ''})` : `Reading (${VITAL_THRESHOLDS[formType]?.unit || ''})`}
                 value={val} onChange={e => setVal(e.target.value)}
                 style={{ width: 200, padding: '12px 14px', borderRadius: 12, border: '1px solid var(--glass-border)', fontSize: 16, fontFamily: 'inherit' }} />
             )}
 
             <button className="btn-primary" onClick={handleSave} disabled={savingReading} style={{ padding: '12px 22px', borderRadius: 12, opacity: savingReading ? 0.7 : 1 }}>
-              {savingReading ? <><Loader2 className="animate-spin" size={16} /> Đang lưu...</> : 'Lưu'}
+              {savingReading ? <><Loader2 className="animate-spin" size={16} /> {isVi ? 'Đang lưu...' : 'Saving...'}</> : (isVi ? 'Lưu' : 'Save')}
             </button>
           </div>
 
@@ -255,11 +261,12 @@ export default function HealthTrackerCard({ selectedMember, readings = [], onSav
       {metrics.length === 0 && !showForm && (
         <div style={{ padding: '18px 16px', borderRadius: 16, background: 'rgba(241,245,249,0.7)', textAlign: 'center', marginBottom: 12 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-dark)', marginBottom: 4 }}>
-            Chưa có số đo nào
+            {isVi ? 'Chưa có số đo nào' : 'No vitals recorded yet'}
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-sub)', lineHeight: 1.5 }}>
-            Đo huyết áp hay đường huyết ở nhà xong, bấm "Ghi số đo" để lưu lại.
-            Chụp luôn mặt máy đo cũng được.
+            {isVi
+              ? 'Đo huyết áp hay đường huyết ở nhà xong, bấm "Nhập chỉ số mới" để lưu lại. Chụp luôn mặt máy đo cũng được.'
+              : 'Log blood pressure or glucose readings after measuring. You can also take a photo of the device.'}
           </div>
         </div>
       )}

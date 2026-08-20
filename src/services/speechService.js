@@ -36,12 +36,21 @@ export function stopSpeaking() {
 }
 
 /** Tầng 2 — giọng trình duyệt. Luôn có mặt, không bao giờ ném lỗi. */
-function speakLocal(text) {
+function speakLocal(text, language = 'vi') {
   if (!('speechSynthesis' in window)) return false;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'vi-VN';
+  u.lang = language === 'en' ? 'en-US' : 'vi-VN';
   u.rate = 0.95;
+
+  try {
+    const voices = window.speechSynthesis.getVoices();
+    if (voices && voices.length > 0) {
+      const match = voices.find(v => language === 'en' ? v.lang.startsWith('en') : v.lang.startsWith('vi'));
+      if (match) u.voice = match;
+    }
+  } catch {}
+
   window.speechSynthesis.speak(u);
   return true;
 }
@@ -51,7 +60,7 @@ function speakLocal(text) {
  *
  * @returns {Promise<'remote'|'local'|'none'>} tầng nào đã đọc — để log/hiện nhãn
  */
-export async function speakOut(text, memberProfile = {}) {
+export async function speakOut(text, memberProfile = {}, language = 'vi') {
   const clean = String(text || '').replace(/[⚠️✓•·]/g, '').trim();
   if (!clean) return 'none';
 
@@ -59,20 +68,19 @@ export async function speakOut(text, memberProfile = {}) {
 
   // Quá dài thì backend cũng từ chối (giới hạn 600). Khỏi tốn một vòng mạng.
   if (remoteDisabledForSession || clean.length > 600) {
-    return speakLocal(clean) ? 'local' : 'none';
+    return speakLocal(clean, language) ? 'local' : 'none';
   }
 
   const res = await apiPost('/ai/speak', {
     text: clean,
-    register: registerBrief(memberProfile)
+    register: registerBrief(memberProfile),
+    language
   });
 
   if (!res.ok || !res.audio) {
-    // TTS_MODEL_UNAVAILABLE nghĩa là khoá này không có model TTS — trạng thái
-    // cố định, thử lại là phí. Các lỗi khác cũng vậy trong phạm vi một phiên.
     remoteDisabledForSession = true;
     console.info('[speech] dùng giọng trình duyệt:', res.error_code || 'NO_AUDIO');
-    return speakLocal(clean) ? 'local' : 'none';
+    return speakLocal(clean, language) ? 'local' : 'none';
   }
 
   try {
@@ -81,8 +89,6 @@ export async function speakOut(text, memberProfile = {}) {
     await audio.play();
     return 'remote';
   } catch {
-    // Trình duyệt chặn autoplay khi chưa có tương tác người dùng. Giọng máy
-    // qua speechSynthesis thường không bị chặn — thử tiếp, đừng bỏ cuộc.
-    return speakLocal(clean) ? 'local' : 'none';
+    return speakLocal(clean, language) ? 'local' : 'none';
   }
 }

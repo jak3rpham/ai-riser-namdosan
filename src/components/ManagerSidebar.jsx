@@ -28,14 +28,19 @@ import { LayoutGrid, Pill, Activity, CalendarClock, Utensils, Users } from 'luci
  * là mất, và không còn gì nhắc đang xem hồ sơ của ai.
  */
 
-export const MANAGER_SECTIONS = [
-  { id: 'overview', label: 'Tổng quan', icon: LayoutGrid, hint: 'Tuân thủ và cảnh báo' },
-  { id: 'prescriptions', label: 'Đơn thuốc', icon: Pill, hint: 'Quét đơn, tủ thuốc' },
-  { id: 'vitals', label: 'Chỉ số sức khoẻ', icon: Activity, hint: 'Huyết áp, đường huyết' },
-  { id: 'appointments', label: 'Lịch tái khám', icon: CalendarClock, hint: 'Hẹn khám, xét nghiệm' },
-  { id: 'food', label: 'Kiêng ăn', icon: Utensils, hint: 'Món cần tránh theo đơn' },
-  { id: 'household', label: 'Nhà mình', icon: Users, hint: 'Người nhà, mã mời, Google' }
-];
+export const getManagerSections = (language = 'vi') => {
+  const isVi = language === 'vi';
+  return [
+    { id: 'overview', label: isVi ? 'Tổng quan' : 'Overview', icon: LayoutGrid, hint: isVi ? 'Tuân thủ và cảnh báo' : 'Adherence & Alerts' },
+    { id: 'prescriptions', label: isVi ? 'Đơn thuốc' : 'Prescriptions', icon: Pill, hint: isVi ? 'Quét đơn, tủ thuốc' : 'Scan & Cabinet' },
+    { id: 'vitals', label: isVi ? 'Chỉ số sức khoẻ' : 'Vitals & Health', icon: Activity, hint: isVi ? 'Huyết áp, đường huyết' : 'Blood pressure, glucose' },
+    { id: 'appointments', label: isVi ? 'Lịch tái khám' : 'Appointments', icon: CalendarClock, hint: isVi ? 'Hẹn khám, xét nghiệm' : 'Doctor visits & tests' },
+    { id: 'food', label: isVi ? 'Kiêng ăn' : 'Food Interactions', icon: Utensils, hint: isVi ? 'Món cần tránh theo đơn' : 'Foods to avoid' },
+    { id: 'household', label: isVi ? 'Nhà mình' : 'Household', icon: Users, hint: isVi ? 'Người nhà, mã mời, Google' : 'Family, invite & Google' }
+  ];
+};
+
+export const MANAGER_SECTIONS = getManagerSections('vi');
 
 export default function ManagerSidebar({
   section,
@@ -43,8 +48,10 @@ export default function ManagerSidebar({
   members = [],
   selectedMember,
   onSelectMember,
-  badges = {}
+  badges = {},
+  language = 'vi'
 }) {
+  const sections = getManagerSections(language);
   /**
    * Kéo mục đang mở vào tầm nhìn.
    *
@@ -78,10 +85,10 @@ export default function ManagerSidebar({
   }, [section]);
 
   return (
-    <nav className="manager-nav" aria-label="Điều hướng chính">
+    <nav className="manager-nav" aria-label={language === 'vi' ? 'Điều hướng chính' : 'Main navigation'}>
       {/* ── Đang xem hồ sơ của ai ── */}
       <div className="manager-nav-people">
-        <span className="manager-nav-eyebrow">Đang xem hồ sơ</span>
+        <span className="manager-nav-eyebrow">{language === 'vi' ? 'Đang xem hồ sơ' : 'Viewing profile'}</span>
         <div className="manager-nav-chips">
           {members.map(m => {
             const active = selectedMember?.id === m.id;
@@ -110,7 +117,7 @@ export default function ManagerSidebar({
 
       {/* ── Các mục ── */}
       <ul className="manager-nav-list" ref={listRef}>
-        {MANAGER_SECTIONS.map(({ id, label, icon: Icon, hint }) => {
+        {sections.map(({ id, label, icon: Icon, hint }) => {
           const active = section === id;
           const badge = badges[id];
           return (

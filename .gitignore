@@ -23,6 +23,9 @@ pnpm-debug.log*
 
 .env
 .env.local
+.env.*
+env
+.firebase/
 node_modules/.cache/
 
 # Secrets — KHÔNG BAO GIỜ commit / upload lên AI Studio

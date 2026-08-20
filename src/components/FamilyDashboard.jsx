@@ -12,16 +12,11 @@ import { runAllSafetyChecks } from '../services/safetyChecks';
 import { resolveGenerics, GENERIC_PLAIN_NAMES } from '../services/medicalKnowledge';
 import MedicalDisclaimer from './MedicalDisclaimer';
 import FamilyFeedCard from './FamilyFeedCard';
-import { MANAGER_SECTIONS } from './ManagerSidebar';
+import { getManagerSections } from './ManagerSidebar';
 import { I18N_STRINGS } from '../services/i18n';
 
 /**
  * Bảng điều khiển của app Con.
- *
- * `section` = mục đang mở trên thanh điều hướng (xem ManagerSidebar.jsx).
- * Truyền `null` — chế độ trình diễn ?demo=1 dùng cách này — thì hiện HẾT mọi
- * khối trong một trang cuộn dài, đúng như bản trước, để quay video hai màn hình
- * cạnh nhau không phải bấm qua lại giữa các mục.
  */
 export default function FamilyDashboard({
   section = null,
@@ -41,6 +36,7 @@ export default function FamilyDashboard({
   const [isPharmacyOpen, setIsPharmacyOpen] = useState(false);
   const [isMapsOpen, setIsMapsOpen] = useState(false);
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
+  const isVi = language === 'vi';
 
   // ⚠️ Chỉ lấy đơn của ĐÚNG thành viên đang chọn.
   const memberPrescriptions = prescriptions.filter(p => p.member_id === selectedMember.id);
@@ -51,26 +47,10 @@ export default function FamilyDashboard({
   const dosesTakenCount = memberDoseLogs.length;
   // Giả định chuẩn 2 liều/ngày * số thuốc
   const expectedDoses = Math.max(1, activeMeds.length * 2);
-  // Chưa ghi nhận lần uống nào thì KHÔNG có tỷ lệ. Bản trước rơi về 96% —
-  // một con số bịa, hiện ngay trên hồ sơ vừa tạo, kèm câu "uống rất đúng giờ"
-  // cho người chưa từng uống viên nào.
   const complianceRate = dosesTakenCount > 0
     ? Math.min(100, Math.round((dosesTakenCount / expectedDoses) * 100))
     : null;
 
-  /**
-   * Còn mấy ngày nữa hết thuốc.
-   *
-   * ⚠️ Bản trước lấy thẳng `duration_days` — SỐ NGÀY BÁC SĨ KÊ, không phải số
-   * ngày còn lại. Đơn kê 30 ngày quét vào từ tháng trước vẫn hiện "Hết sau 30
-   * ngày" kèm dấu ✓ "Lượng thuốc còn đầy đủ", đúng lúc trong nhà đã hết thuốc.
-   * Con cái nhìn con số đó để quyết định có đi mua thuốc hay không.
-   *
-   * Và `|| 7` ở cuối là một con số từ trên trời rơi xuống cho thuốc không ghi
-   * số ngày. Giờ thuốc nào không biết thì không tính, thay vì đoán.
-   */
-  // `created_at` về từ hai nguồn: chuỗi "2026-08-16" do màn quét đơn ghi, và
-  // Timestamp của Firestore do nhà mẫu ghi bằng serverTimestamp().
   const daysSince = value => {
     const ms = value?.toDate ? value.toDate().getTime() : Date.parse(value);
     if (!Number.isFinite(ms)) return 0;
@@ -86,7 +66,6 @@ export default function FamilyDashboard({
     }, min);
   }, Infinity);
 
-  // Không thuốc nào ghi đủ để tính → nói là chưa tính được, không bịa một con số
   const hasRemainingEstimate = Number.isFinite(minDaysRemaining);
 
   // Kiểm tra an toàn: dị ứng + trùng hoạt chất + tương tác thuốc–thuốc + kiêng ăn.
@@ -96,21 +75,19 @@ export default function FamilyDashboard({
     memberProfile: selectedMember
   });
 
-  const sectionMeta = MANAGER_SECTIONS.find(s => s.id === section) || null;
+  const sections = getManagerSections(language);
+  const sectionMeta = sections.find(s => s.id === section) || null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       
-      {/* ── Đầu trang ──
-          Có thanh điều hướng rồi thì việc chọn người đã chuyển lên đó, và tên
-          mục đang mở mới là thứ cần nói ở đây. Chế độ ?demo=1 không có thanh
-          nào nên vẫn giữ nguyên hàng chip chọn người như cũ. */}
+      {/* ── Đầu trang ── */}
       <div className="manager-section-head">
         <div>
           <h3 className="manager-section-title">{sectionMeta?.label || t.family_profile}</h3>
           <div className="manager-section-sub">
             {section
-              ? `${sectionMeta?.hint || ''} — hồ sơ của ${selectedMember.display_name}`
+              ? `${sectionMeta?.hint || ''} — ${isVi ? 'hồ sơ của' : 'profile of'} ${selectedMember.display_name}`
               : t.family_profile_sub}
           </div>
         </div>
@@ -121,7 +98,7 @@ export default function FamilyDashboard({
             className="btn-secondary"
             style={{ padding: '8px 16px', borderRadius: 99, fontSize: 13, border: '1px solid var(--glass-border)', color: 'var(--sky-blue)' }}
           >
-            <MapPin size={16} /> Tìm nhà thuốc gần đây
+            <MapPin size={16} /> {isVi ? 'Tìm nhà thuốc gần đây' : 'Nearby Pharmacies'}
           </button>
 
           <button
@@ -173,18 +150,20 @@ export default function FamilyDashboard({
           </div>
           <span style={{ fontSize: 14, color: complianceRate == null ? 'var(--text-sub)' : 'var(--emerald-ok)', fontWeight: 700 }}>
             {complianceRate == null
-              ? 'Chưa có lần uống nào được ghi nhận'
-              : `✓ ${selectedMember.display_name} đã ghi nhận ${dosesTakenCount} lần uống`}
+              ? (isVi ? 'Chưa có lần uống nào được ghi nhận' : 'No dose records logged yet')
+              : (isVi ? `✓ ${selectedMember.display_name} đã ghi nhận ${dosesTakenCount} lần uống` : `✓ ${selectedMember.display_name} has logged ${dosesTakenCount} doses`)}
           </span>
         </div>
 
         <div className="liquid-card" style={{ padding: 22 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>{t.meds_count}</span>
-          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-dark)', margin: '6px 0 2px' }}>{activeMeds.length} loại</div>
+          <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--text-dark)', margin: '6px 0 2px' }}>
+            {isVi ? `${activeMeds.length} loại` : `${activeMeds.length} items`}
+          </div>
           <span style={{ fontSize: 14, color: 'var(--text-sub)', fontWeight: 600 }}>
             {activeMeds.length
-              ? [...new Set(activeMeds.flatMap(m => resolveGenerics(m).map(g => GENERIC_PLAIN_NAMES[g]).filter(Boolean)))].join(' · ') || 'Chưa phân loại được'
-              : 'Chưa có đơn thuốc nào'}
+              ? [...new Set(activeMeds.flatMap(m => resolveGenerics(m).map(g => GENERIC_PLAIN_NAMES[g]).filter(Boolean)))].join(' · ') || (isVi ? 'Chưa phân loại được' : 'Uncategorized')
+              : (isVi ? 'Chưa có đơn thuốc nào' : 'No active prescriptions')}
           </span>
         </div>
 
@@ -196,16 +175,16 @@ export default function FamilyDashboard({
               ? 'var(--text-muted)'
               : low ? 'var(--amber-warm)' : 'var(--emerald-ok)';
 
-            const headline = !activeMeds.length ? 'Chưa có thuốc'
-              : !hasRemainingEstimate ? 'Chưa tính được'
-              : minDaysRemaining === 0 ? 'Hết thuốc rồi'
-              : `Còn ${minDaysRemaining} ngày`;
+            const headline = !activeMeds.length ? (isVi ? 'Chưa có thuốc' : 'No medications')
+              : !hasRemainingEstimate ? (isVi ? 'Chưa tính được' : 'Not calculated')
+              : minDaysRemaining === 0 ? (isVi ? 'Hết thuốc rồi' : 'Out of medication')
+              : (isVi ? `Còn ${minDaysRemaining} ngày` : `${minDaysRemaining} days remaining`);
 
-            const sub = !activeMeds.length ? 'Thêm đơn thuốc để app tính giúp ngày hết'
-              : !hasRemainingEstimate ? 'Đơn chưa ghi số ngày uống — bổ sung giúp nhé'
-              : minDaysRemaining === 0 ? '⚠️ Theo đơn thì đã hết — nhà mình mua thêm nhé'
-              : low ? '⚠️ Sắp hết, nhà mình mua thêm nhé'
-              : '✓ Lượng thuốc còn đủ dùng';
+            const sub = !activeMeds.length ? (isVi ? 'Thêm đơn thuốc để app tính giúp ngày hết' : 'Add prescriptions to track refills')
+              : !hasRemainingEstimate ? (isVi ? 'Đơn chưa ghi số ngày uống — bổ sung giúp nhé' : 'Duration not specified on prescription')
+              : minDaysRemaining === 0 ? (isVi ? '⚠️ Theo đơn thì đã hết — nhà mình mua thêm nhé' : '⚠️ Medication finished — please refill')
+              : low ? (isVi ? '⚠️ Sắp hết, nhà mình mua thêm nhé' : '⚠️ Low supply — refill soon')
+              : (isVi ? '✓ Lượng thuốc còn đủ dùng' : '✓ Sufficient medication supply');
 
             return (
               <>
@@ -222,14 +201,14 @@ export default function FamilyDashboard({
       {shows('overview') && (
       <div>
         <h4 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <ShieldCheck color="var(--amber-warm)" /> Kiểm tra an toàn thuốc
+          <ShieldCheck color="var(--amber-warm)" /> {isVi ? 'Kiểm tra an toàn thuốc' : 'Medication Safety Checks'}
         </h4>
-        <SignatureAlertCard warnings={safety.warnings} coverage={safety.coverage} />
+        <SignatureAlertCard warnings={safety.warnings} coverage={safety.coverage} language={language} />
       </div>
       )}
 
       {/* Dòng sự kiện realtime từ phía ba mẹ */}
-      {shows('overview') && <FamilyFeedCard feed={feed} />}
+      {shows('overview') && <FamilyFeedCard feed={feed} language={language} />}
 
       {/* Food-Drug Interactions (M12) */}
       {shows('food') && <FoodInteractionCard selectedMember={selectedMember} prescriptions={prescriptions} language={language} />}

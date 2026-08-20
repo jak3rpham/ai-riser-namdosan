@@ -2,7 +2,8 @@ import {
   collection, doc, setDoc, getDoc, addDoc,
   onSnapshot, query, orderBy, limit, serverTimestamp
 } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { signInWithCustomToken } from 'firebase/auth';
+import { db, auth } from '../config/firebaseConfig';
 import { apiPost, ensureUser } from './apiClient';
 
 /**
@@ -51,9 +52,22 @@ export function forgetHousehold() {
  * nhà và thành viên; hồ sơ người được chăm sóc ghi từ client vì lúc đó đã là
  * thành viên nên rules cho phép.
  */
-export async function createHousehold({ name, displayName, subjects = [] } = {}) {
-  const res = await apiPost('/household/create', { name, display_name: displayName });
+export async function createHousehold({ name, displayName, username, password, subjects = [] } = {}) {
+  const res = await apiPost('/household/create', {
+    name,
+    display_name: displayName,
+    username: username ? String(username).trim() : undefined,
+    password: password ? String(password).trim() : undefined
+  });
   if (!res.ok) return res;
+
+  if (res.token) {
+    try {
+      await signInWithCustomToken(auth, res.token);
+    } catch {
+      // Bỏ qua nếu phiên hiện tại vẫn dùng được
+    }
+  }
 
   const hid = res.household_id;
 
@@ -73,7 +87,7 @@ export async function createHousehold({ name, displayName, subjects = [] } = {})
   }
 
   saveHouseholdId(hid);
-  return { ok: true, household_id: hid };
+  return { ok: true, household_id: hid, username: res.username };
 }
 
 /** Tạo mã mời mới. Chỉ người đã ở trong nhà mới gọi được. */

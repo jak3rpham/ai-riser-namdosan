@@ -26,13 +26,17 @@ import MedicalDisclaimer from './MedicalDisclaimer';
  * khỏe thì tab mở modal này kèm nguyên câu để xử lại cho đủ.
  */
 /** Lời chào mở đầu — có tên người dùng nên phải dựng lại khi đổi hồ sơ */
-const greeting = (profile) => speak(
-  `{{Da}} {{me}} chào ${profile?.display_name || ''}! {{Me}} là "Cháu Bi" đây{{a}}. `
-  + '{{You}} muốn hỏi gì về thuốc hay giờ uống thuốc hôm nay không{{a}}?',
-  profile
+const greeting = (profile, language = 'vi') => (language === 'vi'
+  ? speak(
+      `{{Da}} {{me}} chào ${profile?.display_name || ''}! {{Me}} là "Cháu Bi" đây{{a}}. `
+      + '{{You}} muốn hỏi gì về thuốc hay giờ uống thuốc hôm nay không{{a}}?',
+      profile
+    )
+  : `Hello ${profile?.display_name || ''}! I am AI Bi. What questions do you have about your medications or schedule today?`
 );
 
-export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, prescriptions = [], onAlert, initialQuestion = null }) {
+export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, prescriptions = [], onAlert, initialQuestion = null, language = 'vi' }) {
+  const isVi = language === 'vi';
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
@@ -44,29 +48,17 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
   const [quickReplies, setQuickReplies] = useState(null);
   const [familyNotified, setFamilyNotified] = useState(false);
   const [messages, setMessages] = useState(() => [
-    { sender: 'assistant', text: greeting(memberProfile) }
+    { sender: 'assistant', text: greeting(memberProfile, language) }
   ]);
 
   // Giọng Gemini trước, giọng trình duyệt làm lưới đỡ. Chi tiết vì sao phải
   // có lưới đỡ: src/services/speechService.js
-  const speakText = (text) => { speakOut(text, memberProfile); };
+  const speakText = (text) => { speakOut(text, memberProfile, language); };
 
   // Nói giờ có màn hình riêng che kín (VoiceCaptureView). Nút micro nhỏ cạnh ô
   // nhập với cái viền đổi màu là không đủ thấy — xem ghi chú trong file đó.
   const startVoiceInput = () => setVoiceOpen(true);
 
-  /**
-   * Đóng modal là dọn sạch.
-   *
-   * ⚠️ Component này KHÔNG bị gỡ khỏi cây khi đóng — nó luôn được render với
-   * `isOpen={false}`. Nên trước đây mọi state sống qua hết các lần đóng mở:
-   * mở lại là thấy nguyên khối cảnh báo đỏ "gọi 115 ngay" của lần hỏi trước,
-   * kèm nút "Báo cho người nhà" đã bấm rồi, cho một câu hỏi chưa ai hỏi. Người
-   * đang không sao nhìn thấy màn hình cấp cứu của lần trước.
-   *
-   * Lời chào cũng dựng lại ở đây, vì nó có tên người dùng trong câu — đổi hồ sơ
-   * mà không dựng lại thì Cháu Bi vẫn chào tên người cũ.
-   */
   useEffect(() => {
     if (isOpen) return;
     setEmergency(null);
@@ -76,8 +68,8 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     setFamilyNotified(false);
     setQuery('');
     setLoading(false);
-    setMessages([{ sender: 'assistant', text: greeting(memberProfile) }]);
-  }, [isOpen, memberProfile?.id]);
+    setMessages([{ sender: 'assistant', text: greeting(memberProfile, language) }]);
+  }, [isOpen, memberProfile?.id, language]);
 
   // Câu chuyển từ ô hỏi nhanh sang — chạy đúng một lần cho mỗi câu.
   const sentSeed = useRef(null);
@@ -101,7 +93,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     setEmergency(null);
     setQuickReplies(null);
 
-    const res = await askVoiceAssistant(text, memberProfile, prescriptions);
+    const res = await askVoiceAssistant(text, memberProfile, prescriptions, language, messages);
 
     setMessages([...nextMsgs, { sender: 'assistant', text: res.text, source: res.source }]);
     setLoading(false);
@@ -113,13 +105,31 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     speakText(res.text);
   };
 
-  const handleQuickReply = (reply) => {
+  const handleQuickReply = async (reply) => {
     setQuickReplies(null);
     setMessages(m => [...m, { sender: 'user', text: reply.label }]);
-    if (reply.action === 'START_INTAKE') {
+    if (reply.action === 'NOTIFY_FAMILY') {
+      if (onAlert) {
+        await onAlert({
+          type: 'FAMILY_NOTIFY',
+          title: isVi ? `Bác ${memberProfile?.display_name || ''} cần hỗ trợ` : `${memberProfile?.display_name || 'Member'} requested assistance`,
+          message: isVi ? `Bác vừa báo Cháu Bi cần người nhà liên hệ hỗ trợ.` : `Requested family check-in via AI Bi.`
+        });
+      }
+      setFamilyNotified(true);
+      const replyMsg = isVi
+        ? speak('{{Da}} con đã gửi lời nhắn cho người nhà liền rồi ạ. Người nhà sẽ liên hệ lại với {{you}} sớm {{nha}}!', memberProfile)
+        : 'I have notified your family. Someone will reach out to you shortly!';
+      setMessages(m => [...m, { sender: 'assistant', text: replyMsg }]);
+      speakText(replyMsg);
+    } else if (reply.action === 'START_INTAKE') {
       setIntakeOpen(true);
     } else {
-      setMessages(m => [...m, { sender: 'assistant', text: speak('{{Da}} vậy thì {{me}} yên tâm{{a}}. {{You}} có gì cứ gọi {{me}} {{nha}}.', memberProfile) }]);
+      const dismissMsg = isVi
+        ? speak('{{Da}} vậy thì {{me}} yên tâm{{a}}. {{You}} có gì cứ gọi {{me}} {{nha}}.', memberProfile)
+        : 'Glad to hear that. Feel free to ask me anytime!';
+      setMessages(m => [...m, { sender: 'assistant', text: dismissMsg }]);
+      speakText(dismissMsg);
     }
   };
 
@@ -135,8 +145,8 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
     .filter(m => m?.name);
 
   const sampleQuestions = myMeds.slice(0, 2)
-    .map(m => speak(`${m.name} uống trước hay sau ăn{{a}}?`, memberProfile));
-  if (myMeds.length) sampleQuestions.push('Quên uống thuốc trưa rồi thì giờ làm sao?');
+    .map(m => isVi ? speak(`${m.name} uống trước hay sau ăn{{a}}?`, memberProfile) : `Should I take ${m.name} before or after meals?`);
+  if (myMeds.length) sampleQuestions.push(isVi ? 'Quên uống thuốc trưa rồi thì giờ làm sao?' : 'What should I do if I missed my noon dose?');
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(16px)', display: 'grid', placeItems: 'center', padding: 20 }}>
@@ -148,9 +158,9 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
               <Mic size={24} />
             </div>
             <div>
-              <h3 style={{ fontSize: 20, fontWeight: 800 }}>Trợ lý "Cháu Bi" 🎙️</h3>
+              <h3 style={{ fontSize: 20, fontWeight: 800 }}>{isVi ? 'Trợ lý "Cháu Bi" 🎙️' : 'AI Assistant "Bi" 🎙️'}</h3>
               <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
-                Trả lời theo đúng hồ sơ thuốc của {memberProfile.display_name}
+                {isVi ? `Trả lời theo đúng hồ sơ thuốc của ${memberProfile.display_name}` : `Answers based on ${memberProfile.display_name}'s medication record`}
               </span>
             </div>
           </div>
@@ -168,33 +178,31 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
 
             <a href="tel:115" style={{ textDecoration: 'none' }}>
               <button style={{ width: '100%', padding: 16, borderRadius: 16, background: '#DC2626', color: '#FFF', border: 'none', fontWeight: 800, fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <PhoneCall size={20} /> GỌI 115 NGAY
+                <PhoneCall size={20} /> {isVi ? 'GỌI 115 NGAY' : 'CALL 115 NOW'}
               </button>
             </a>
 
             <button
               onClick={async () => {
-                // ⚠️ Chỉ đổi nút sau khi GHI THẬT vào Firestore.
-                // Bản đầu chỉ setState — app nói đã báo mà chưa báo (doc 33 C2).
                 if (!onAlert) { setFamilyNotified(true); return; }
                 const r = await onAlert({
                   type: 'EMERGENCY',
-                  title: 'Dấu hiệu cần cấp cứu',
+                  title: isVi ? 'Dấu hiệu cần cấp cứu' : 'Emergency Alert',
                   detail: emergency.reason,
                   ruleId: emergency.rule_id
                 });
                 setFamilyNotified(!!r?.ok);
-                if (!r?.ok) alert('Chưa gửi được cho người nhà. Bác gọi điện trực tiếp giúp con nha!');
+                if (!r?.ok) alert(isVi ? 'Chưa gửi được cho người nhà. Bác gọi điện trực tiếp giúp con nha!' : 'Failed to send alert to family. Please call directly!');
               }}
               disabled={familyNotified}
               style={{ width: '100%', padding: 12, borderRadius: 12, background: familyNotified ? 'var(--emerald-soft)' : '#FFF', color: familyNotified ? 'var(--emerald-ok)' : '#DC2626', border: `1.5px solid ${familyNotified ? 'var(--emerald-ok)' : '#DC2626'}`, fontWeight: 800, fontSize: 14, cursor: familyNotified ? 'default' : 'pointer' }}
             >
-              {familyNotified ? '✓ Đã gửi báo cho người nhà' : 'Báo cho người nhà'}
+              {familyNotified ? (isVi ? '✓ Đã gửi báo cho người nhà' : '✓ Family Notified') : (isVi ? 'Báo cho người nhà' : 'Notify Family')}
             </button>
 
             {emergency.reason && (
               <div style={{ fontSize: 12, color: '#991B1B', fontWeight: 600 }}>
-                Lý do: {emergency.reason} (luật {emergency.rule_id})
+                {isVi ? `Lý do: ${emergency.reason} (luật ${emergency.rule_id})` : `Reason: ${emergency.reason} (rule ${emergency.rule_id})`}
               </div>
             )}
           </div>
@@ -209,10 +217,11 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
               onCancel={() => setIntakeOpen(false)}
               onAlert={onAlert}
               prefill={intakePrefill}
+              language={language}
               onFinish={({ summary, decision }) => {
                 setMessages(m => [...m, {
                   sender: 'assistant',
-                  text: speak(`{{Me}} ghi lại rồi{{a}}: ${summary}`, memberProfile),
+                  text: isVi ? speak(`{{Me}} ghi lại rồi{{a}}: ${summary}`, memberProfile) : `Logged: ${summary}`,
                   source: `TRIAGE:${decision.rule_id || 'NO_RULE'}`
                 }]);
               }}
@@ -230,7 +239,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
                 </div>
                 {msg.source && msg.source !== 'AI' && (
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', fontWeight: 600, marginTop: 3, paddingLeft: 4 }}>
-                    câu trả lời cố định · {msg.source}
+                    {isVi ? `câu trả lời cố định · ${msg.source}` : `static rule · ${msg.source}`}
                   </div>
                 )}
               </div>
@@ -238,7 +247,7 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
 
             {loading && (
               <div style={{ alignSelf: 'flex-start', padding: '12px 16px', borderRadius: '20px 20px 20px 4px', background: 'rgba(241,245,249,0.9)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: 'var(--text-sub)' }}>
-                <Loader2 className="animate-spin" size={16} /> Cháu Bi đang suy nghĩ...
+                <Loader2 className="animate-spin" size={16} /> {isVi ? 'Cháu Bi đang suy nghĩ...' : 'AI Bi is thinking...'}
               </div>
             )}
 
@@ -265,12 +274,12 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
             </div>
 
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={startVoiceInput} className="btn-secondary" style={{ padding: '0 16px', borderRadius: 16, background: 'rgba(255,255,255,0.8)', border: '1px solid var(--glass-border)', color: 'var(--coral-main)' }} title="Nói với Cháu Bi">
+              <button onClick={startVoiceInput} className="btn-secondary" style={{ padding: '0 16px', borderRadius: 16, background: 'rgba(255,255,255,0.8)', border: '1px solid var(--glass-border)', color: 'var(--coral-main)' }} title={isVi ? "Nói với Cháu Bi" : "Speak with AI Bi"}>
                 <Mic size={20} />
               </button>
               <input
                 type="text"
-                placeholder="Hỏi Cháu Bi..." 
+                placeholder={isVi ? "Hỏi Cháu Bi..." : "Ask AI Bi..."}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSend()}
@@ -283,12 +292,13 @@ export default function VoiceAssistantModal({ isOpen, onClose, memberProfile, pr
           </>
         )}
 
-        <MedicalDisclaimer variant="inline" />
+        <MedicalDisclaimer variant="inline" language={language} />
       </div>
 
       <VoiceCaptureView
         isOpen={voiceOpen}
         memberProfile={memberProfile}
+        language={language}
         onClose={() => setVoiceOpen(false)}
         onTypeInstead={() => setVoiceOpen(false)}
         onResult={text => { setVoiceOpen(false); handleSend(text); }}

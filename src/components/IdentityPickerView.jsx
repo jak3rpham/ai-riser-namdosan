@@ -23,8 +23,10 @@ export default function IdentityPickerView({
   onPick,
   onCreateNew,
   onLeave,
-  currentId = null
+  currentId = null,
+  language = 'vi'
 }) {
+  const isVi = language === 'vi';
   const [saving, setSaving] = useState(null);
   const [error, setError] = useState(null);
 
@@ -33,7 +35,7 @@ export default function IdentityPickerView({
     setError(null);
     const res = await onPick(subject.id);
     setSaving(null);
-    if (!res?.ok) setError(res?.error_message || 'Chưa lưu được lựa chọn. Bác thử lại giúp con nha.');
+    if (!res?.ok) setError(res?.error_message || (isVi ? 'Chưa lưu được lựa chọn. Bác thử lại giúp con nha.' : 'Failed to save selection. Please retry.'));
   };
 
   return (
@@ -43,11 +45,12 @@ export default function IdentityPickerView({
           <Users size={28} color="#FFF" />
         </div>
         <h2 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 23, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 8 }}>
-          Trong nhà mình, bác là ai ạ?
+          {isVi ? 'Trong nhà mình, bác là ai ạ?' : 'Who are you in this household?'}
         </h2>
         <p style={{ fontSize: 16, color: 'var(--text-sub)', lineHeight: 1.6 }}>
-          Con cần biết để nhắc đúng thuốc của bác, và ghi đúng vào hồ sơ của bác.
-          Chọn nhầm thì đổi lại được.
+          {isVi
+            ? 'Con cần biết để nhắc đúng thuốc của bác, và ghi đúng vào hồ sơ của bác. Chọn nhầm thì đổi lại được.'
+            : 'Select your profile to receive personalized reminders and log your adherence accurately.'}
         </p>
       </div>
 
@@ -81,7 +84,7 @@ export default function IdentityPickerView({
                   {s.display_name}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {[s.relation, s.birth_year ? `sinh ${s.birth_year}` : null].filter(Boolean).join(' · ') || 'Chưa ghi quan hệ'}
+                  {[s.relation, s.birth_year ? (isVi ? `sinh ${s.birth_year}` : `b. ${s.birth_year}`) : null].filter(Boolean).join(' · ') || (isVi ? 'Chưa ghi quan hệ' : 'No relation specified')}
                 </div>
               </div>
 
@@ -94,7 +97,7 @@ export default function IdentityPickerView({
 
         {subjects.length === 0 && (
           <div style={{ padding: 16, borderRadius: 16, background: 'rgba(241,245,249,0.8)', fontSize: 14, color: 'var(--text-sub)', fontWeight: 600, textAlign: 'center', lineHeight: 1.6 }}>
-            Nhà này chưa có hồ sơ nào. Bác khai hồ sơ của bác trước nha.
+            {isVi ? 'Nhà này chưa có hồ sơ nào. Bác khai hồ sơ của bác trước nha.' : 'No profiles in this household yet. Please create a profile first.'}
           </div>
         )}
       </div>
@@ -108,7 +111,7 @@ export default function IdentityPickerView({
         onClick={onCreateNew}
         style={{ width: '100%', padding: 15, borderRadius: 16, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}
       >
-        <UserPlus size={18} /> Chưa có tôi — khai hồ sơ mới
+        <UserPlus size={18} /> {isVi ? 'Chưa có tôi — khai hồ sơ mới' : 'Not listed — create new profile'}
       </button>
 
       <button
@@ -116,7 +119,7 @@ export default function IdentityPickerView({
         onClick={onLeave}
         style={{ width: '100%', marginTop: 12, padding: '11px 18px', borderRadius: 12, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
       >
-        <LogOut size={15} /> Vào nhà khác
+        <LogOut size={15} /> {isVi ? 'Vào nhà khác' : 'Switch Household'}
       </button>
     </div>
   );

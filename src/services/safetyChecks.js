@@ -33,11 +33,13 @@ export const SEVERITY_ORDER = { CRITICAL: 0, SEVERE: 1, HIGH: 2, MEDIUM: 3, MODE
  * ──────────────────────────────────────────────────────────────── */
 export function checkAllergies(medications = [], allergies = []) {
   const warnings = [];
-  if (!allergies.length) return warnings;
+  const validMeds = Array.isArray(medications) ? medications : [];
+  const validAllergies = Array.isArray(allergies) ? allergies : [];
+  if (!validAllergies.length || !validMeds.length) return warnings;
 
   // Ánh xạ tiền sử dị ứng (chữ người dùng tự gõ) → nhóm dị ứng chuẩn
   const matchedClasses = [];
-  allergies.forEach(raw => {
+  validAllergies.forEach(raw => {
     const a = normalizeText(raw);
     if (!a) return;
     const cls = ALLERGY_CLASSES.find(c => c.aliases.some(al => a.includes(normalizeText(al))));
@@ -45,7 +47,7 @@ export function checkAllergies(medications = [], allergies = []) {
     else matchedClasses.push({ cls: null, raw });
   });
 
-  medications.forEach(med => {
+  validMeds.forEach(med => {
     const generics = resolveGenerics(med);
     if (!generics.length) return;
 
@@ -53,12 +55,12 @@ export function checkAllergies(medications = [], allergies = []) {
       if (!cls) {
         // Không nhận ra nhóm dị ứng → so trực tiếp tên. Không đoán thêm.
         const a = normalizeText(raw);
-        if (generics.some(g => normalizeText(g) === a) || normalizeText(med.name).includes(a)) {
+        if (generics.some(g => normalizeText(g) === a) || normalizeText(med?.name).includes(a)) {
           warnings.push({
             type: 'ALLERGY_MATCH',
             severity: 'CRITICAL',
             title: `⛔ Trùng với dị ứng đã ghi: ${raw}`,
-            description: `"${med.name}" trùng với thứ ${raw} mà hồ sơ ghi là bị dị ứng.`,
+            description: `"${med?.name || 'Thuốc'}" trùng với thứ ${raw} mà hồ sơ ghi là bị dị ứng.`,
             action_recommended: 'Chưa cho uống. Gọi lại cho bác sĩ hoặc dược sĩ đã kê đơn để xác nhận.',
             source: 'Đối chiếu trực tiếp với tiền sử dị ứng trong hồ sơ.'
           });
@@ -72,7 +74,7 @@ export function checkAllergies(medications = [], allergies = []) {
         warnings.push({
           type: 'ALLERGY_MATCH',
           severity: 'CRITICAL',
-          title: `⛔ "${med.name}" thuộc nhóm ${cls.label} — hồ sơ ghi dị ứng`,
+          title: `⛔ "${med?.name || 'Thuốc'}" thuộc nhóm ${cls.label} — hồ sơ ghi dị ứng`,
           description: `Hoạt chất ${direct.join(', ')} nằm trong nhóm ${cls.label}. Hồ sơ ghi "${raw}" là dị ứng.`,
           action_recommended: 'Chưa cho uống viên nào. Gọi lại bác sĩ hoặc dược sĩ đã kê đơn ngay hôm nay.',
           source: 'Đối chiếu tiền sử dị ứng với bảng nhóm thuốc.'
@@ -87,7 +89,7 @@ export function checkAllergies(medications = [], allergies = []) {
           warnings.push({
             type: 'ALLERGY_CROSS',
             severity: 'HIGH',
-            title: `⚠️ "${med.name}" có thể dị ứng chéo với ${cls.label}`,
+            title: `⚠️ "${med?.name || 'Thuốc'}" có thể dị ứng chéo với ${cls.label}`,
             description: cls.cross_reactive.note,
             action_recommended: 'Hỏi lại dược sĩ hoặc bác sĩ trước liều đầu tiên.',
             source: 'Bảng dị ứng chéo trong kho kiến thức.'
@@ -109,17 +111,19 @@ export function checkAllergies(medications = [], allergies = []) {
 export function checkDuplicateIngredients(newMedications = [], existingMedications = []) {
   const warnings = [];
   const seen = new Map(); // generic → bản ghi thuốc đầu tiên chứa nó
+  const validNew = Array.isArray(newMedications) ? newMedications : [];
+  const validExisting = Array.isArray(existingMedications) ? existingMedications : [];
 
   const register = (med, origin) => {
     resolveGenerics(med).forEach(g => {
       if (seen.has(g)) {
         const prev = seen.get(g);
-        if (prev.med.name === med.name && prev.origin === origin) return; // cùng một viên
+        if (prev.med?.name === med?.name && prev.origin === origin) return; // cùng một viên
         warnings.push({
           type: 'DUPLICATE_ACTIVE_INGREDIENT',
           severity: 'HIGH',
           title: `Trùng hoạt chất: ${g.toUpperCase()}`,
-          description: `"${med.name}" (${origin}) và "${prev.med.name}" (${prev.origin}) cùng chứa ${g}. Uống cả hai trong ngày là dư liều mà không nhận ra.`,
+          description: `"${med?.name || 'Thuốc'}" (${origin}) và "${prev.med?.name || 'Thuốc'}" (${prev.origin}) cùng chứa ${g}. Uống cả hai trong ngày là dư liều mà không nhận ra.`,
           action_recommended: 'Mang cả hai vỉ thuốc cho dược sĩ xem để biết giữ loại nào. Chưa có xác nhận thì đừng uống cả hai cùng ngày.',
           source: 'Bảng ánh xạ biệt dược → hoạt chất.'
         });
@@ -129,8 +133,8 @@ export function checkDuplicateIngredients(newMedications = [], existingMedicatio
     });
   };
 
-  existingMedications.forEach(m => register(m, 'đang uống ở nhà'));
-  newMedications.forEach(m => register(m, 'đơn mới'));
+  validExisting.forEach(m => register(m, 'đang uống ở nhà'));
+  validNew.forEach(m => register(m, 'đơn mới'));
 
   return warnings;
 }
@@ -140,13 +144,14 @@ export function checkDuplicateIngredients(newMedications = [], existingMedicatio
  * ──────────────────────────────────────────────────────────────── */
 export function checkDrugInteractions(medications = []) {
   const warnings = [];
+  const validMeds = Array.isArray(medications) ? medications : [];
 
   // hoạt chất → tên thuốc chứa nó (để nói cho người dùng bằng tên họ thấy)
   const genericToNames = new Map();
-  medications.forEach(med => {
+  validMeds.forEach(med => {
     resolveGenerics(med).forEach(g => {
       if (!genericToNames.has(g)) genericToNames.set(g, new Set());
-      genericToNames.get(g).add(med.name);
+      genericToNames.get(g).add(med?.name || g);
     });
   });
 
@@ -187,8 +192,9 @@ export function checkDrugInteractions(medications = []) {
 export function checkFoodInteractions(medications = []) {
   const warnings = [];
   const emitted = new Set();
+  const validMeds = Array.isArray(medications) ? medications : [];
 
-  medications.forEach(med => {
+  validMeds.forEach(med => {
     resolveGenerics(med).forEach(g => {
       (FOOD_INTERACTIONS_BY_GENERIC[g] || []).forEach(fi => {
         const key = `${g}|${fi.food}`;
@@ -198,11 +204,11 @@ export function checkFoodInteractions(medications = []) {
         warnings.push({
           type: 'FOOD_INTERACTION',
           severity: fi.severity,
-          title: `${med.name} — nên tránh ${fi.food}`,
+          title: `${med?.name || 'Thuốc'} — nên tránh ${fi.food}`,
           description: fi.plain,
           alternative: fi.alternative,
           meal_context: fi.meal_context,
-          med_name: med.name,
+          med_name: med?.name || g,
           generic: g,
           source: 'Bảng tương tác thuốc–thức ăn trong kho kiến thức.'
         });
@@ -217,11 +223,14 @@ export function checkFoodInteractions(medications = []) {
  * Điểm vào chung
  * ──────────────────────────────────────────────────────────────── */
 export function runAllSafetyChecks({ newMedications = [], existingMedications = [], memberProfile = {} } = {}) {
-  const all = [...existingMedications, ...newMedications];
+  const validNew = Array.isArray(newMedications) ? newMedications : [];
+  const validExisting = Array.isArray(existingMedications) ? existingMedications : [];
+  const profile = memberProfile && typeof memberProfile === 'object' ? memberProfile : {};
+  const all = [...validExisting, ...validNew];
 
   const warnings = [
-    ...checkAllergies(newMedications.length ? newMedications : all, memberProfile.allergies || []),
-    ...checkDuplicateIngredients(newMedications, existingMedications),
+    ...checkAllergies(validNew.length ? validNew : all, profile.allergies || []),
+    ...checkDuplicateIngredients(validNew, validExisting),
     ...checkDrugInteractions(all),
     ...checkFoodInteractions(all)
   ];
@@ -238,8 +247,8 @@ export function runAllSafetyChecks({ newMedications = [], existingMedications = 
     coverage: {
       total_meds: all.length,
       recognized: recognized.length,
-      unrecognized: unrecognized.map(m => m.name),
-      allergies_on_file: (memberProfile.allergies || []).length,
+      unrecognized: unrecognized.map(m => m?.name || 'Không rõ tên'),
+      allergies_on_file: (profile.allergies || []).length,
       knowledge_version: KNOWLEDGE_STATUS.version,
       reviewed_by_pharmacist: KNOWLEDGE_STATUS.reviewed_by_pharmacist
     }

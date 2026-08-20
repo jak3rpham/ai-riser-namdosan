@@ -1,5 +1,6 @@
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
-import { requireAuth, fail } from '../plugins/auth.js';
+import { scryptSync, randomBytes } from 'node:crypto';
+import { adminAuth, requireAuth, fail } from '../plugins/auth.js';
 
 /**
  * Tạo nhà, mời người nhà, vào nhà.
@@ -94,8 +95,32 @@ async function recordFailedAttempt(uid) {
 export default async function householdRoutes(app) {
   /* ── Tạo nhà mới. Người tạo thành chủ nhà. ── */
   app.post('/create', { preHandler: requireAuth }, async (request, reply) => {
-    const { name, display_name } = request.body || {};
-    const uid = request.user.uid;
+    const { name, display_name, username, password, phone } = request.body || {};
+    let uid = request.user.uid;
+
+    const rawUser = String(username || '').trim().toLowerCase();
+    const rawPass = String(password || '').trim();
+    const cleanPhone = String(phone || '').trim().replace(/\D/g, '');
+    let cleanUser = null;
+
+    if (rawUser) {
+      cleanUser = rawUser.replace(/[^a-z0-9_]/g, '');
+      if (cleanUser.length < 3) {
+        return fail(reply, 400, 'BAD_USERNAME', 'Tên đăng nhập cần ít nhất 3 ký tự (chữ, số hoặc dấu gạch dưới).');
+      }
+      if (!rawPass || rawPass.length < 4) {
+        return fail(reply, 400, 'BAD_PASSWORD', 'Mật khẩu cần ít nhất 4 ký tự.');
+      }
+
+      // Kiểm tra trùng tên tài khoản
+      const userDoc = await db.doc(`app_users/${cleanUser}`).get();
+      if (userDoc.exists) {
+        return fail(reply, 409, 'USERNAME_TAKEN', 'Tên đăng nhập này đã được sử dụng. Bạn chọn tên khác nhé.');
+      }
+
+      // Nếu có username, đặt UID cố định theo username
+      uid = `user_${cleanUser}`;
+    }
 
     const householdRef = db.collection('households').doc();
 
@@ -103,18 +128,52 @@ export default async function householdRoutes(app) {
     batch.set(householdRef, {
       name: String(name || 'Nhà mình').slice(0, 60),
       host_uid: uid,
+      owner_username: cleanUser || null,
+      emergency_phone: cleanPhone || null,
       created_at: FieldValue.serverTimestamp()
     });
     batch.set(householdRef.collection('members').doc(uid), {
       role: 'host',
-      display_name: String(display_name || '').slice(0, 60) || null,
-      anonymous: request.user.isAnonymous,
+      display_name: String(display_name || cleanUser || '').slice(0, 60) || null,
+      phone: cleanPhone || null,
+      anonymous: cleanUser ? false : request.user.isAnonymous,
       joined_at: FieldValue.serverTimestamp()
     });
+
+    if (cleanUser) {
+      const salt = randomBytes(16).toString('hex');
+      const passwordHash = scryptSync(rawPass, salt, 64).toString('hex');
+      batch.set(db.doc(`app_users/${cleanUser}`), {
+        username: cleanUser,
+        phone: cleanPhone || null,
+        password_hash: passwordHash,
+        salt: salt,
+        household_id: householdRef.id,
+        display_name: String(display_name || name || 'Chủ nhà').slice(0, 60),
+        uid: uid,
+        created_at: FieldValue.serverTimestamp()
+      });
+    }
+
     await batch.commit();
 
-    request.log.info({ household: householdRef.id }, 'đã tạo nhà mới');
-    return { ok: true, household_id: householdRef.id };
+    let customToken = null;
+    if (cleanUser) {
+      try {
+        customToken = await adminAuth.createCustomToken(uid, { household_id: householdRef.id });
+      } catch (err) {
+        request.log.error({ err }, 'lỗi tạo custom token cho user mới');
+      }
+    }
+
+    request.log.info({ household: householdRef.id, username: cleanUser, phone: cleanPhone }, 'đã tạo nhà mới');
+    return {
+      ok: true,
+      household_id: householdRef.id,
+      token: customToken,
+      username: cleanUser,
+      phone: cleanPhone || null
+    };
   });
 
   /* ── Tạo mã mời. Chỉ người đã ở trong nhà mới mời được. ── */

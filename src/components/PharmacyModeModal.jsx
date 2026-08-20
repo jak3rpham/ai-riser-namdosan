@@ -5,12 +5,10 @@ import { I18N_STRINGS } from '../services/i18n';
 export default function PharmacyModeModal({ isOpen, onClose, memberProfile, prescriptions = [], language = 'vi' }) {
   if (!isOpen) return null;
 
+  const isVi = language === 'vi';
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
   const activeMeds = prescriptions.flatMap(p => p.medications || []);
 
-  // ⚠️ Bản trước đoán Rx/OTC bằng `name.includes('5mg')` — thuốc 10mg bị xếp
-  // thành OTC ngay trên màn đưa cho dược sĩ xem (doc 33 mục 11). Giờ thiếu
-  // `type` thì xếp vào nhóm "chưa phân loại" thay vì đoán.
   const rxMeds = activeMeds.filter(m => m.type === 'RX');
   const otcMeds = activeMeds.filter(m => m.type === 'OTC');
   const unclassifiedMeds = activeMeds.filter(m => m.type !== 'RX' && m.type !== 'OTC');
@@ -26,10 +24,10 @@ export default function PharmacyModeModal({ isOpen, onClose, memberProfile, pres
               <UserCheck size={16} /> {t.pharmacist_view_title}
             </div>
             <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-dark)' }}>
-              {memberProfile.display_name} ({2026 - (memberProfile.birth_year || 1958)} tuổi)
+              {memberProfile.display_name} ({2026 - (memberProfile.birth_year || 1958)} {isVi ? 'tuổi' : 'yo'})
             </h2>
             <p style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 4, fontWeight: 600 }}>
-              Tiền sử y tế & danh sách thuốc đang sử dụng tại nhà
+              {isVi ? 'Tiền sử y tế & danh sách thuốc đang sử dụng tại nhà' : 'Medical history & current at-home medication regimen'}
             </p>
           </div>
 
@@ -56,7 +54,7 @@ export default function PharmacyModeModal({ isOpen, onClose, memberProfile, pres
               <HeartPulse size={16} /> {t.conditions}
             </span>
             <div style={{ fontSize: 18, fontWeight: 800, color: '#0C4A6E', marginTop: 6 }}>
-              {memberProfile.conditions?.length ? memberProfile.conditions.join(", ") : "Bình thường"}
+              {memberProfile.conditions?.length ? memberProfile.conditions.join(", ") : (isVi ? "Bình thường" : "None")}
             </div>
           </div>
         </div>
@@ -76,12 +74,12 @@ export default function PharmacyModeModal({ isOpen, onClose, memberProfile, pres
                   <div>
                     <h5 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)' }}>{med.name}</h5>
                     <div style={{ fontSize: 14, color: 'var(--coral-main)', fontWeight: 700 }}>
-                      Hoạt chất: {med.generic || med.name} · {med.strength}
+                      {isVi ? 'Hoạt chất:' : 'Active ingredient:'} {med.generic || med.name} · {med.strength}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-dark)' }}>{med.dosage}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600 }}>Cữ {med.time_slot}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-sub)', fontWeight: 600 }}>{isVi ? `Cữ ${med.time_slot}` : `Slot ${med.time_slot}`}</div>
                   </div>
                 </div>
               ))}
@@ -101,7 +99,7 @@ export default function PharmacyModeModal({ isOpen, onClose, memberProfile, pres
                     <div>
                       <h5 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)' }}>{med.name}</h5>
                       <div style={{ fontSize: 14, color: 'var(--sky-blue)', fontWeight: 700 }}>
-                        Hoạt chất: {med.generic || med.name}
+                        {isVi ? 'Hoạt chất:' : 'Active ingredient:'} {med.generic || med.name}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -118,7 +116,7 @@ export default function PharmacyModeModal({ isOpen, onClose, memberProfile, pres
           {unclassifiedMeds.length > 0 && (
             <div>
               <h4 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Pill color="var(--text-muted)" size={18} /> Chưa phân loại Rx/OTC ({unclassifiedMeds.length})
+                <Pill color="var(--text-muted)" size={18} /> {isVi ? `Chưa phân loại Rx/OTC (${unclassifiedMeds.length})` : `Unclassified Rx/OTC (${unclassifiedMeds.length})`}
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {unclassifiedMeds.map((med, idx) => (
@@ -126,7 +124,7 @@ export default function PharmacyModeModal({ isOpen, onClose, memberProfile, pres
                     <div>
                       <h5 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)' }}>{med.name}</h5>
                       <div style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 700 }}>
-                        Hoạt chất: {med.generic || 'chưa ghi nhận'}{med.strength ? ` · ${med.strength}` : ''}
+                        {isVi ? 'Hoạt chất:' : 'Active ingredient:'} {med.generic || (isVi ? 'chưa ghi nhận' : 'not specified')}{med.strength ? ` · ${med.strength}` : ''}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -143,8 +141,9 @@ export default function PharmacyModeModal({ isOpen, onClose, memberProfile, pres
         {/* Bottom Pharmacist Note */}
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, maxWidth: 460, lineHeight: 1.55 }}>
-            Danh sách do gia đình nhập và xác nhận từ đơn thuốc. Có thể thiếu thuốc mua lẻ hoặc
-            thuốc nam chưa được ghi vào app — mong dược sĩ hỏi lại người nhà.
+            {isVi
+              ? 'Danh sách do gia đình nhập và xác nhận từ đơn thuốc. Có thể thiếu thuốc mua lẻ hoặc thuốc nam chưa được ghi vào app — mong dược sĩ hỏi lại người nhà.'
+              : 'Medication regimen logged from household prescriptions. Please verify with patient for unrecorded supplements or OTC purchases.'}
           </span>
           <button className="btn-primary" onClick={onClose} style={{ padding: '10px 24px', borderRadius: 16 }}>
             {t.close}

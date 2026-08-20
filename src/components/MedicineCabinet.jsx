@@ -4,6 +4,7 @@ import { I18N_STRINGS } from '../services/i18n';
 
 export default function MedicineCabinet({ medications = [], language = 'vi' }) {
   const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
+  const isVi = language === 'vi';
 
   return (
     <div className="liquid-card" style={{ padding: 26 }}>
@@ -13,11 +14,13 @@ export default function MedicineCabinet({ medications = [], language = 'vi' }) {
             📦 {t.medicine_cabinet}
           </h3>
           <p style={{ fontSize: 14, color: 'var(--text-sub)' }}>
-            Theo dõi tiến trình đợt dùng thuốc & dự đoán thời điểm kết thúc đợt để gia hạn kịp thời.
+            {isVi
+              ? 'Theo dõi tiến trình đợt dùng thuốc & dự đoán thời điểm kết thúc đợt để gia hạn kịp thời.'
+              : 'Track medication lifecycle & forecast completion to refill in time.'}
           </p>
         </div>
         <span style={{ padding: '6px 14px', borderRadius: 99, background: 'var(--coral-soft)', color: 'var(--coral-main)', fontWeight: 800, fontSize: 13 }}>
-          {medications.length} loại thuốc
+          {isVi ? `${medications.length} loại thuốc` : `${medications.length} medications`}
         </span>
       </div>
 
@@ -36,14 +39,14 @@ export default function MedicineCabinet({ medications = [], language = 'vi' }) {
                   <span style={{ fontSize: 13, color: 'var(--coral-main)', fontWeight: 700 }}>{med.nick_name || med.generic}</span>
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 800, padding: '3px 10px', borderRadius: 99, background: isLow ? 'var(--amber-soft)' : 'var(--emerald-soft)', color: isLow ? 'var(--amber-warm)' : 'var(--emerald-ok)' }}>
-                  {isLow ? '⚠️ Sắp hết đợt' : 'Đang dùng'}
+                  {isLow ? (isVi ? '⚠️ Sắp hết đợt' : '⚠️ Low supply') : (isVi ? 'Đang dùng' : 'Active')}
                 </span>
               </div>
 
               {/* M18 Lifecycle Progress Bar */}
               <div style={{ marginTop: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: 'var(--text-sub)', marginBottom: 4 }}>
-                  <span>Tiến trình đợt: {elapsedDays}/{totalDays} ngày</span>
+                  <span>{isVi ? `Tiến trình đợt: ${elapsedDays}/${totalDays} ngày` : `Progress: ${elapsedDays}/${totalDays} days`}</span>
                   <span>{percent}%</span>
                 </div>
                 <div style={{ width: '100%', height: 6, borderRadius: 99, background: '#E2E8F0', overflow: 'hidden' }}>
@@ -52,8 +55,8 @@ export default function MedicineCabinet({ medications = [], language = 'vi' }) {
               </div>
 
               <div style={{ marginTop: 14, paddingTop: 10, borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text-sub)' }}>
-                <span>Còn lại: <strong style={{ color: isLow ? 'var(--amber-warm)' : 'var(--text-dark)' }}>{med.est_remaining} ngày</strong></span>
-                <span>Cữ: <strong>{med.time_slot}</strong></span>
+                <span>{isVi ? 'Còn lại:' : 'Remaining:'} <strong style={{ color: isLow ? 'var(--amber-warm)' : 'var(--text-dark)' }}>{med.est_remaining} {isVi ? 'ngày' : 'days'}</strong></span>
+                <span>{isVi ? 'Cữ:' : 'Slot:'} <strong>{med.time_slot}</strong></span>
               </div>
             </div>
           );

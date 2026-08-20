@@ -213,7 +213,12 @@ export default async function aiRoutes(fastify) {
       question: z.string().min(1).max(1000),
       profile: profileSchema.optional().default({}),
       medications: z.array(medSchema).max(40).optional().default([]),
-      register: z.enum(['elder', 'peer']).optional().default('elder')
+      register: z.enum(['elder', 'peer']).optional().default('elder'),
+      language: z.enum(['vi', 'en']).optional().default('vi'),
+      history: z.array(z.object({
+        sender: z.enum(['user', 'assistant']),
+        text: z.string().max(1000)
+      })).max(20).optional().default([])
     }).safeParse(request.body);
 
     if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Câu hỏi không hợp lệ.');
@@ -227,7 +232,7 @@ export default async function aiRoutes(fastify) {
     }
 
     const res = await callGemini({
-      prompt: askPrompt(pseudo, parsed.data.question, parsed.data.register),
+      prompt: askPrompt(pseudo, parsed.data.question, parsed.data.register, parsed.data.history, parsed.data.language),
       jsonMode: false,
       temperature: 0.5,
       maxTokens: 2500,
@@ -235,7 +240,26 @@ export default async function aiRoutes(fastify) {
     });
 
     if (!res.ok) return fail(reply, 502, res.code, res.message);
-    return reply.send({ ok: true, text: res.text.trim() });
+
+    let rawText = res.text.trim();
+    let quickReplies = [];
+
+    // Tách gợi ý nếu model sinh dạng [GỢI Ý] / [SUGGESTIONS]: A | B | C
+    const suggestionMatch = rawText.match(/\[(?:GỢI Ý|GOI Y|LỰA CHỌN|GỢI Ý TRẢ LỜI|SUGGESTIONS?|OPTIONS?|QUICK REPLIES)\]:\s*([^\n]+)/i);
+    if (suggestionMatch) {
+      quickReplies = suggestionMatch[1]
+        .split('|')
+        .map(s => s.trim().replace(/^[-*•\d.)\s]+/, '').trim())
+        .filter(s => s.length > 0 && s.length < 50)
+        .slice(0, 4);
+      rawText = rawText.replace(suggestionMatch[0], '').trim();
+    }
+
+    return reply.send({
+      ok: true,
+      text: rawText,
+      quick_replies: quickReplies.length > 0 ? quickReplies : undefined
+    });
   });
 
   /* ── Phân loại câu nói thành KHUNG ──
@@ -260,34 +284,16 @@ export default async function aiRoutes(fastify) {
   fastify.post('/classify-symptom', guard, async (request, reply) => {
     const parsed = z.object({
       text: z.string().min(1).max(1000),
-      register: z.enum(['elder', 'peer']).optional().default('elder')
+      register: z.enum(['elder', 'peer']).optional().default('elder'),
+      language: z.enum(['vi', 'en']).optional().default('vi')
     }).safeParse(request.body);
 
     if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Câu nói không hợp lệ.');
 
     const res = await callGemini({
-      prompt: `${classifySymptomPrompt(parsed.data.register)}\n\nCâu người dùng vừa nói: "${parsed.data.text}"`,
+      prompt: `${classifySymptomPrompt(parsed.data.register, parsed.data.language)}\n\nCâu người dùng vừa nói: "${parsed.data.text}"`,
       jsonMode: true,
       temperature: 0,   // phân loại phải ổn định: cùng câu, cùng nhãn
-      /**
-       * ⚠️ Từng để 200 và route này HỎNG HOÀN TOÀN — mọi lời gọi trả BAD_JSON.
-       *
-       * Lý do: `maxOutputTokens` tính cả phần model suy nghĩ trước khi viết,
-       * không chỉ phần chữ nó trả ra. Với gemini-3.6-flash, 200 token bị phần
-       * suy nghĩ ăn hết, JSON ra cụt giữa chừng, JSON.parse ném lỗi.
-       *
-       * Bằng chứng khi truy: /extract-prescription (JSON, 8000 token) chạy tốt,
-       * /ask (2500) chạy tốt, chỉ mỗi route 200 token hỏng — cùng khoá, cùng
-       * model, cùng chế độ JSON.
-       *
-       * Hỏng theo kiểu im lặng: client bắt lỗi rồi lặng lẽ giữ kết quả từ điển
-       * tại máy, nên nhìn ngoài app vẫn chạy. Chỉ mất đúng cái mà lớp Gemini
-       * sinh ra để làm — đọc chính tả sai, tiếng lóng, câu nói vòng.
-       *
-       * Đừng hạ xuống để "tiết kiệm". Chỉ trả tiền cho token thật sự sinh ra,
-       * mà JSON này chỉ vài chục token; con số dưới đây là trần, không phải
-       * lượng dùng.
-       */
       maxTokens: 1200,
       log: request.log
     });
@@ -298,16 +304,10 @@ export default async function aiRoutes(fastify) {
     try {
       data = JSON.parse(res.text.replace(/```json/g, '').replace(/```/g, '').trim());
     } catch {
-      // Ghi lại NGUYÊN VĂN thứ model trả về. Không có dòng này thì lần trước
-      // phải suy luận gián tiếp qua các route khác mới ra được nguyên nhân là
-      // hết ngân sách token — mà lỗi thì im lặng, không ai biết để đi tìm.
       request.log.warn({ raw: String(res.text || '').slice(0, 300) }, 'phân loại: JSON không đọc được');
       return fail(reply, 502, 'BAD_JSON', 'AI trả về phân loại không đọc được.');
     }
 
-    // Lọc trắng danh sách. Model bịa ra nhãn lạ thì vứt, KHÔNG chuyển tiếp —
-    // nhãn lạ lọt xuống bảng luật sẽ không khớp luật nào và im lặng thành
-    // "không có gì bất thường".
     const pick = (v, list) => (list.includes(v) ? v : null);
 
     return reply.send({
@@ -335,10 +335,9 @@ export default async function aiRoutes(fastify) {
     }
 
     const parsed = z.object({
-      // Giới hạn 600 ký tự: câu trả lời của app tối đa 3 câu. Dài hơn nghĩa là
-      // có ai đó đang mượn endpoint này làm dịch vụ đọc sách.
       text: z.string().min(1).max(600),
-      register: z.enum(['elder', 'peer']).optional().default('elder')
+      register: z.enum(['elder', 'peer']).optional().default('elder'),
+      language: z.enum(['vi', 'en']).optional().default('vi')
     }).safeParse(request.body);
 
     if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Nội dung đọc không hợp lệ.');
@@ -346,6 +345,7 @@ export default async function aiRoutes(fastify) {
     const res = await synthesizeSpeech({
       text: parsed.data.text,
       register: parsed.data.register,
+      language: parsed.data.language,
       log: request.log
     });
 
@@ -357,7 +357,8 @@ export default async function aiRoutes(fastify) {
   fastify.post('/explain', guard, async (request, reply) => {
     const parsed = z.object({
       medications: z.array(medSchema).max(40),
-      register: z.enum(['elder', 'peer']).optional().default('elder')
+      register: z.enum(['elder', 'peer']).optional().default('elder'),
+      language: z.enum(['vi', 'en']).optional().default('vi')
     }).safeParse(request.body);
 
     if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Danh sách thuốc không hợp lệ.');
@@ -365,7 +366,7 @@ export default async function aiRoutes(fastify) {
     const pseudo = buildPseudonymousProfile({}, parsed.data.medications);
 
     const res = await callGemini({
-      prompt: explainPrompt(pseudo, parsed.data.register),
+      prompt: explainPrompt(pseudo, parsed.data.register, parsed.data.language),
       jsonMode: false,
       temperature: 0.6,
       maxTokens: 2500,
@@ -383,7 +384,8 @@ export default async function aiRoutes(fastify) {
       summary: z.string().min(1).max(600),
       profile: profileSchema.optional().default({}),
       medications: z.array(medSchema).max(40).optional().default([]),
-      register: z.enum(['elder', 'peer']).optional().default('elder')
+      register: z.enum(['elder', 'peer']).optional().default('elder'),
+      language: z.enum(['vi', 'en']).optional().default('vi')
     }).safeParse(request.body);
 
     if (!parsed.success) return fail(reply, 400, 'BAD_INPUT', 'Dữ liệu triệu chứng không hợp lệ.');
@@ -391,7 +393,7 @@ export default async function aiRoutes(fastify) {
     const pseudo = buildPseudonymousProfile(parsed.data.profile, parsed.data.medications);
 
     const res = await callGemini({
-      prompt: narrateSymptomPrompt(pseudo, parsed.data.summary, parsed.data.register),
+      prompt: narrateSymptomPrompt(pseudo, parsed.data.summary, parsed.data.register, parsed.data.language),
       jsonMode: false,
       temperature: 0.5,
       maxTokens: 2500,

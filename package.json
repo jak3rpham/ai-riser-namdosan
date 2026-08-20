@@ -9,7 +9,11 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "deploy": "npm run build && python3 scripts/deploy.py",
-    "test:safety": "esbuild tests/safety.test.mjs --bundle --platform=node --format=esm --outfile=node_modules/.cache/safety.test.mjs --log-level=error && node node_modules/.cache/safety.test.mjs"
+    "test:safety": "esbuild tests/safety.test.mjs --bundle --platform=node --format=esm --outfile=node_modules/.cache/safety.test.mjs --log-level=error && node node_modules/.cache/safety.test.mjs",
+    "test:comprehensive": "esbuild tests/comprehensive_test.mjs --bundle --platform=node --format=esm --outfile=node_modules/.cache/comprehensive.test.mjs --log-level=error && node node_modules/.cache/comprehensive.test.mjs",
+    "test:audit": "esbuild tests/audit_connections.test.mjs --bundle --platform=node --format=esm --outfile=node_modules/.cache/audit_connections.test.mjs --log-level=error && node node_modules/.cache/audit_connections.test.mjs",
+    "test:server": "node server/test/pseudonym.test.mjs && node server/test/prompts_bilingual.test.mjs",
+    "test": "npm run test:safety && npm run test:comprehensive && npm run test:audit && npm run test:server"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.3",

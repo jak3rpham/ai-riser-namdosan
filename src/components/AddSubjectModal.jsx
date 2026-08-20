@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, UserPlus, Loader2 } from 'lucide-react';
+import { registerFor } from '../services/honorifics';
 
 /**
  * Khai báo một người được chăm sóc (ba, mẹ, ông, bà).
@@ -13,29 +14,19 @@ import { X, UserPlus, Loader2 } from 'lucide-react';
  * còn nguy hiểm hơn bỏ trống. Bỏ trống thì app biết là chưa biết.
  */
 
-const RELATIONS = ['Ba', 'Mẹ', 'Ông', 'Bà', 'Vợ/Chồng', 'Anh/Chị/Em', 'Chính tôi', 'Người thân'];
+const RELATIONS_VI = ['Ba', 'Mẹ', 'Ông', 'Bà', 'Vợ/Chồng', 'Anh/Chị/Em', 'Chính tôi', 'Người thân'];
+const RELATIONS_EN = ['Father', 'Mother', 'Grandfather', 'Grandmother', 'Spouse', 'Sibling', 'Myself', 'Other Relative'];
 
-/**
- * Cách Cháu Bi xưng hô với người này.
- *
- * Để người dùng chọn tay chứ không chỉ suy từ năm sinh, vì năm sinh KHÔNG bắt
- * buộc — bỏ trống thì app mặc định "con–bác", và gọi một người 30 tuổi là
- * "bác" là hỏng ngay câu đầu tiên. Mà app này cả nhà dùng, không riêng ba mẹ.
- */
-const ADDRESS_STYLES = [
-  { value: 'elder', label: 'Con – Bác', hint: 'Cháu Bi xưng "con", gọi "bác". Cho ông bà, ba mẹ.' },
-  { value: 'peer', label: 'Mình – Bạn', hint: 'Xưng "mình", gọi "bạn". Cho người trẻ trong nhà.' }
+const ADDRESS_STYLES = (isVi) => [
+  { value: 'elder', label: isVi ? 'Con – Bác' : 'Respectful (Elder)', hint: isVi ? 'Cháu Bi xưng "con", gọi "bác". Cho ông bà, ba mẹ.' : 'AI assistant uses polite elder honorifics.' },
+  { value: 'peer', label: isVi ? 'Mình – Bạn' : 'Friendly (Peer)', hint: isVi ? 'Xưng "mình", gọi "bạn". Cho người trẻ trong nhà.' : 'AI assistant uses casual peer honorifics.' }
 ];
 
-/** Người sinh từ năm này trở về trước thì mặc định chọn giọng con–bác */
-const ELDER_BORN_BEFORE = new Date().getFullYear() - 60;
-
-/** Mức tự lập, quyết định app hiển thị đơn giản tới đâu (doc 39). */
-const CAPABILITIES = [
-  { value: 'C1', label: 'Tự dùng điện thoại tốt' },
-  { value: 'C2', label: 'Dùng được, cần nhắc' },
-  { value: 'C3', label: 'Cần người nhà hỗ trợ' },
-  { value: 'C4', label: 'Phụ thuộc hoàn toàn' }
+const CAPABILITIES = (isVi) => [
+  { value: 'C1', label: isVi ? 'Tự dùng điện thoại tốt' : 'Tech-savvy / Independent' },
+  { value: 'C2', label: isVi ? 'Dùng được, cần nhắc' : 'Can use with reminders' },
+  { value: 'C3', label: isVi ? 'Cần người nhà hỗ trợ' : 'Needs caregiver assistance' },
+  { value: 'C4', label: isVi ? 'Phụ thuộc hoàn toàn' : 'Fully dependent' }
 ];
 
 const AVATAR_COLORS = [
@@ -45,14 +36,15 @@ const AVATAR_COLORS = [
   'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)'
 ];
 
-export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount = 0, variant = 'manager' }) {
-  // App Ba Mẹ: người đầu tiên bác khai là chính bác, nên mặc định "Chính tôi".
-  // App Con: mặc định "Ba" như cũ.
+export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount = 0, variant = 'manager', language = 'vi' }) {
+  const isVi = language === 'vi';
+  const relations = isVi ? RELATIONS_VI : RELATIONS_EN;
+  const addressStyles = ADDRESS_STYLES(isVi);
+  const capabilities = CAPABILITIES(isVi);
+
   const [name, setName] = useState('');
-  const [relation, setRelation] = useState(variant === 'parent' ? 'Chính tôi' : 'Ba');
+  const [relation, setRelation] = useState(variant === 'parent' ? (isVi ? 'Chính tôi' : 'Myself') : (isVi ? 'Ba' : 'Father'));
   const [birthYear, setBirthYear] = useState('');
-  // null = chưa ai đụng tới, cứ suy theo năm sinh. Người dùng bấm một lần thì
-  // lựa chọn của họ thắng, kể cả khi sau đó sửa năm sinh.
   const [addressStyle, setAddressStyle] = useState(null);
   const [capability, setCapability] = useState('C2');
   const [conditions, setConditions] = useState('');
@@ -65,23 +57,22 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
   const splitList = raw =>
     raw.split(',').map(s => s.trim()).filter(Boolean);
 
-  // Suy từ năm sinh khi người dùng chưa chọn tay
   const guessedStyle = (() => {
     const y = Number(birthYear);
-    if (Number.isInteger(y) && y > 1900) return y <= ELDER_BORN_BEFORE ? 'elder' : 'peer';
+    if (Number.isInteger(y) && y > 1900) return registerFor({ birth_year: y }).id;
     return 'elder';
   })();
   const effectiveStyle = addressStyle || guessedStyle;
 
   const submit = async () => {
     if (!name.trim()) {
-      setError('Bạn nhập tên giúp nhé.');
+      setError(isVi ? 'Bạn nhập tên giúp nhé.' : 'Please enter a name.');
       return;
     }
 
     const year = Number(birthYear);
     if (birthYear && (!Number.isInteger(year) || year < 1900 || year > new Date().getFullYear())) {
-      setError('Năm sinh chưa hợp lệ.');
+      setError(isVi ? 'Năm sinh chưa hợp lệ.' : 'Invalid birth year.');
       return;
     }
 
@@ -105,7 +96,7 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
       setName(''); setBirthYear(''); setConditions(''); setAllergies(''); setAddressStyle(null);
       onClose();
     } else {
-      setError(res.error_message || 'Chưa lưu được. Bạn thử lại nhé.');
+      setError(res.error_message || (isVi ? 'Chưa lưu được. Bạn thử lại nhé.' : 'Failed to save. Please retry.'));
     }
   };
 
@@ -114,7 +105,9 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
       <div style={sheetStyle} onClick={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>
-            {variant === 'parent' ? 'Hồ sơ của bác' : 'Thêm người nhà'}
+            {variant === 'parent'
+              ? (isVi ? 'Hồ sơ của bác' : 'My Profile')
+              : (isVi ? 'Thêm người nhà' : 'Add Family Member')}
           </h3>
           <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 12 }}>
             <X size={18} />
@@ -122,19 +115,19 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
         </div>
 
         <div style={{ display: 'grid', gap: 14 }}>
-          <Field label="Gọi là gì">
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Ví dụ: Ba Mười" maxLength={40} style={inputStyle} />
+          <Field label={isVi ? "Gọi là gì" : "Full Name / Nickname"}>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder={isVi ? "Ví dụ: Ba Mười" : "e.g. Dad John"} maxLength={40} style={inputStyle} />
           </Field>
 
-          <Field label="Quan hệ">
+          <Field label={isVi ? "Quan hệ" : "Relationship"}>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-              {RELATIONS.map(r => (
+              {relations.map(r => (
                 <Chip key={r} active={relation === r} onClick={() => setRelation(r)}>{r}</Chip>
               ))}
             </div>
           </Field>
 
-          <Field label="Năm sinh (không bắt buộc)">
+          <Field label={isVi ? "Năm sinh (không bắt buộc)" : "Birth Year (optional)"}>
             <input
               value={birthYear}
               onChange={e => setBirthYear(e.target.value.replace(/\D/g, '').slice(0, 4))}
@@ -144,9 +137,9 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
             />
           </Field>
 
-          <Field label="Cháu Bi xưng hô thế nào">
+          <Field label={isVi ? "Cháu Bi xưng hô thế nào" : "AI Honorific Style"}>
             <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
-              {ADDRESS_STYLES.map(a => (
+              {addressStyles.map(a => (
                 <Chip key={a.value} active={effectiveStyle === a.value} onClick={() => setAddressStyle(a.value)} block>
                   <span style={{ fontWeight: 800 }}>{a.label}</span>
                   <span style={{ display: 'block', fontSize: 13, fontWeight: 600, opacity: 0.75, marginTop: 2 }}>
@@ -157,9 +150,9 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
             </div>
           </Field>
 
-          <Field label="Dùng điện thoại thế nào">
+          <Field label={isVi ? "Dùng điện thoại thế nào" : "Smartphone Capability"}>
             <div style={{ display: 'grid', gap: 6, marginTop: 8 }}>
-              {CAPABILITIES.map(c => (
+              {capabilities.map(c => (
                 <Chip key={c.value} active={capability === c.value} onClick={() => setCapability(c.value)} block>
                   {c.label}
                 </Chip>
@@ -167,15 +160,16 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
             </div>
           </Field>
 
-          <Field label="Bệnh nền (không bắt buộc, cách nhau bởi dấu phẩy)">
-            <input value={conditions} onChange={e => setConditions(e.target.value)} placeholder="Huyết áp cao, Mỡ máu cao" style={inputStyle} />
+          <Field label={isVi ? "Bệnh nền (không bắt buộc, cách nhau bởi dấu phẩy)" : "Underlying Conditions (comma separated)"}>
+            <input value={conditions} onChange={e => setConditions(e.target.value)} placeholder={isVi ? "Huyết áp cao, Mỡ máu cao" : "Hypertension, High Cholesterol"} style={inputStyle} />
           </Field>
 
-          <Field label="Dị ứng thuốc (không bắt buộc)">
+          <Field label={isVi ? "Dị ứng thuốc (không bắt buộc)" : "Drug Allergies (optional)"}>
             <input value={allergies} onChange={e => setAllergies(e.target.value)} placeholder="Penicillin" style={inputStyle} />
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
-              Khai báo dị ứng giúp app cảnh báo khi thêm thuốc. Không nhớ rõ thì cứ để trống,
-              đừng đoán.
+              {isVi
+                ? 'Khai báo dị ứng giúp app cảnh báo khi thêm thuốc. Không nhớ rõ thì cứ để trống, đừng đoán.'
+                : 'Allergy logs allow the app to screen interactions. Leave blank if unsure.'}
             </div>
           </Field>
         </div>
@@ -185,7 +179,7 @@ export default function AddSubjectModal({ isOpen, onClose, onSave, existingCount
         )}
 
         <button className="btn-primary" onClick={submit} disabled={saving} style={{ marginTop: 20, width: '100%', padding: '15px', borderRadius: 16, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          {saving ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />} Lưu
+          {saving ? <Loader2 className="animate-spin" size={18} /> : <UserPlus size={18} />} {isVi ? 'Lưu' : 'Save'}
         </button>
       </div>
     </div>

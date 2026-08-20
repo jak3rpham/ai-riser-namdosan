@@ -27,8 +27,10 @@ export default function HouseholdManageModal({
   onAddSubject,
   onEditSubject,
   onReclaimIdentity,
-  onSignOut
+  onSignOut,
+  language = 'vi'
 }) {
+  const isVi = language === 'vi';
   const [confirmSignOut, setConfirmSignOut] = useState(false);
 
   if (!isOpen) return null;
@@ -40,14 +42,14 @@ export default function HouseholdManageModal({
       <div style={sheet} onClick={e => e.stopPropagation()}>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>Nhà mình</h3>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>{isVi ? 'Nhà mình' : 'Household Management'}</h3>
           <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 12 }}>
             <X size={18} />
           </button>
         </div>
 
         {/* ── Hồ sơ sức khoẻ ── */}
-        <SectionTitle icon={Users} text={`Hồ sơ trong nhà (${subjects.length})`} />
+        <SectionTitle icon={Users} text={isVi ? `Hồ sơ trong nhà (${subjects.length})` : `Family Profiles (${subjects.length})`} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 18 }}>
           {subjects.map(s => (
@@ -59,32 +61,32 @@ export default function HouseholdManageModal({
                 <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text-dark)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   {s.display_name}
                   {s.id === identityId && (
-                    <span style={badge}><Check size={11} /> là tôi</span>
+                    <span style={badge}><Check size={11} /> {isVi ? 'là tôi' : 'me'}</span>
                   )}
                 </div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
-                  {[s.relation, s.birth_year ? `sinh ${s.birth_year}` : null].filter(Boolean).join(' · ') || 'Chưa ghi quan hệ'}
+                  {[s.relation, s.birth_year ? (isVi ? `sinh ${s.birth_year}` : `b. ${s.birth_year}`) : null].filter(Boolean).join(' · ') || (isVi ? 'Chưa ghi quan hệ' : 'No relation specified')}
                 </div>
               </div>
               {onEditSubject && (
                 <button onClick={() => onEditSubject(s)} className="btn-secondary" style={{ padding: '7px 11px', borderRadius: 12, fontSize: 12 }}>
-                  <Pencil size={13} /> Sửa
+                  <Pencil size={13} /> {isVi ? 'Sửa' : 'Edit'}
                 </button>
               )}
             </div>
           ))}
 
-          {subjects.length === 0 && <Empty text="Chưa có hồ sơ nào trong nhà." />}
+          {subjects.length === 0 && <Empty text={isVi ? "Chưa có hồ sơ nào trong nhà." : "No profiles in this household."} />}
         </div>
 
         {onAddSubject && (
           <button className="btn-primary" onClick={onAddSubject} style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 20 }}>
-            <UserPlus size={17} /> Thêm hồ sơ
+            <UserPlus size={17} /> {isVi ? 'Thêm hồ sơ' : 'Add Profile'}
           </button>
         )}
 
         {/* ── Máy đang dùng chung ── */}
-        <SectionTitle icon={Smartphone} text={`Máy đang dùng chung (${accounts.length})`} />
+        <SectionTitle icon={Smartphone} text={isVi ? `Máy đang dùng chung (${accounts.length})` : `Connected Devices (${accounts.length})`} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 6 }}>
           {accounts.map(a => {
@@ -96,32 +98,33 @@ export default function HouseholdManageModal({
                 </div>
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-dark)' }}>
-                    {claimed || a.display_name || 'Máy chưa đặt tên'}
-                    {a.role === 'host' && <span style={{ ...badge, marginLeft: 6 }}>người tạo nhà</span>}
+                    {claimed || a.display_name || (isVi ? 'Máy chưa đặt tên' : 'Unnamed Device')}
+                    {a.role === 'host' && <span style={{ ...badge, marginLeft: 6 }}>{isVi ? 'người tạo nhà' : 'host'}</span>}
                   </div>
                   <div style={{ fontSize: 13, fontWeight: 600, color: claimed ? 'var(--text-muted)' : '#B45309' }}>
                     {claimed
-                      ? 'Đang dùng hồ sơ này'
-                      : 'Chưa chọn là ai trong nhà'}
+                      ? (isVi ? 'Đang dùng hồ sơ này' : 'Using this profile')
+                      : (isVi ? 'Chưa chọn là ai trong nhà' : 'No profile selected')}
                   </div>
                 </div>
               </div>
             );
           })}
 
-          {accounts.length === 0 && <Empty text="Chưa có máy nào khác tham gia." />}
+          {accounts.length === 0 && <Empty text={isVi ? "Chưa có máy nào khác tham gia." : "No other devices connected."} />}
         </div>
 
         <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.55, marginBottom: 20 }}>
-          Một hồ sơ có thể chưa gắn với máy nào — người nhà khai hộ thì vẫn vậy.
-          Máy mới vào bằng mã mời sẽ hiện ở đây trước khi họ chọn mình là ai.
+          {isVi
+            ? 'Một hồ sơ có thể chưa gắn với máy nào — người nhà khai hộ thì vẫn vậy. Máy mới vào bằng mã mời sẽ hiện ở đây trước khi họ chọn mình là ai.'
+            : 'Profiles can exist without a device. Newly joined devices appear here before selecting a profile.'}
         </div>
 
         {/* ── Tôi ── */}
-        <SectionTitle icon={RefreshCw} text="Tài khoản này" />
+        <SectionTitle icon={RefreshCw} text={isVi ? "Tài khoản này" : "Current Account"} />
 
         <button className="btn-secondary" onClick={onReclaimIdentity} style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 9 }}>
-          <RefreshCw size={16} /> Tôi không phải người này — chọn lại
+          <RefreshCw size={16} /> {isVi ? 'Tôi không phải người này — chọn lại' : 'Not me — reselect profile'}
         </button>
 
         {!confirmSignOut ? (
@@ -129,27 +132,27 @@ export default function HouseholdManageModal({
             onClick={() => setConfirmSignOut(true)}
             style={{ width: '100%', padding: 13, borderRadius: 12, fontSize: 14, fontWeight: 700, background: 'transparent', border: '1px solid #FCA5A5', color: '#B91C1C', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
-            <LogOut size={16} /> Đăng xuất khỏi nhà này
+            <LogOut size={16} /> {isVi ? 'Đăng xuất khỏi nhà này' : 'Leave this household'}
           </button>
         ) : (
           <div style={{ padding: 14, borderRadius: 12, background: '#FEF2F2', border: '1px solid #FCA5A5' }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 10 }}>
               <AlertTriangle size={17} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
               <div style={{ fontSize: 13, color: '#7F1D1D', fontWeight: 600, lineHeight: 1.55 }}>
-                Máy này sẽ thoát khỏi nhà. Hồ sơ, đơn thuốc và lịch sử vẫn còn
-                nguyên trên máy chủ — người nhà vẫn thấy đủ. Muốn vào lại thì
-                xin mã mời mới.
+                {isVi
+                  ? 'Máy này sẽ thoát khỏi nhà. Hồ sơ, đơn thuốc và lịch sử vẫn còn nguyên trên máy chủ — người nhà vẫn thấy đủ. Muốn vào lại thì xin mã mời mới.'
+                  : 'This device will disconnect from the household. All data remains safe on the server. You will need a new invite code to reconnect.'}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => setConfirmSignOut(false)} className="btn-secondary" style={{ flex: 1, padding: 11, borderRadius: 12, fontSize: 14 }}>
-                Thôi
+                {isVi ? 'Thôi' : 'Cancel'}
               </button>
               <button
                 onClick={onSignOut}
                 style={{ flex: 1, padding: 11, borderRadius: 12, fontSize: 14, fontWeight: 800, background: '#DC2626', color: '#FFF', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                Đăng xuất
+                {isVi ? 'Đăng xuất' : 'Sign Out'}
               </button>
             </div>
           </div>

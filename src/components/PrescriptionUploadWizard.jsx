@@ -148,7 +148,8 @@ export default function PrescriptionUploadWizard({
     const explanation = await generatePlainExplanation(
       medications,
       selectedMember.display_name,
-      selectedMember   // để xưng hô theo đúng người, không mặc định "bác"
+      selectedMember,   // để xưng hô theo đúng người, không mặc định "bác"
+      language
     );
 
     const newPrescription = {
@@ -219,17 +220,19 @@ export default function PrescriptionUploadWizard({
             </div>
             <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>📷 {t.scan_prescription}</h3>
             <p style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 4, maxWidth: 460, lineHeight: 1.55 }}>
-              AI đọc đơn rồi bạn kiểm lại từng dòng trước khi lưu. AI đề xuất — người xác nhận.
+              {language === 'vi'
+                ? 'AI đọc đơn rồi bạn kiểm lại từng dòng trước khi lưu. AI đề xuất — người xác nhận.'
+                : 'AI extracts prescription data for your review before saving. AI suggests — Human confirms.'}
             </p>
           </div>
 
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             <button className="btn-secondary" onClick={startManualEntry} style={{ padding: '12px 20px', borderRadius: 16 }}>
-              <Pencil size={16} /> Nhập tay
+              <Pencil size={16} /> {language === 'vi' ? 'Nhập tay' : 'Manual Entry'}
             </button>
             <label className="btn-primary" style={{ cursor: 'pointer' }}>
               {loading ? <Loader2 className="animate-spin" size={18} /> : <Camera size={18} />}
-              <span>{loading ? 'AI đang đọc...' : t.upload_btn}</span>
+              <span>{loading ? (language === 'vi' ? 'AI đang đọc...' : 'AI parsing...') : t.upload_btn}</span>
               <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} hidden />
             </label>
           </div>
@@ -242,27 +245,29 @@ export default function PrescriptionUploadWizard({
           <div style={{ padding: 20, borderRadius: 20, background: '#FFFBEB', border: '1.5px solid #FDE68A', display: 'flex', gap: 14, alignItems: 'flex-start', marginBottom: 18 }}>
             <AlertTriangle size={24} color="#B45309" style={{ flexShrink: 0 }} />
             <div>
-              <h4 style={{ fontSize: 16, fontWeight: 800, color: '#B45309' }}>Chưa đọc được đơn này</h4>
+              <h4 style={{ fontSize: 16, fontWeight: 800, color: '#B45309' }}>{language === 'vi' ? 'Chưa đọc được đơn này' : 'Could not read prescription'}</h4>
               <p style={{ fontSize: 14, color: '#78350F', fontWeight: 600, marginTop: 4, lineHeight: 1.55 }}>
                 {extractionError?.error_message}
               </p>
               {extractionError?.unreadable_parts?.length > 0 && (
                 <p style={{ fontSize: 13, color: '#92400E', marginTop: 6, fontWeight: 600 }}>
-                  Phần không đọc được: {extractionError.unreadable_parts.join('; ')}
+                  {language === 'vi' ? 'Phần không đọc được:' : 'Unreadable parts:'} {extractionError.unreadable_parts.join('; ')}
                 </p>
               )}
               <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 8, fontWeight: 600 }}>
-                Mã lỗi: {extractionError?.error_code}. App không tự đoán nội dung đơn thuốc — nhập tay sẽ chắc chắn hơn.
+                {language === 'vi'
+                  ? `Mã lỗi: ${extractionError?.error_code}. App không tự đoán nội dung đơn thuốc — nhập tay sẽ chắc chắn hơn.`
+                  : `Error code: ${extractionError?.error_code}. Manual entry is recommended.`}
               </p>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
             <button className="btn-secondary" onClick={() => { setStep('upload'); setExtractionError(null); }}>
-              <ArrowLeft size={16} /> Chụp lại
+              <ArrowLeft size={16} /> {language === 'vi' ? 'Chụp lại' : 'Retake'}
             </button>
             <button className="btn-primary" onClick={startManualEntry}>
-              <Pencil size={16} /> Nhập tay
+              <Pencil size={16} /> {language === 'vi' ? 'Nhập tay' : 'Manual Entry'}
             </button>
           </div>
         </div>
@@ -272,23 +277,25 @@ export default function PrescriptionUploadWizard({
       {step === 'confirm' && (
         <div>
           <div style={{ marginBottom: 18 }}>
-            <h3 style={{ fontSize: 20, fontWeight: 800 }}>Kiểm lại trước khi lưu</h3>
+            <h3 style={{ fontSize: 20, fontWeight: 800 }}>{language === 'vi' ? 'Kiểm lại trước khi lưu' : 'Review before saving'}</h3>
             <p style={{ fontSize: 14, color: 'var(--text-sub)', marginTop: 2 }}>
-              Sửa trực tiếp vào ô bên dưới. Ô <span style={{ background: '#FEF3C7', padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>viền vàng</span> là chỗ AI đọc không chắc — kiểm kỹ giúp nhé.
+              {language === 'vi'
+                ? <>Sửa trực tiếp vào ô bên dưới. Ô <span style={{ background: '#FEF3C7', padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>viền vàng</span> là chỗ AI đọc không chắc — kiểm kỹ giúp nhé.</>
+                : <>Edit fields directly below. Highlighted fields indicate lower confidence — please verify.</>}
             </p>
           </div>
 
           {/* Cảnh báo an toàn chạy ngay tại đây */}
           {safety && safety.warnings.length > 0 && (
             <div style={{ marginBottom: 18 }}>
-              <SignatureAlertCard warnings={safety.warnings} coverage={safety.coverage} />
+              <SignatureAlertCard warnings={safety.warnings} coverage={safety.coverage} language={language} />
             </div>
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: previewImage ? '260px 1fr' : '1fr', gap: 20 }}>
             {previewImage && (
               <div>
-                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>Ảnh gốc</h4>
+                <h4 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>{language === 'vi' ? 'Ảnh gốc' : 'Original image'}</h4>
                 <img src={previewImage} alt="Đơn thuốc" style={{ width: '100%', borderRadius: 16, border: '1px solid var(--glass-border)' }} />
               </div>
             )}
@@ -306,49 +313,49 @@ export default function PrescriptionUploadWizard({
                   <div key={idx} style={{ padding: 16, borderRadius: 16, background: lowConf ? '#FFFBEB' : '#FFF', border: lowConf ? '1.5px solid #FBBF24' : '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                       <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)' }}>
-                        THUỐC {idx + 1}
+                        {language === 'vi' ? `THUỐC ${idx + 1}` : `MEDICATION ${idx + 1}`}
                         {!med._manual && (
                           <span style={{ marginLeft: 8, color: lowConf ? '#B45309' : 'var(--emerald-ok)' }}>
-                            · AI đọc {Math.round(med.confidence * 100)}% chắc chắn
+                            {language === 'vi' ? `· AI đọc ${Math.round(med.confidence * 100)}% chắc chắn` : `· AI confidence ${Math.round(med.confidence * 100)}%`}
                           </span>
                         )}
-                        {med._manual && <span style={{ marginLeft: 8, color: 'var(--sky-blue)' }}>· nhập tay</span>}
+                        {med._manual && <span style={{ marginLeft: 8, color: 'var(--sky-blue)' }}>{language === 'vi' ? '· nhập tay' : '· manual'}</span>}
                       </span>
                       <button onClick={() => removeMed(idx)} style={{ border: 'none', background: 'none', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 700 }}>
-                        <Trash2 size={14} /> Xoá
+                        <Trash2 size={14} /> {language === 'vi' ? 'Xoá' : 'Delete'}
                       </button>
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8, marginBottom: 8 }}>
-                      <input placeholder="Tên thuốc *" value={med.name} onChange={e => updateMed(idx, 'name', e.target.value)} style={inputStyle(med.name.trim())} />
-                      <input placeholder="Hàm lượng" value={med.strength} onChange={e => updateMed(idx, 'strength', e.target.value)} style={inputStyle(true)} />
+                      <input placeholder={language === 'vi' ? "Tên thuốc *" : "Medication name *"} value={med.name} onChange={e => updateMed(idx, 'name', e.target.value)} style={inputStyle(med.name.trim())} />
+                      <input placeholder={language === 'vi' ? "Hàm lượng" : "Strength"} value={med.strength} onChange={e => updateMed(idx, 'strength', e.target.value)} style={inputStyle(true)} />
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                      <input placeholder="Liều mỗi lần * (vd: uống 1 viên)" value={med.dosage} onChange={e => updateMed(idx, 'dosage', e.target.value)} style={inputStyle(med.dosage.trim())} />
-                      <input placeholder="Số lần/ngày" value={med.frequency} onChange={e => updateMed(idx, 'frequency', e.target.value)} style={inputStyle(true)} />
+                      <input placeholder={language === 'vi' ? "Liều mỗi lần * (vd: uống 1 viên)" : "Dosage * (e.g. 1 tablet)"} value={med.dosage} onChange={e => updateMed(idx, 'dosage', e.target.value)} style={inputStyle(med.dosage.trim())} />
+                      <input placeholder={language === 'vi' ? "Số lần/ngày" : "Frequency/day"} value={med.frequency} onChange={e => updateMed(idx, 'frequency', e.target.value)} style={inputStyle(true)} />
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 8 }}>
                       <select value={med.timing} onChange={e => updateMed(idx, 'timing', e.target.value)} style={inputStyle(med.timing.trim())}>
-                        <option value="">— Chọn cữ uống * —</option>
+                        <option value="">{language === 'vi' ? '— Chọn cữ uống * —' : '— Select timing * —'}</option>
                         {TIME_SLOTS.flatMap(slot =>
                           slot === 'Khi cần'
-                            ? [<option key={slot} value={slot}>{slot}</option>]
+                            ? [<option key={slot} value={slot}>{language === 'vi' ? slot : 'As needed'}</option>]
                             : [
-                                <option key={`${slot}-sau`} value={`${slot} (sau ăn)`}>{slot} (sau ăn)</option>,
-                                <option key={`${slot}-truoc`} value={`${slot} (trước ăn)`}>{slot} (trước ăn)</option>
+                                <option key={`${slot}-sau`} value={`${slot} (sau ăn)`}>{slot} {language === 'vi' ? '(sau ăn)' : '(after meal)'}</option>,
+                                <option key={`${slot}-truoc`} value={`${slot} (trước ăn)`}>{slot} {language === 'vi' ? '(trước ăn)' : '(before meal)'}</option>
                               ]
                         )}
                       </select>
-                      <input type="number" inputMode="numeric" placeholder="Số ngày *" value={med.duration_days} onChange={e => updateMed(idx, 'duration_days', e.target.value)} style={inputStyle(String(med.duration_days).trim())} />
+                      <input type="number" inputMode="numeric" placeholder={language === 'vi' ? "Số ngày *" : "Days *"} value={med.duration_days} onChange={e => updateMed(idx, 'duration_days', e.target.value)} style={inputStyle(String(med.duration_days).trim())} />
                     </div>
                   </div>
                 );
               })}
 
               <button className="btn-secondary" onClick={() => setMeds([...meds, EMPTY_MED()])} style={{ padding: '10px 16px', borderRadius: 12, alignSelf: 'flex-start' }}>
-                <Plus size={16} /> Thêm thuốc
+                <Plus size={16} /> {language === 'vi' ? 'Thêm thuốc' : 'Add Medication'}
               </button>
             </div>
           </div>
@@ -361,17 +368,19 @@ export default function PrescriptionUploadWizard({
 
           {criticalCount > 0 && (
             <div style={{ marginTop: 14, padding: '12px 16px', borderRadius: 12, background: '#FEF2F2', border: '1.5px solid #DC2626', color: '#991B1B', fontSize: 14, fontWeight: 700 }}>
-              Có {criticalCount} cảnh báo nghiêm trọng ở trên. Bạn xác nhận lại với dược sĩ trước khi cho uống nhé — app vẫn cho lưu để bạn có sổ mang đi hỏi.
+              {language === 'vi'
+                ? `Có ${criticalCount} cảnh báo nghiêm trọng ở trên. Bạn xác nhận lại với dược sĩ trước khi cho uống nhé — app vẫn cho lưu để bạn có sổ mang đi hỏi.`
+                : `There are ${criticalCount} critical safety alerts above. Please verify with a doctor or pharmacist.`}
             </div>
           )}
 
-          <MedicalDisclaimer variant="inline" />
+          <MedicalDisclaimer variant="inline" language={language} />
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>
-            <button className="btn-secondary" onClick={() => { setStep('upload'); setMeds([]); setPreviewImage(null); }}>Huỷ</button>
+            <button className="btn-secondary" onClick={() => { setStep('upload'); setMeds([]); setPreviewImage(null); }}>{language === 'vi' ? 'Huỷ' : 'Cancel'}</button>
             <button className="btn-primary" onClick={handleConfirmAndSave} disabled={loading}>
               {loading ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
-              <span>Xác nhận & Tạo lịch nhắc</span>
+              <span>{language === 'vi' ? 'Xác nhận & Tạo lịch nhắc' : 'Confirm & Set Reminders'}</span>
             </button>
           </div>
         </div>
@@ -383,12 +392,11 @@ export default function PrescriptionUploadWizard({
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--emerald-soft)', color: 'var(--emerald-ok)', display: 'grid', placeItems: 'center', margin: '0 auto 12px' }}>
             <CheckCircle2 size={32} />
           </div>
-          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', textAlign: 'center' }}>Đã lưu đơn thuốc</h3>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)', textAlign: 'center' }}>{language === 'vi' ? 'Đã lưu đơn thuốc' : 'Prescription Saved'}</h3>
           <p style={{ fontSize: 14, color: 'var(--text-sub)', textAlign: 'center', marginTop: 4 }}>
-            Đơn đã lưu vào app của {selectedMember.display_name}.
+            {language === 'vi' ? `Đơn đã lưu vào app của ${selectedMember.display_name}.` : `Prescription saved to ${selectedMember.display_name}'s record.`}
           </p>
 
-          {/* Trạng thái đồng bộ Google — nói đúng kết quả thật, kể cả khi trượt */}
           {syncResult && (
             <div style={{
               margin: '14px auto 0', maxWidth: 520, padding: '10px 14px', borderRadius: 12, fontSize: 13, fontWeight: 700, lineHeight: 1.55, textAlign: 'center',
@@ -400,7 +408,7 @@ export default function PrescriptionUploadWizard({
             </div>
           )}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
-            <button className="btn-primary" onClick={() => { setStep('upload'); setMeds([]); setPreviewImage(null); }}>+ Quét đơn khác</button>
+            <button className="btn-primary" onClick={() => { setStep('upload'); setMeds([]); setPreviewImage(null); }}>{language === 'vi' ? '+ Quét đơn khác' : '+ Scan Another'}</button>
           </div>
         </div>
       )}

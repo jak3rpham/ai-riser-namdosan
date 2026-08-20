@@ -64,3 +64,28 @@ export async function loginDemo(username, password) {
 
   return { ok: true, household_id: hid, username: res.username };
 }
+
+export async function resetPassword(username, phone, newPassword) {
+  const res = await apiPost('/demo/reset-password', {
+    username,
+    phone,
+    new_password: newPassword
+  });
+  if (!res.ok) return res;
+
+  try {
+    await signInWithCustomToken(auth, res.token);
+  } catch (err) {
+    return {
+      ok: false,
+      error_code: 'TOKEN_SIGNIN_FAILED',
+      error_message: 'Đặt lại mật khẩu thành công nhưng chưa mở được phiên. Bạn thử đăng nhập lại nhé.',
+      detail: err.message
+    };
+  }
+
+  const hid = res.household_id;
+  try { localStorage.setItem(HOUSEHOLD_KEY, hid); } catch { /* chế độ riêng tư */ }
+
+  return { ok: true, household_id: hid, username: res.username, message: res.message };
+}

@@ -625,6 +625,7 @@ export function normalizeText(s) {
  * biệt dược. Trả về [] khi không nhận ra — KHÔNG đoán.
  */
 export function resolveGenerics(med) {
+  if (!med || typeof med !== 'object') return [];
   const found = new Set();
 
   // 1. trường generic đã có (có thể ghi "Paracetamol + Caffeine")

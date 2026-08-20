@@ -13,18 +13,27 @@ import { showDevTools } from '../services/featureFlags';
  * Chưa có tài khoản thật nên vai lưu tạm ở máy. Khi có đăng nhập thì vai lấy
  * từ `households/{id}/grants/{uid}` (doc 39 mục 2).
  */
-export default function LandingView({ onChoose }) {
+import { I18N_STRINGS } from '../services/i18n';
+
+export default function LandingView({ onChoose, language = 'vi' }) {
+  const isVi = language === 'vi';
+  const t = I18N_STRINGS[language] || I18N_STRINGS.vi;
+
   const cards = [
     {
       role: 'manager',
       to: '/app',
       icon: LayoutGrid,
-      title: 'Tôi chăm sóc ba mẹ',
-      subtitle: 'Bản web cho con cái',
-      lines: [
+      title: isVi ? 'Tôi chăm sóc ba mẹ' : 'I care for my family',
+      subtitle: isVi ? 'Bản web cho con cái' : 'Caregiver Web Portal',
+      lines: isVi ? [
         'Chụp đơn thuốc, kiểm tra an toàn, đặt lịch nhắc',
         'Theo dõi ba mẹ đã uống thuốc chưa',
         'Kết nối Google Calendar'
+      ] : [
+        'Scan prescriptions, safety checks & reminders',
+        'Real-time medication adherence tracking',
+        'Google Calendar & Tasks integration'
       ],
       accent: 'var(--coral-main)',
       soft: 'var(--coral-soft)',
@@ -34,12 +43,16 @@ export default function LandingView({ onChoose }) {
       role: 'parent',
       to: '/parent',
       icon: Smartphone,
-      title: 'Tôi tự dùng thuốc',
-      subtitle: 'Bản dành cho ba mẹ',
-      lines: [
+      title: isVi ? 'Tôi tự dùng thuốc' : 'I take my own medications',
+      subtitle: isVi ? 'Bản dành cho ba mẹ' : 'Senior Mobile View',
+      lines: isVi ? [
         'Nút to, chữ lớn, ít bước',
         'Nhắc tới giờ uống thuốc',
         'Hỏi "Cháu Bi" bất cứ lúc nào'
+      ] : [
+        'Large buttons, high contrast, simple flow',
+        'Timely dosage alerts & reminders',
+        'Voice Assistant "AI Bi" support'
       ],
       accent: 'var(--sky-blue)',
       soft: 'var(--sky-soft)',
@@ -54,10 +67,12 @@ export default function LandingView({ onChoose }) {
           <Heart size={30} fill="#FFF" />
         </div>
         <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 32, fontWeight: 800, letterSpacing: '-0.6px', color: 'var(--text-dark)' }}>
-          Nhà Mình
+          {t.app_title}
         </h1>
         <p style={{ fontSize: 16, color: 'var(--text-sub)', marginTop: 6, maxWidth: 460, lineHeight: 1.6 }}>
-          Giúp cả nhà uống thuốc đúng giờ, đúng liều — và biết khi nào cần đi khám.
+          {isVi
+            ? 'Giúp cả nhà uống thuốc đúng giờ, đúng liều — và biết khi nào cần đi khám.'
+            : 'Helping families take medications on time, safely, and know when to see a doctor.'}
         </p>
       </div>
 
@@ -95,7 +110,7 @@ export default function LandingView({ onChoose }) {
               </ul>
 
               <div style={{ marginTop: 'auto', paddingTop: 8, display: 'flex', alignItems: 'center', gap: 6, color: c.accent, fontWeight: 800, fontSize: 14 }}>
-                Vào đây <ArrowRight size={17} />
+                {isVi ? 'Vào đây' : 'Enter'} <ArrowRight size={17} />
               </div>
             </button>
           );
@@ -103,21 +118,15 @@ export default function LandingView({ onChoose }) {
       </div>
 
       <div style={{ marginTop: 26, maxWidth: 620 }}>
-        <MedicalDisclaimer variant="bar" />
+        <MedicalDisclaimer variant="bar" language={language} />
       </div>
 
-      {/* Lối vào chế độ trình diễn — chỉ hiện khi bật công cụ dev.
-          Trước đây nó nằm công khai trên trang chào cho mọi người dùng, mà nó
-          dẫn thẳng tới hai giao diện cạnh nhau đầy hồ sơ hư cấu. Bác 70 tuổi
-          bấm vào là lạc vào một cái nhà không phải nhà mình.
-          Địa chỉ `/?demo=1` vẫn dùng được để quay video — chỉ là không quảng
-          cáo nó trên trang đầu nữa. */}
       {showDevTools && (
         <a
           href="/?demo=1"
           style={{ marginTop: 18, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, textDecoration: 'none' }}
         >
-          Chế độ xem 2 màn hình →
+          {isVi ? 'Chế độ xem 2 màn hình →' : 'Dual-screen demo mode →'}
         </a>
       )}
     </div>

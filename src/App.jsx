@@ -62,7 +62,7 @@ function useDemoState() {
 }
 
 /* ── Trang chào ── */
-function Landing() {
+function Landing({ language = 'vi' }) {
   const navigate = useNavigate();
   const [params] = useSearchParams();
 
@@ -71,6 +71,7 @@ function Landing() {
 
   return (
     <LandingView
+      language={language}
       onChoose={(role, to) => {
         try { localStorage.setItem(ROLE_KEY, role); } catch { /* chế độ riêng tư */ }
         navigate(to);
@@ -116,8 +117,11 @@ function ManagerWeb({ language, setLanguage }) {
       <OnboardingView
         onCreate={state.createOwn}
         onJoin={state.join}
+        onDemoLogin={state.loginDemo}
+        onResetPassword={state.resetPassword}
         busy={state.busy}
         error={state.error}
+        language={language}
       />
     );
   }
@@ -127,7 +131,7 @@ function ManagerWeb({ language, setLanguage }) {
   if (state.status !== 'ready' || !state.membersLoaded) {
     return (
       <div className="app-container" style={{ paddingTop: 40 }}>
-        <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} onReset={state.leave} />
+        <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} onReset={state.leave} language={language} />
       </div>
     );
   }
@@ -140,12 +144,13 @@ function ManagerWeb({ language, setLanguage }) {
   if (!state.members.length) {
     return (
       <div className="app-container" style={{ paddingTop: 40 }}>
-        <EmptyHouseholdView onAdd={() => setAddSubject(true)} onLeave={state.leave} />
+        <EmptyHouseholdView onAdd={() => setAddSubject(true)} onLeave={state.leave} language={language} />
         <AddSubjectModal
           isOpen={isAddSubjectOpen}
           onClose={() => setAddSubject(false)}
           onSave={state.addSubject}
           existingCount={state.members.length}
+          language={language}
         />
       </div>
     );
@@ -171,6 +176,8 @@ function ManagerWeb({ language, setLanguage }) {
       + state.feed.filter(f => f.type === 'EMERGENCY' || f.type === 'SAFETY_CRITICAL').length
   };
 
+  const isVi = language === 'vi';
+
   return (
     <div className="app-container">
       <Navbar
@@ -193,6 +200,7 @@ function ManagerWeb({ language, setLanguage }) {
           selectedMember={viewMember}
           onSelectMember={state.setSelectedMember}
           badges={badges}
+          language={language}
         />
 
         <main style={{ display: 'flex', flexDirection: 'column', gap: 24, minWidth: 0 }}>
@@ -204,18 +212,18 @@ function ManagerWeb({ language, setLanguage }) {
             <>
               <div className="manager-section-head">
                 <div>
-                  <h3 className="manager-section-title">Nhà mình</h3>
-                  <div className="manager-section-sub">Người nhà, mã mời, và kết nối Google</div>
+                  <h3 className="manager-section-title">{isVi ? 'Nhà mình' : 'Household'}</h3>
+                  <div className="manager-section-sub">{isVi ? 'Người nhà, mã mời, và kết nối Google' : 'Family members, invite codes, and Google integration'}</div>
                 </div>
               </div>
-              <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="manager" />
-              <GoogleConnectPanel />
+              <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="manager" language={language} />
+              <GoogleConnectPanel language={language} />
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <button className="btn-secondary" onClick={() => setManage(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 14 }}>
-                  <Users size={15} /> Quản lý nhà
+                  <Users size={15} /> {isVi ? 'Quản lý nhà' : 'Manage Household'}
                 </button>
                 <button className="btn-secondary" onClick={() => setAddSubject(true)} style={{ padding: '11px 18px', borderRadius: 12, fontSize: 14 }}>
-                  <UserPlus size={15} /> Thêm người nhà
+                  <UserPlus size={15} /> {isVi ? 'Thêm người nhà' : 'Add Family Member'}
                 </button>
               </div>
             </>
@@ -246,9 +254,10 @@ function ManagerWeb({ language, setLanguage }) {
         onClose={() => setAddSubject(false)}
         onSave={state.addSubject}
         existingCount={state.members.length}
+        language={language}
       />
 
-      <GoldenSetBenchmarkModal isOpen={isBenchmarkOpen} onClose={() => setBenchmark(false)} />
+      <GoldenSetBenchmarkModal isOpen={isBenchmarkOpen} onClose={() => setBenchmark(false)} language={language} />
       <NotificationCenterModal isOpen={isNotifsOpen} onClose={() => setNotifs(false)} selectedMember={viewMember} feed={state.feed} language={language} />
 
       <UserProfileModal
@@ -269,6 +278,7 @@ function ManagerWeb({ language, setLanguage }) {
         onEditSubject={sub => { setManage(false); setEditingSubject(sub); }}
         onReclaimIdentity={async () => { setManage(false); await state.claimIdentity(null); }}
         onSignOut={state.signOutFully}
+        language={language}
       />
     </div>
   );
@@ -280,12 +290,13 @@ function ManagerWeb({ language, setLanguage }) {
  * Không có liên kết nào từ app chính trỏ tới đây. Người dùng thật đi qua màn
  * onboarding bình thường và không bao giờ thấy khái niệm "tài khoản dùng thử".
  */
-function DemoEntry() {
+function DemoEntry({ language }) {
   const navigate = useNavigate();
   return (
     <DemoLoginView
       onSuccess={() => navigate('/app')}
       onBack={() => navigate('/')}
+      language={language}
     />
   );
 }
@@ -309,8 +320,11 @@ function ParentApp({ language }) {
       <OnboardingView
         onCreate={state.createOwn}
         onJoin={state.join}
+        onDemoLogin={state.loginDemo}
+        onResetPassword={state.resetPassword}
         busy={state.busy}
         error={state.error}
+        language={language}
       />
     );
   }
@@ -320,7 +334,7 @@ function ParentApp({ language }) {
     return (
       <div style={{ padding: 20, minHeight: '100dvh', display: 'grid', placeItems: 'center' }}>
         <div style={{ width: '100%', maxWidth: 460 }}>
-          <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" />
+          <HouseholdBar householdId={state.householdId} status={state.status === 'ready' ? 'connecting' : state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" language={language} />
         </div>
       </div>
     );
@@ -342,9 +356,10 @@ function ParentApp({ language }) {
             variant="parent"
             onAdd={() => setAddSubject(true)}
             onLeave={state.leave}
+            language={language}
           />
           <div style={{ marginTop: 18 }}>
-            <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" />
+            <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" language={language} />
           </div>
         </div>
         <AddSubjectModal
@@ -353,6 +368,7 @@ function ParentApp({ language }) {
           onSave={addAndClaim}
           existingCount={state.members.length}
           variant="parent"
+          language={language}
         />
       </div>
     );
@@ -372,6 +388,7 @@ function ParentApp({ language }) {
             onPick={state.claimIdentity}
             onCreateNew={() => setAddSubject(true)}
             onLeave={state.leave}
+            language={language}
           />
         </div>
         <AddSubjectModal
@@ -380,6 +397,7 @@ function ParentApp({ language }) {
           onSave={addAndClaim}
           existingCount={state.members.length}
           variant="parent"
+          language={language}
         />
       </div>
     );
@@ -406,6 +424,7 @@ function ParentApp({ language }) {
         onAddSubject={() => { setManage(false); setAddSubject(true); }}
         onReclaimIdentity={async () => { setManage(false); await state.claimIdentity(null); }}
         onSignOut={state.signOutFully}
+        language={language}
       />
       <AddSubjectModal
         isOpen={isAddSubjectOpen}
@@ -413,9 +432,10 @@ function ParentApp({ language }) {
         onSave={state.addSubject}
         existingCount={state.members.length}
         variant="parent"
+        language={language}
       />
       <div style={{ padding: '12px 16px 24px', maxWidth: 480, margin: '0 auto' }}>
-        <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" />
+        <HouseholdBar householdId={state.householdId} status={state.status} error={state.error} onJoin={state.join} onReset={state.leave} variant="parent" language={language} />
       </div>
     </>
   );
@@ -497,10 +517,10 @@ function Shell() {
 
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<Landing language={language} />} />
       <Route path="/app" element={<ManagerWeb language={language} setLanguage={setLanguage} />} />
       <Route path="/parent" element={<ParentApp language={language} />} />
-      <Route path="/demo" element={<DemoEntry />} />
+      <Route path="/demo" element={<DemoEntry language={language} />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

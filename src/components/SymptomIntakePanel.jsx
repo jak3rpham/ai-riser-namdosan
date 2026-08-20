@@ -14,7 +14,8 @@ import MedicalDisclaimer from './MedicalDisclaimer';
  *
  * Nút chọn để cỡ lớn vì người dùng có thể 70 tuổi và đang khó chịu.
  */
-export default function SymptomIntakePanel({ memberProfile, prescriptions, onFinish, onCancel, onAlert, prefill = null }) {
+export default function SymptomIntakePanel({ memberProfile, prescriptions, onFinish, onCancel, onAlert, prefill = null, language = 'vi' }) {
+  const isVi = language === 'vi';
   /**
    * `prefill` = khung Gemini đã điền từ câu người dùng vừa nói.
    *
@@ -112,7 +113,7 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
 
     if (result.outcome === OUTCOME.LOG_AND_NOTIFY) {
       setLoading(true);
-      const text = await narrateMildSymptom(describeAnswers(finalAnswers), memberProfile, prescriptions);
+      const text = await narrateMildSymptom(describeAnswers(finalAnswers), memberProfile, prescriptions, language);
       setMildText(text);
       setLoading(false);
     }
@@ -164,26 +165,27 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
             <AlertTriangle size={24} color="#DC2626" style={{ flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#DC2626', marginBottom: 4 }}>
-                {speak('Cái này {{me}} không dám chờ{{a}}', memberProfile)}
+                {isVi ? speak('Cái này {{me}} không dám chờ{{a}}', memberProfile) : 'This symptom requires immediate emergency attention'}
               </div>
               <div style={{ fontSize: 14, color: '#7F1D1D', fontWeight: 600, lineHeight: 1.5 }}>
-                {speak(decision.advice, memberProfile)}
+                {isVi ? speak(decision.advice, memberProfile) : decision.advice}
               </div>
             </div>
           </div>
 
           <a href="tel:115" style={{ textDecoration: 'none', display: 'block' }}>
             <button style={{ width: '100%', padding: 18, borderRadius: 16, background: '#DC2626', color: '#FFF', border: 'none', fontWeight: 800, fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-              <PhoneCall size={22} /> GỌI 115 NGAY
+              <PhoneCall size={22} /> {isVi ? 'GỌI 115 NGAY' : 'CALL 115 NOW'}
             </button>
           </a>
 
           <div style={{ marginTop: 10, fontSize: 12, color: '#991B1B', fontWeight: 600 }}>
-            Lý do: {decision.reason}
+            {isVi ? `Lý do: ${decision.reason}` : `Reason: ${decision.reason}`}
           </div>
           <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-muted)' }}>
-            Luật {decision.rule_id} · bảng v{decision.rules_version} · chưa được bác sĩ rà
+            {isVi ? `Luật ${decision.rule_id} · bảng v${decision.rules_version} · chưa được bác sĩ rà` : `Rule ${decision.rule_id} · v${decision.rules_version} · preliminary triage`}
           </div>
+          <MedicalDisclaimer variant="inline" language={language} />
         </div>
       );
     }
@@ -195,10 +197,10 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
             <CalendarClock size={22} color="#B45309" style={{ flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#B45309', marginBottom: 4 }}>
-                {speak('{{Da}} {{me}} ghi lại rồi{{a}} — cái này nên đi khám hôm nay', memberProfile)}
+                {isVi ? speak('{{Da}} {{me}} ghi lại rồi{{a}} — cái này nên đi khám hôm nay', memberProfile) : 'Recorded — recommend consulting a doctor within 24 hours'}
               </div>
               <div style={{ fontSize: 14, color: '#78350F', fontWeight: 600, lineHeight: 1.5 }}>
-                {speak(decision.advice, memberProfile)}
+                {isVi ? speak(decision.advice, memberProfile) : decision.advice}
               </div>
             </div>
           </div>
@@ -206,21 +208,21 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <a href="tel:115" style={{ textDecoration: 'none', flex: 1 }}>
               <button style={{ width: '100%', padding: 12, borderRadius: 12, background: '#FFF', color: '#B45309', border: '1.5px solid #F59E0B', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-                Nặng hơn thì gọi 115
+                {isVi ? 'Nặng hơn thì gọi 115' : 'If worsening, call 115'}
               </button>
             </a>
             <button onClick={onCancel} style={{ flex: 1, padding: 12, borderRadius: 12, background: '#B45309', color: '#FFF', border: 'none', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
-              Đã báo người nhà
+              {isVi ? 'Đã báo người nhà' : 'Family Notified'}
             </button>
           </div>
 
           <div style={{ marginTop: 10, fontSize: 12, color: '#92400E', fontWeight: 600 }}>
-            Lý do: {decision.reason}
+            {isVi ? `Lý do: ${decision.reason}` : `Reason: ${decision.reason}`}
           </div>
           <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text-muted)' }}>
-            Luật {decision.rule_id} · bảng v{decision.rules_version} · chưa được bác sĩ rà
+            {isVi ? `Luật ${decision.rule_id} · bảng v${decision.rules_version} · chưa được bác sĩ rà` : `Rule ${decision.rule_id} · v${decision.rules_version} · preliminary triage`}
           </div>
-          <MedicalDisclaimer variant="inline" />
+          <MedicalDisclaimer variant="inline" language={language} />
         </div>
       );
     }
@@ -232,14 +234,14 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
           <CheckCircle2 size={22} color="var(--emerald-ok)" style={{ flexShrink: 0 }} />
           <div style={{ fontSize: 14, color: '#166534', fontWeight: 600, lineHeight: 1.6 }}>
             {loading
-              ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Loader2 className="animate-spin" size={16} /> Cháu Bi đang ghi lại...</span>
+              ? <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><Loader2 className="animate-spin" size={16} /> {isVi ? 'Cháu Bi đang ghi lại...' : 'AI Bi is logging...'}</span>
               : mildText}
           </div>
         </div>
         <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
-          Đã ghi: {describeAnswers(answers)}
+          {isVi ? `Đã ghi: ${describeAnswers(answers)}` : `Logged: ${describeAnswers(answers)}`}
         </div>
-        <MedicalDisclaimer variant="inline" />
+        <MedicalDisclaimer variant="inline" language={language} />
       </div>
     );
   }
@@ -251,15 +253,15 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
     <div style={{ padding: 18, borderRadius: 20, background: 'rgba(241,245,249,0.7)', border: '1px solid var(--glass-border)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
         <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-          Câu {INTAKE_STEPS.slice(0, stepIndex + 1).filter(st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null || showAuto).length} / {INTAKE_STEPS.filter(st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null || showAuto).length}
+          {isVi ? 'Câu' : 'Question'} {INTAKE_STEPS.slice(0, stepIndex + 1).filter(st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null || showAuto).length} / {INTAKE_STEPS.filter(st => NEVER_SKIP.includes(st.key) || initialAnswers[st.key] == null || showAuto).length}
         </span>
         <button onClick={onCancel} style={{ border: 'none', background: 'none', color: 'var(--text-muted)', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-          Thôi để lúc khác
+          {isVi ? 'Thôi để lúc khác' : 'Cancel'}
         </button>
       </div>
 
       <h4 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-dark)', marginBottom: 12, lineHeight: 1.4 }}>
-        {speak(step.question, memberProfile)}
+        {isVi ? speak(step.question, memberProfile) : (step.question_en || step.question)}
       </h4>
 
       {autoFilled.length > 0 && !showAuto && (
@@ -268,17 +270,17 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
           style={{ width: '100%', textAlign: 'left', marginBottom: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.75)', border: '1px dashed var(--glass-border)', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700 }}>
-            Con hiểu từ lời {speak('{{you}}', memberProfile)} vừa nói: {autoFilled.map(a => a.label).join(' · ')}
+            {isVi ? `Con hiểu từ lời ${speak('{{you}}', memberProfile)} vừa nói: ${autoFilled.map(a => a.label).join(' · ')}` : `Detected from speech: ${autoFilled.map(a => a.label).join(' · ')}`}
           </span>
           <span style={{ display: 'block', fontSize: 12, color: 'var(--coral-main)', fontWeight: 800, marginTop: 3 }}>
-            Con hiểu sai thì bấm vào đây để sửa
+            {isVi ? 'Con hiểu sai thì bấm vào đây để sửa' : 'Tap here to edit if misunderstood'}
           </span>
         </button>
       )}
 
       {selected != null && (Array.isArray(selected) ? selected.length > 0 : true) && (
         <div style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 700, marginBottom: 8 }}>
-          Con chọn sẵn theo lời {speak('{{you}}', memberProfile)} vừa nói — không đúng thì bấm chọn lại
+          {isVi ? `Con chọn sẵn theo lời ${speak('{{you}}', memberProfile)} vừa nói — không đúng thì bấm chọn lại` : 'Pre-selected based on what you said — tap to change'}
         </div>
       )}
 
@@ -310,7 +312,7 @@ export default function SymptomIntakePanel({ memberProfile, prescriptions, onFin
 
       {step.multi && (
         <button className="btn-primary" onClick={submitMulti} style={{ width: '100%', marginTop: 12, padding: 14, borderRadius: 16, fontSize: 16 }}>
-          {speak('Xong, {{me}} xem giúp {{you}}', memberProfile)}
+          {isVi ? speak('Xong, {{me}} xem giúp {{you}}', memberProfile) : 'Submit & Review'}
         </button>
       )}
     </div>

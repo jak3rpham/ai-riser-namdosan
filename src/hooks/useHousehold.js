@@ -6,6 +6,7 @@ import {
   subscribeReadings, saveReading,
   savePrescription, saveAppointment, logDose, sendAlert
 } from '../services/householdService';
+import { loginDemo, resetPassword } from '../services/demoAuth';
 import { signOut } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 
@@ -263,12 +264,18 @@ export function useHousehold() {
     feed,
     readings,
 
-    /* ── Hai lối vào ở màn onboarding ── */
+    /* ── Lối vào ở màn onboarding ── */
 
-    createOwn: ({ name, displayName } = {}) =>
-      enter(() => createHousehold({ name, displayName })),
+    createOwn: ({ name, displayName, username, password, phone } = {}) =>
+      enter(() => createHousehold({ name, displayName, username, password, phone })),
 
     join: code => enter(() => joinHousehold(code)),
+
+    login: (username, password) => enter(() => loginDemo(username, password)),
+
+    loginDemo: (username, password) => enter(() => loginDemo(username, password)),
+
+    resetPassword: (username, phone, newPassword) => enter(() => resetPassword(username, phone, newPassword)),
 
     /** Nhận một hồ sơ là mình, hoặc truyền null để chọn lại từ đầu. */
     claimIdentity: async subjectId => {

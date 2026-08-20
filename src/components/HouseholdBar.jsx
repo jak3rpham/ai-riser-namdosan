@@ -13,7 +13,8 @@ import { createInvite } from '../services/householdService';
  * video demo là đủ để mất. Giờ mã chỉ sinh ra KHI người dùng bấm nút, hết hạn
  * sau 7 ngày, và giới hạn số lượt. Không hiện gì cho tới lúc thực sự cần mời.
  */
-export default function HouseholdBar({ householdId, status, error, onJoin, onReset, variant = 'manager' }) {
+export default function HouseholdBar({ householdId, status, error, onJoin, onReset, variant = 'manager', language = 'vi' }) {
+  const isVi = language === 'vi';
   const [copied, setCopied] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const [code, setCode] = useState('');
@@ -40,7 +41,7 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setInviteError('Trình duyệt không cho copy tự động. Bạn đọc mã cho người nhà giúp nhé.');
+      setInviteError(isVi ? 'Trình duyệt không cho copy tự động. Bạn đọc mã cho người nhà giúp nhé.' : 'Clipboard copy failed. Please read the code directly.');
     }
   };
 
@@ -56,35 +57,22 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
   if (status === 'connecting') {
     return (
       <div style={{ padding: '10px 16px', borderRadius: 16, background: 'rgba(241,245,249,0.9)', display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-sub)', fontWeight: 600 }}>
-        <Loader2 className="animate-spin" size={15} /> Đang kết nối dữ liệu nhà mình...
+        <Loader2 className="animate-spin" size={15} /> {isVi ? 'Đang kết nối dữ liệu nhà mình...' : 'Connecting to household data...'}
       </div>
     );
   }
 
-  /**
-   * ⚠️ Trạng thái lỗi PHẢI có lối ra.
-   *
-   * Bản trước chỉ in một khối đỏ rồi hết. Gặp thật ngày 16/08: chủ nhà nối
-   * Google xong bị mất quyền vào nhà (uid đổi), và màn hình đỏ này là tất cả
-   * những gì còn lại — không nút, không đường lùi, tải lại trang vẫn y nguyên
-   * vì id nhà vẫn nằm trong máy. Ngõ cụt hoàn toàn, phải tự xoá dữ liệu trang
-   * mới thoát được.
-   *
-   * Id nhà hiện ngay đây, có chủ ý: mất quyền không có nghĩa là mất dữ liệu,
-   * và người dùng cần con số đó để nhờ khôi phục.
-   */
   if (status === 'error') {
     return (
       <div style={{ padding: '14px 16px', borderRadius: 16, background: '#FEF2F2', border: '1px solid #FCA5A5' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           <AlertTriangle size={16} color="#DC2626" style={{ flexShrink: 0, marginTop: 1 }} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#991B1B' }}>Chưa kết nối được dữ liệu</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#991B1B' }}>{isVi ? 'Chưa kết nối được dữ liệu' : 'Connection failed'}</div>
             <div style={{ fontSize: 13, color: '#B91C1C', fontWeight: 600, marginTop: 2 }}>{error}</div>
             {householdId && (
               <div style={{ fontSize: 12, color: '#B91C1C', fontWeight: 600, marginTop: 6 }}>
-                Dữ liệu của nhà vẫn còn trên máy chủ, không mất đi đâu.
-                Mã nhà: <code style={{ fontWeight: 800 }}>{householdId}</code>
+                {isVi ? 'Dữ liệu của nhà vẫn còn trên máy chủ, không mất đi đâu. Mã nhà:' : 'Data is safe on server. Household ID:'} <code style={{ fontWeight: 800 }}>{householdId}</code>
               </div>
             )}
           </div>
@@ -92,11 +80,11 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
           <button onClick={() => setShowJoin(v => !v)} className="btn-secondary" style={{ padding: '9px 14px', borderRadius: 12, fontSize: 13 }}>
-            <LogIn size={14} /> Nhập mã mời
+            <LogIn size={14} /> {isVi ? 'Nhập mã mời' : 'Enter invite code'}
           </button>
           {onReset && (
             <button onClick={onReset} className="btn-secondary" style={{ padding: '9px 14px', borderRadius: 12, fontSize: 13 }}>
-              <RotateCcw size={14} /> Bắt đầu lại
+              <RotateCcw size={14} /> {isVi ? 'Bắt đầu lại' : 'Start over'}
             </button>
           )}
         </div>
@@ -106,7 +94,7 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
             <input
               value={code}
               onChange={e => setCode(e.target.value.toUpperCase())}
-              placeholder="Nhập mã mời"
+              placeholder={isVi ? "Nhập mã mời" : "Enter code"}
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}
@@ -114,7 +102,7 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
               style={{ flex: 1, minWidth: 180, padding: '11px 14px', borderRadius: 12, border: '1px solid var(--glass-border)', fontSize: 16, fontWeight: 700, letterSpacing: 2, fontFamily: 'inherit', outline: 'none' }}
             />
             <button className="btn-primary" onClick={submitJoin} disabled={joining} style={{ padding: '11px 18px', borderRadius: 12 }}>
-              {joining ? <Loader2 className="animate-spin" size={16} /> : <Users size={16} />} Vào nhà
+              {joining ? <Loader2 className="animate-spin" size={16} /> : <Users size={16} />} {isVi ? 'Vào nhà' : 'Join'}
             </button>
           </div>
         )}
@@ -131,16 +119,16 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
         <Cloud size={17} color="var(--emerald-ok)" style={{ flexShrink: 0 }} />
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--text-dark)' }}>
-            {variant === 'manager' ? 'Dữ liệu nhà mình đã kết nối' : 'Đang dùng chung dữ liệu với gia đình'}
+            {variant === 'manager'
+              ? (isVi ? 'Dữ liệu nhà mình đã kết nối' : 'Household data connected')
+              : (isVi ? 'Đang dùng chung dữ liệu với gia đình' : 'Sharing data with family')}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>
-            {/* Chỉ dẫn phải khớp với nút THẬT SỰ hiện ra. Bản trước luôn bảo
-                bấm "Tạo mã mời" kể cả ở app Ba Mẹ — nơi nút đó không tồn tại. */}
             {invite
-              ? 'Đọc mã dưới đây cho người nhà nhập vào máy của họ'
+              ? (isVi ? 'Đọc mã dưới đây cho người nhà nhập vào máy của họ' : 'Share the code below with family members')
               : variant === 'manager'
-                ? 'Muốn thêm người nhà thì bấm "Tạo mã mời"'
-                : 'Người nhà cho mã thì bấm "Nhập mã mời" để dùng chung dữ liệu'}
+                ? (isVi ? 'Muốn thêm người nhà thì bấm "Tạo mã mời"' : 'Click "Create Invite Code" to add family members')
+                : (isVi ? 'Người nhà cho mã thì bấm "Nhập mã mời" để dùng chung dữ liệu' : 'Enter invite code to connect with your family')}
           </div>
         </div>
       </div>
@@ -148,28 +136,27 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         {variant === 'manager' && (
           <button onClick={makeInvite} disabled={creatingInvite} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 13 }}>
-            {creatingInvite ? <Loader2 className="animate-spin" size={14} /> : <KeyRound size={14} />} Tạo mã mời
+            {creatingInvite ? <Loader2 className="animate-spin" size={14} /> : <KeyRound size={14} />} {isVi ? 'Tạo mã mời' : 'Create Invite Code'}
           </button>
         )}
         <button onClick={() => setShowJoin(v => !v)} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 13 }}>
-          <LogIn size={14} /> Nhập mã mời
+          <LogIn size={14} /> {isVi ? 'Nhập mã mời' : 'Enter Invite Code'}
         </button>
       </div>
 
       {invite && (
         <div style={{ width: '100%', padding: '12px 14px', borderRadius: 12, background: 'var(--coral-soft)', border: '1px solid var(--coral-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div>
-            {/* Chữ to, giãn ký tự: bác cầm điện thoại đọc cho con qua điện thoại */}
             <code style={{ fontSize: 26, fontWeight: 800, letterSpacing: 3, color: 'var(--coral-main)', fontFamily: 'Be Vietnam Pro, monospace' }}>
               {invite.code}
             </code>
             <div style={{ fontSize: 12, color: 'var(--text-sub)', fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
               <Clock size={12} />
-              Dùng được {invite.max_uses} lần, trong 7 ngày
+              {isVi ? `Dùng được ${invite.max_uses} lần, trong 7 ngày` : `Valid for ${invite.max_uses} uses, 7 days`}
             </div>
           </div>
           <button onClick={copy} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: 12, fontSize: 13 }}>
-            {copied ? <><Check size={14} color="var(--emerald-ok)" /> Đã copy</> : <><Copy size={14} /> Copy mã</>}
+            {copied ? <><Check size={14} color="var(--emerald-ok)" /> {isVi ? 'Đã copy' : 'Copied'}</> : <><Copy size={14} /> {isVi ? 'Copy mã' : 'Copy Code'}</>}
           </button>
         </div>
       )}
@@ -183,7 +170,7 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
           <input
             value={code}
             onChange={e => setCode(e.target.value.toUpperCase())}
-            placeholder="Nhập mã mời, ví dụ K7M2PQXR"
+            placeholder={isVi ? "Nhập mã mời, ví dụ K7M2PQXR" : "Enter code, e.g. K7M2PQXR"}
             autoCapitalize="characters"
             autoCorrect="off"
             spellCheck={false}
@@ -191,7 +178,7 @@ export default function HouseholdBar({ householdId, status, error, onJoin, onRes
             style={{ flex: 1, minWidth: 200, padding: '11px 14px', borderRadius: 12, border: '1px solid var(--glass-border)', fontSize: 18, fontWeight: 700, letterSpacing: 2, fontFamily: 'inherit', outline: 'none' }}
           />
           <button className="btn-primary" onClick={submitJoin} disabled={joining} style={{ padding: '11px 20px', borderRadius: 12 }}>
-            {joining ? <Loader2 className="animate-spin" size={16} /> : <Users size={16} />} Vào nhà này
+            {joining ? <Loader2 className="animate-spin" size={16} /> : <Users size={16} />} {isVi ? 'Vào nhà này' : 'Join Household'}
           </button>
         </div>
       )}

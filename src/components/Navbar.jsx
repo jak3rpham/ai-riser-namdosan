@@ -21,7 +21,7 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
               <h1 style={{ fontFamily: 'Be Vietnam Pro, sans-serif', fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px', color: 'var(--text-dark)', whiteSpace: 'nowrap' }}>
                 {t.app_title}
               </h1>
-              <SyncStatusBadge />
+              <SyncStatusBadge language={language} />
             </div>
             <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>AI Riser Vietnam 2026</span>
           </div>
@@ -32,17 +32,17 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
             <>
             {/* User Profile & Capability Trigger */}
             <button onClick={onOpenProfile} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 13, color: 'var(--text-dark)' }}>
-              👤 Hồ sơ C1–C4
+              👤 {language === 'vi' ? 'Hồ sơ C1–C4' : 'Profile C1–C4'}
             </button>
 
             {/* Golden Set Benchmark Trigger */}
             <button onClick={onOpenBenchmark} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 13, color: 'var(--coral-main)', border: '1px solid var(--coral-border)', background: 'var(--coral-soft)' }}>
-              <Award size={15} /> Golden Set AI Metric
+              <Award size={15} /> {language === 'vi' ? 'Đánh giá chuẩn AI' : 'Golden Set Benchmark'}
             </button>
 
             {/* Notification Simulator Trigger */}
             <button onClick={onOpenNotifs} className="btn-secondary" style={{ padding: '6px 14px', borderRadius: 99, fontSize: 13, color: 'var(--text-dark)' }}>
-              <Bell size={15} /> Giả lập Thông báo
+              <Bell size={15} /> {language === 'vi' ? 'Thử thông báo' : 'Test Notification'}
             </button>
             </>
           )}
@@ -74,14 +74,14 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
           <button
             onClick={() => setMenuOpen(true)}
             className="btn-secondary"
-            aria-label="Cài đặt"
+            aria-label={language === 'vi' ? 'Cài đặt' : 'Settings'}
             style={{ padding: '8px 14px', borderRadius: 12, fontSize: 13 }}
           >
-            <Settings size={15} /> Cài đặt
+            <Settings size={15} /> {language === 'vi' ? 'Cài đặt' : 'Settings'}
           </button>
 
           {showDevTools && (
-            <button onClick={onResetDemo} title="Khôi phục dữ liệu mẫu" className="btn-secondary" style={{ padding: '8px 14px', borderRadius: '99px', fontSize: 13 }}>
+            <button onClick={onResetDemo} title={language === 'vi' ? 'Khôi phục dữ liệu mẫu' : 'Reset Demo Data'} className="btn-secondary" style={{ padding: '8px 14px', borderRadius: '99px', fontSize: 13 }}>
               <RefreshCw size={14} /> {t.reset_demo}
             </button>
           )}
@@ -91,6 +91,7 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
 
       {menuOpen && (
         <SettingsSheet
+          language={language}
           onClose={() => setMenuOpen(false)}
           onGoHome={onGoHome}
           onGoParent={onGoParent}
@@ -103,15 +104,29 @@ export default function Navbar({ activeRole, onToggleRole, onResetDemo, language
 
 /**
  * Bảng cài đặt.
- *
- * Trước đây vào /app là không có lối ra: không nút về trang chính, không đổi
- * được nhà, không xem được giao diện ba mẹ. Người dùng phải sửa URL bằng tay.
  */
-function SettingsSheet({ onClose, onGoHome, onGoParent, onLeaveHousehold }) {
+function SettingsSheet({ language = 'vi', onClose, onGoHome, onGoParent, onLeaveHousehold }) {
+  const isVi = language === 'vi';
   const items = [
-    { icon: Home, label: 'Về trang chính', hint: 'Chọn lại vai con cái hay ba mẹ', onClick: onGoHome },
-    { icon: Smartphone, label: 'Xem giao diện Ba Mẹ', hint: 'Màn hình nút to dành cho người lớn tuổi', onClick: onGoParent },
-    { icon: LogOut, label: 'Đổi nhà khác', hint: 'Rời nhà này trên máy này. Dữ liệu trên máy chủ giữ nguyên.', onClick: onLeaveHousehold, danger: true }
+    {
+      icon: Home,
+      label: isVi ? 'Về trang chính' : 'Back to Home',
+      hint: isVi ? 'Chọn lại vai con cái hay ba mẹ' : 'Choose caregiver or parent role',
+      onClick: onGoHome
+    },
+    {
+      icon: Smartphone,
+      label: isVi ? 'Xem giao diện Ba Mẹ' : 'Switch to Parent View',
+      hint: isVi ? 'Màn hình nút to dành cho người lớn tuổi' : 'Senior-friendly view with big buttons',
+      onClick: onGoParent
+    },
+    {
+      icon: LogOut,
+      label: isVi ? 'Đổi nhà khác' : 'Switch Household',
+      hint: isVi ? 'Rời nhà này trên máy này. Dữ liệu trên máy chủ giữ nguyên.' : 'Leave household on this device. Cloud data remains intact.',
+      onClick: onLeaveHousehold,
+      danger: true
+    }
   ].filter(i => i.onClick);
 
   return (
@@ -121,7 +136,9 @@ function SettingsSheet({ onClose, onGoHome, onGoParent, onLeaveHousehold }) {
     >
       <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, background: '#FFF', borderRadius: 20, padding: '20px 18px', boxShadow: '0 24px 60px rgba(15,23,42,0.18)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>Cài đặt</h3>
+          <h3 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-dark)' }}>
+            {isVi ? 'Cài đặt' : 'Settings'}
+          </h3>
           <button onClick={onClose} className="btn-secondary" style={{ padding: 8, borderRadius: 12 }}>
             <X size={18} />
           </button>

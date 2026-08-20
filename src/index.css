@@ -439,3 +439,58 @@ html, body { max-width: 100%; overflow-x: hidden; }
     border-radius: var(--radius-pill);
   }
 }
+
+/* ──────────────────────────────────────────────────────────────
+   Trợ lý Cháu Bi - Waveform & Chat Animations
+   ────────────────────────────────────────────────────────────── */
+@keyframes audio-wave {
+  0%, 100% { height: 6px; transform: scaleY(0.4); }
+  50% { height: 32px; transform: scaleY(1.2); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 75, 0.5); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(255, 107, 75, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 75, 0); }
+}
+
+@keyframes chat-bubble-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-8px); }
+}
+
+.chat-bubble-enter {
+  animation: chat-bubble-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.wave-bar {
+  width: 4px;
+  border-radius: 4px;
+  background: currentColor;
+  animation: audio-wave 1.2s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(1) { animation-delay: 0.0s; height: 12px; }
+.wave-bar:nth-child(2) { animation-delay: 0.15s; height: 24px; }
+.wave-bar:nth-child(3) { animation-delay: 0.3s; height: 32px; }
+.wave-bar:nth-child(4) { animation-delay: 0.45s; height: 18px; }
+.wave-bar:nth-child(5) { animation-delay: 0.6s; height: 28px; }
+.wave-bar:nth-child(6) { animation-delay: 0.2s; height: 14px; }
+.wave-bar:nth-child(7) { animation-delay: 0.35s; height: 26px; }
+
+.thinking-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--coral-main);
+  display: inline-block;
+  animation: dot-bounce 1.4s infinite ease-in-out both;
+}
+.thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+.thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+.thinking-dot:nth-child(3) { animation-delay: 0s; }
